@@ -3,7 +3,7 @@
    Caching strategy: Static assets (cache-first), Pages (network-first), API (network-first)
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'coach4u-v0.5.143';
+const CACHE_VERSION = 'coach4u-v0.5.144';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const PAGES_CACHE = CACHE_VERSION + '-pages';
 const API_CACHE = CACHE_VERSION + '-api';

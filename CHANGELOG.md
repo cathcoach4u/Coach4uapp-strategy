@@ -4,6 +4,14 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.144
+- **Account nav item now appears on `index.html` and the account hubs.** User reported after v0.5.142 ship: "But if this is the case where is the account area located. Because it's not down bottom." They were looking for the new button on the account dashboard itself, but v0.5.142 had skipped that page on the (wrong) theory that a self-link was redundant.
+- **What's actually wrong with skipping it:** the bottom nav becomes inconsistent — 5 items on account-level pages vs 6 on business-level pages — so the change is invisible from the page the user naturally checks.
+- **Fix:** added the 6th `🏛️ Account` item to four more pages: `index.html` (marked `.active` since this is the account dashboard), `account-strategy.html`, `account-operations.html`, `account-planning.html`. The carousel pages (`account-*.html`) use the `.screen-toolbar` pattern instead of `bottom-nav`, so they remain unaffected.
+- **No SQL, no functional change** beyond nav layout consistency.
+
+---
+
 ## v0.5.143
 - **Version label on account dashboard was stuck on v0.5.89.** User reported only seeing v0.5.89 on the home/account dashboard even after the v0.5.142 deploy. Cause: the project's version-bump checklist only listed `business.html`'s footer label — `index.html`'s footer label was a separate hardcoded `<p>v0.5.89</p>` that hadn't been touched since the file was created. ~54 versions of drift.
 - **Fixed:** `index.html` footer now reads `v0.5.143`.
