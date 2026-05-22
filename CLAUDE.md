@@ -6,11 +6,12 @@
 - Always push changes directly to `main` branch
 - Commit with clear, descriptive messages
 - Push after every commit — do not batch pushes
-- **Bump version number with EVERY change** (patch: 0.5.x). **Four files MUST stay in sync:**
+- **Bump version number with EVERY change** (patch: 0.5.x). **Five files MUST stay in sync:**
   1. `CLAUDE.md` → `## Current Version` line
   2. `VERSION` (just the number, e.g. `0.5.74`)
   3. `sw.js` → `CACHE_VERSION = 'coach4u-vX.Y.Z'`
   4. `business.html` → visible label at the bottom of the dashboard footer (`<p ...>vX.Y.Z</p>`)
+  5. `index.html` → visible label at the bottom of the account dashboard footer (`<p ...>vX.Y.Z</p>`) — added v0.5.143 after the index footer was found stuck on v0.5.89
 - Append a new entry to `CHANGELOG.md` for every bump. Keep the most recent 1–2 entries duplicated under `## Latest` in this file as a pointer.
 - For large file changes: split into small focused files (each under ~8KB) to avoid push timeouts
 
@@ -188,9 +189,10 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.142
+v0.5.143
 
 ## Latest
+- **v0.5.143** — Fixed the version label on the account dashboard. `index.html`'s footer was stuck on `v0.5.89` because the version-bump checklist only covered `business.html`'s footer — `index.html` was missed for ~54 versions. User report: "I only see v 0.5.89" on the account dashboard, even though business pages and the live `VERSION` file showed v0.5.142. Bumped index.html's footer to v0.5.143 and added `index.html` to the five-files version-bump checklist in CLAUDE.md so this doesn't drift again. The actual functionality (Account nav item added v0.5.142, etc.) was already live — only the visible label was misleading.
 - **v0.5.142** — Added an **Account** item to the bottom nav, sitting after Learn (🏛️ icon → `index.html`). User feedback: "the flow needs to be easier to get back to the main accounts page. can we add this as a box next to learn?" Previously the only way back to the multi-business account dashboard was through the navy header's `← Back` (which goes to `business.html`, not `index.html`) or the breadcrumb chain. Now every business-level page (22 files including `business.html`, all 4 hubs, every operations tool, every strategy worksheet, planning list pages, sessions, learning vault) has a one-tap path to the account dashboard. The bottom-nav is now 6 items: Home / Planning / Strategy / Operations / Learn / Account. Account-level pages (`account-*.html`) and `index.html` itself are unchanged.
 - **v0.5.141** — Header layout rework. User feedback: "move the pill for the drop down out of the main header and put it to the right side of the screen and I want it a square 'pill'. And Your business coach more at the top." Done — `js/active-org.js` now detaches `#activeBizName` from the navy header on init and moves it into a new sticky sub-toolbar (`.biz-switcher-bar`) right under the header, right-aligned. Pill border-radius dropped from 14px → 6px (square-ish). Removed the v0.5.124/130 hide-title-on-phones CSS rule since the pill no longer crowds the navy bar — "Your Business Coach" now shows on every viewport and is slightly bolder (font-weight 800, 1.05rem on phones).
 - **v0.5.140** — Manual reordering for businesses. New `sort_order` column on `organisations` (default 0). On the account dashboard, each biz card gets a small ↑/↓ pair (admins only, hidden when there's just one biz). Click swaps sort_orders with the adjacent biz, persists both, re-renders. The v0.5.139 navy-header switcher dropdown picks up the new order too (cache busted automatically). **Requires SQL** — see `supabase/v0.5.140-delta.sql`.

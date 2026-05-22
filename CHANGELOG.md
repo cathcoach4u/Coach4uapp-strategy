@@ -4,6 +4,14 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.143
+- **Version label on account dashboard was stuck on v0.5.89.** User reported only seeing v0.5.89 on the home/account dashboard even after the v0.5.142 deploy. Cause: the project's version-bump checklist only listed `business.html`'s footer label — `index.html`'s footer label was a separate hardcoded `<p>v0.5.89</p>` that hadn't been touched since the file was created. ~54 versions of drift.
+- **Fixed:** `index.html` footer now reads `v0.5.143`.
+- **Process fix:** CLAUDE.md's "## Git Workflow" section now lists **five** files that must stay in sync per bump (was four). Added `index.html` to the list with a note explaining when it was added.
+- **No functional change** — the Account nav item and everything else from v0.5.142 was already live. This was a label-only bug.
+
+---
+
 ## v0.5.142
 - **Account item added to bottom nav.** User: "the flow needs to be easier to get back to the main accounts page. can we add this as a box next to learn?"
 - **What changed:** the bottom nav on every business-level page goes from 5 items to 6 — the new item sits to the right of "Learn":
