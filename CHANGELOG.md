@@ -4,6 +4,23 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.189
+- **Removed the redundant back link from the one-page plan + ops toolbars.** User: "The back link isn't needed is it?"
+
+After v0.5.188 added the standard 5-tab bottom-nav (Home · Planning · Strategy · Operations · Learn) to both presentation docs, the toolbar's `← Strategy` / `← Operations` back link was redundant — Strategy and Operations are now one tap away in the nav, plus Home (which the back link never offered).
+
+### Change
+- `one-page-plan.html` — removed `<a href="strategy.html" class="toolbar-back">← Strategy</a>` from `.toolbar-left`.
+- `one-page-operations.html` — removed `<a href="operations.html" class="toolbar-back">← Operations</a>` from `.toolbar-left`.
+
+### Net effect
+- **Desktop toolbar**: `[page title · 🏢 IASHQ]` left, `[🖨️ Print]` right.
+- **Phone toolbar** (where `.toolbar-title` is hidden via the v0.5.186 rule): `[🏢 IASHQ]` left, `[🖨️ Print]` right — clean and uncluttered.
+
+The CSS for `.toolbar-back` itself is left in the file in case it's reused elsewhere; it just doesn't render anymore. Bottom-nav and print rules unchanged.
+
+---
+
 ## v0.5.188
 - **Bottom-nav added to the one-page plan + one-page operations.** User: "The link to the one page operations page has a back link to operations. I wonder if it should have the tabs down the bottom like the other pages?"
 
