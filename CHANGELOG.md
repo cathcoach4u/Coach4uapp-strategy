@@ -4,6 +4,43 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.206
+- **Weekly meeting agenda sections now show the items inline with an Edit ›  link.** User: "Can the weekly meetings be structured so it shows the items and then has an edit button similar to the dashboard. ... if I click on quarterly goal I see the goals and if I need to edit them I click on edit. And this is the same do all of the sections in weekly meeting."
+
+### Before
+Sections 2 (Numbers Review), 3 (Priorities Review), and 6 (Issues) showed a one-line paragraph and a link to the dedicated edit page — *"Review quarterly goals. Open Goals →"*. Tap the section → see nothing useful → navigate to a different page → come back. Lots of friction during the meeting.
+
+### After
+Each of those three sections now shows the actual operational data inline (read-only), with a small **Edit ›** link in the top-right corner of the content area that navigates to the dedicated edit page when something needs changing.
+
+- **Section 2 — Numbers Review**: compact scorecard table identical to the one-page-operations view. Metric name + owner + goal + last 6 weeks of values with hit/miss colouring. Edit link → `scorecard.html`.
+- **Section 3 — Priorities Review**: list of this quarter's rocks with description, owner, and status pill (On Track / At Risk / Off Track / Done / Not Started). Edit link → `goals.html`.
+- **Section 6 — Issues — Discuss & Resolve**: numbered list of `category='current'` open issues with description + owner. Edit link → `issues.html?category=current`.
+
+### Sections kept as-is
+Sections 4 (Customer & Team Highlights), 5 (To-Do List), and 7 (Conclude & Rate) kept their existing inline-editable UI. Their content lives only inside the meeting (per-meeting headlines + todos in `meeting_headlines` / `meeting_todos`, per-meeting rating + notes on the `meetings` row), so there's no separate edit page to link to. They were already showing the actual items.
+
+### Data
+- `loadDetail` Promise.all grows from **3 → 6 queries**: now also fetches `scorecard_metrics`, `rocks` (this quarter), `issues` (current+open). All scoped by `orgId` (set in init from `window.activeOrg.get()`).
+- Second round-trip for `scorecard_entries` over the 6-week window — only runs if metrics exist.
+- All new state lives on top-level `_scMetrics`, `_scEntries`, `_scWeeks`, `_rocks`, `_issues` arrays.
+
+### CSS
+- `.agenda-edit-row` / `.agenda-edit-link` — the small teal "Edit ›" link at the top-right of each section.
+- `.agenda-view-list` / `.agenda-view-row` — read-only list of items inside a section.
+- `.agenda-pill` + `.pill-green/amber/red/grey` — rock status pills (matches dashboard styling).
+- `.agenda-sc-wrap` / `.agenda-sc-table` — scorecard mini-table (horizontally scrollable on phones).
+
+### Helpers added
+- `currentQuarter()` — same shape as on the other pages.
+- `fmtWeek(iso)` — short "5 Jun" format for column headers.
+- `fmtVal(v, type)` — formats currency / percentage / plain numbers.
+- `editRow(href, label)` — generates the "Edit X ›" link block.
+
+### No SQL.
+
+---
+
 ## v0.5.205
 - **Dynamic Run Weekly Meeting button label so the user can see the meeting was persisted.** User: "The weekly meetings I still think it seems to not be working with meetings that when pressing starts it's not persisting and meeting available."
 

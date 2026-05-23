@@ -38,6 +38,39 @@
     .agenda-toggle.open .agenda-arrow{transform:rotate(180deg)}
     .agenda-content{display:none;padding:16px}
     .agenda-content.open{display:block}
+
+    /* v0.5.206 — Edit ›  link at top-right of each agenda section's content
+       area, for sections that have a dedicated edit page. */
+    .agenda-edit-row{display:flex;justify-content:flex-end;margin:-4px 0 10px}
+    .agenda-edit-link{font-size:.78rem;font-weight:700;color:var(--accent);text-decoration:none;padding:4px 8px;border-radius:6px}
+    .agenda-edit-link:hover{background:rgba(13,148,136,.08);text-decoration:none}
+
+    /* v0.5.206 — read-only view lists inside agenda sections */
+    .agenda-view-list{display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+    .agenda-view-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px dashed #f0f0f0}
+    .agenda-view-row:last-child{border-bottom:none}
+    .agenda-view-row .marker{color:#0D9488;font-weight:800;font-size:.75rem;min-width:14px;padding-top:2px;flex-shrink:0}
+    .agenda-view-row .body{flex:1;min-width:0}
+    .agenda-view-row .desc{font-size:.85rem;font-weight:600;color:var(--primary);line-height:1.35}
+    .agenda-view-row .meta{font-size:.72rem;color:#888;margin-top:2px}
+    .agenda-view-row .meta .owner{color:var(--accent);font-weight:700}
+    .agenda-view-empty{font-size:.82rem;color:#aaa;font-style:italic;padding:6px 0}
+    /* Status pill (Priorities Review) */
+    .agenda-pill{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+    .agenda-pill.pill-green{background:#D1FAE5;color:#059669}
+    .agenda-pill.pill-amber{background:#FEF3C7;color:#D97706}
+    .agenda-pill.pill-red{background:#FEE2E2;color:#DC2626}
+    .agenda-pill.pill-grey{background:#F3F4F6;color:#6B7280}
+    /* Scorecard mini-table (Numbers Review) */
+    .agenda-sc-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .agenda-sc-table{width:100%;border-collapse:collapse;font-size:.78rem;table-layout:auto}
+    .agenda-sc-table th,.agenda-sc-table td{padding:5px 7px;border-bottom:1px solid #f0f0f0;text-align:right;white-space:nowrap}
+    .agenda-sc-table th{font-size:.65rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;background:#fafbfc}
+    .agenda-sc-table th.sc-name,.agenda-sc-table td.sc-name{text-align:left;color:var(--primary);font-weight:700}
+    .agenda-sc-table td.sc-goal{color:#888;font-weight:700;font-size:.72rem}
+    .agenda-sc-table td.hit{color:#0D9488;font-weight:700}
+    .agenda-sc-table td.miss{color:#c53030;font-weight:700}
+    .agenda-sc-table td.empty{color:#c0c0c0}
     .item-list{list-style:none;margin:0 0 12px;padding:0}
     .item-list li{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid #f0f0f0;border-radius:8px;margin-bottom:6px;font-size:.88rem;font-family:inherit}
     .item-list li .item-text{flex:1;color:var(--text)}
@@ -122,11 +155,17 @@
   let orgId = null;
   let meetingId = null;
   let _currentMeeting=null, _headlines=[], _todos=[];
+  // v0.5.206 — operational data loaded for in-section views of agenda sections
+  // 2 (Numbers Review), 3 (Priorities Review), and 6 (Issues).
+  let _scMetrics=[], _scEntries={}, _scWeeks=[], _rocks=[], _issues=[];
   let _timerInterval=null, _timerStart=null;
 
   function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
   function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+type;t.classList.remove('toast-hidden');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add('toast-hidden'),3000)}
   function fmtDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}
+  function currentQuarter(){const d=new Date();return 'Q'+(Math.floor(d.getMonth()/3)+1)+' '+d.getFullYear();}
+  function fmtWeek(iso){const dt=new Date(iso+'T00:00:00');return dt.toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
+  function fmtVal(v,type){if(v===null||v===undefined||v==='')return '—';if(type==='currency')return '$'+Number(v).toLocaleString();if(type==='percentage')return v+'%';return String(v);}
 
   function getMeetingId(){
     const u = new URLSearchParams(window.location.search);
@@ -134,10 +173,41 @@
   }
 
   async function loadDetail(id){
-    const [meetingRes, headlinesRes, todosRes] = await Promise.all([
+    // v0.5.206 — also fetch the operational data the user reviews during the
+    // meeting (scorecard metrics + recent entries, current quarter rocks,
+    // current open issues) so each agenda section can show the actual items
+    // inline. Same queries the dashboard + one-page-operations already use;
+    // scoped by orgId via active-org.js (set in init() before this is called).
+    const quarter = currentQuarter();
+    const thisMondayIso = (() => {
+      const d = new Date(); const day = d.getDay();
+      d.setDate(d.getDate() + ((day === 0 ? -6 : 1) - day));
+      return d.toISOString().slice(0, 10);
+    })();
+    _scWeeks = [-5,-4,-3,-2,-1,0].map(o => {
+      const dt = new Date(thisMondayIso + 'T00:00:00');
+      dt.setDate(dt.getDate() + o * 7);
+      return dt.toISOString().slice(0, 10);
+    });
+    const [meetingRes, headlinesRes, todosRes, metricsRes, rocksRes, issuesRes] = await Promise.all([
       supabase.from('meetings').select('*').eq('id', id).maybeSingle(),
       supabase.from('meeting_headlines').select('*').eq('meeting_id', id).order('created_at', { ascending: true }),
-      supabase.from('meeting_todos').select('*').eq('meeting_id', id).order('created_at', { ascending: true })
+      supabase.from('meeting_todos').select('*').eq('meeting_id', id).order('created_at', { ascending: true }),
+      orgId ? supabase.from('scorecard_metrics')
+        .select('id, name, owner, goal, measurement_type, sort_order')
+        .eq('organisation_id', orgId)
+        .order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
+      orgId ? supabase.from('rocks')
+        .select('id, description, owner, status, company_rock, sort_order')
+        .eq('organisation_id', orgId)
+        .eq('quarter', quarter)
+        .order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
+      orgId ? supabase.from('issues')
+        .select('id, description, owner, status, created_at')
+        .eq('organisation_id', orgId)
+        .eq('category', 'current')
+        .eq('status', 'open')
+        .order('created_at', { ascending: true }) : Promise.resolve({ data: [] })
     ]);
     if (meetingRes.error || !meetingRes.data) {
       console.warn('Load meeting failed:', meetingRes.error && meetingRes.error.message);
@@ -148,8 +218,28 @@
     _currentMeeting = meetingRes.data;
     _headlines = (!headlinesRes.error && Array.isArray(headlinesRes.data)) ? headlinesRes.data : [];
     _todos = (!todosRes.error && Array.isArray(todosRes.data)) ? todosRes.data : [];
+    _scMetrics = (metricsRes && !metricsRes.error && Array.isArray(metricsRes.data)) ? metricsRes.data : [];
+    _rocks = (rocksRes && !rocksRes.error && Array.isArray(rocksRes.data)) ? rocksRes.data : [];
+    _issues = (issuesRes && !issuesRes.error && Array.isArray(issuesRes.data)) ? issuesRes.data : [];
     if (headlinesRes.error) console.warn('Load headlines failed:', headlinesRes.error.message);
     if (todosRes.error) console.warn('Load todos failed:', todosRes.error.message);
+
+    // Scorecard entries for the visible weeks (second round-trip after metrics load).
+    _scEntries = {};
+    if (_scMetrics.length) {
+      const metricIds = _scMetrics.map(m => m.id);
+      const { data: entries } = await supabase
+        .from('scorecard_entries')
+        .select('metric_id, week_date, value')
+        .in('metric_id', metricIds)
+        .gte('week_date', _scWeeks[0]);
+      if (Array.isArray(entries)) {
+        for (const e of entries) {
+          if (!_scEntries[e.metric_id]) _scEntries[e.metric_id] = {};
+          _scEntries[e.metric_id][e.week_date] = e.value;
+        }
+      }
+    }
 
     document.getElementById('ws-title').innerHTML='&#x1F5D3;&#xFE0F; '+fmtDate(_currentMeeting.meeting_date);
     document.getElementById('ws-sub').textContent=(_currentMeeting.quarter?_currentMeeting.quarter+' — ':'')+'Work through the agenda below.';
@@ -179,11 +269,11 @@
         </div>
         <div id="agenda-accordion">
           ${agendaSection(1,'Good News','5 min',renderSegue())}
-          ${agendaSection(2,'Numbers Review','5 min','<p style="font-size:.88rem;color:#888;font-family:inherit;">Review your weekly numbers. <a href="scorecard.html" style="color:var(--accent);">Open Weekly Numbers &#x2192;</a></p>')}
-          ${agendaSection(3,'Priorities Review','5 min','<p style="font-size:.88rem;color:#888;font-family:inherit;">Review quarterly goals. <a href="goals.html" style="color:var(--accent);">Open Goals &#x2192;</a></p>')}
+          ${agendaSection(2,'Numbers Review','5 min',renderNumbersView())}
+          ${agendaSection(3,'Priorities Review','5 min',renderPrioritiesView())}
           ${agendaSection(4,'Customer &amp; Team Highlights','5 min',renderHeadlines())}
           ${agendaSection(5,'To-Do List','5 min',renderTodos())}
-          ${agendaSection(6,'Issues &#x2014; Discuss &amp; Resolve','60 min','<p style="font-size:.88rem;color:#888;font-family:inherit;">Work through your issues list. <a href="issues.html?category=current" style="color:var(--accent);">Open Issues &#x2192;</a></p>')}
+          ${agendaSection(6,'Issues &#x2014; Discuss &amp; Resolve','60 min',renderIssuesView())}
           ${agendaSection(7,'Conclude &amp; Rate','5 min',renderConclude())}
         </div>
       </div>
@@ -229,6 +319,63 @@
   }
   function renderSegue(){
     return `<p style="font-size:.88rem;color:#666;font-family:inherit;">Share a good news item to start the meeting &#x2014; personal or professional.</p>`;
+  }
+
+  // v0.5.206 — Helper: small "Edit ›" link at the top of an agenda section's
+  // content area. Used by sections 2, 3, 5, 6 which all have dedicated edit pages.
+  function editRow(href, label){
+    return `<div class="agenda-edit-row"><a href="${href}" class="agenda-edit-link">${escHtml(label)} &#x203A;</a></div>`;
+  }
+
+  // ── v0.5.206 — Read-only views inside agenda sections ──
+  function renderNumbersView(){
+    const head = editRow('scorecard.html', 'Edit Weekly Numbers');
+    if (!_scMetrics.length) {
+      return head + '<div class="agenda-view-empty">No weekly numbers recorded yet.</div>';
+    }
+    const header = `<tr><th class="sc-name">Metric</th><th class="sc-goal">Goal</th>${_scWeeks.map(w => `<th>${escHtml(fmtWeek(w))}</th>`).join('')}</tr>`;
+    const body = _scMetrics.map(m => {
+      const entries = _scEntries[m.id] || {};
+      const goal = (m.goal === null || m.goal === undefined) ? null : Number(m.goal);
+      const cells = _scWeeks.map(w => {
+        const v = entries[w];
+        if (v === undefined || v === null || v === '') return `<td class="empty">&mdash;</td>`;
+        let cls = '';
+        if (goal !== null && !isNaN(goal)) cls = Number(v) >= goal ? ' hit' : ' miss';
+        return `<td class="${cls.trim()}">${escHtml(fmtVal(v, m.measurement_type))}</td>`;
+      }).join('');
+      const owner = (m.owner || '').trim();
+      return `<tr><td class="sc-name">${escHtml(m.name || '')}${owner ? ` <span style="font-size:.65rem;color:var(--accent);font-weight:700;display:block;margin-top:1px;">${escHtml(owner)}</span>` : ''}</td><td class="sc-goal">${goal !== null && !isNaN(goal) ? escHtml(fmtVal(goal, m.measurement_type)) : '—'}</td>${cells}</tr>`;
+    }).join('');
+    return head + `<div class="agenda-sc-wrap"><table class="agenda-sc-table"><thead>${header}</thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  function renderPrioritiesView(){
+    const head = editRow('goals.html', 'Edit Quarterly Goals');
+    if (!_rocks.length) {
+      return head + '<div class="agenda-view-empty">No quarterly goals recorded yet.</div>';
+    }
+    const STATUS_LABEL = { on_track:'On Track', at_risk:'At Risk', off_track:'Off Track', done:'Done', not_started:'Not Started' };
+    const STATUS_PILL  = { on_track:'pill-green', at_risk:'pill-amber', off_track:'pill-red', done:'pill-green', not_started:'pill-grey' };
+    const rows = _rocks.map(r => {
+      const owner = (r.owner || '').trim();
+      const meta = owner ? `<div class="meta"><span class="owner">${escHtml(owner)}</span></div>` : '';
+      return `<li class="agenda-view-row"><div class="body"><div class="desc">${escHtml(r.description || '—')}</div>${meta}</div><span class="agenda-pill ${STATUS_PILL[r.status] || 'pill-grey'}">${escHtml(STATUS_LABEL[r.status] || (r.status || '—'))}</span></li>`;
+    }).join('');
+    return head + `<ul class="agenda-view-list">${rows}</ul>`;
+  }
+
+  function renderIssuesView(){
+    const head = editRow('issues.html?category=current', 'Edit Issues List');
+    if (!_issues.length) {
+      return head + '<div class="agenda-view-empty">No open issues. Nice work.</div>';
+    }
+    const rows = _issues.map((iss, i) => {
+      const owner = (iss.owner || '').trim();
+      const meta = owner ? `<div class="meta"><span class="owner">${escHtml(owner)}</span></div>` : '';
+      return `<li class="agenda-view-row"><span class="marker">${i + 1}.</span><div class="body"><div class="desc">${escHtml(iss.description || '—')}</div>${meta}</div></li>`;
+    }).join('');
+    return head + `<ul class="agenda-view-list">${rows}</ul>`;
   }
   function renderHeadlines(){
     const items=_headlines;
