@@ -170,6 +170,10 @@
       <div class="greeting-name" id="bizName">Business Dashboard</div>
       <div class="greeting-date" id="todayDate"></div>
       <a href="index.html" id="switchBizLink" class="switch-biz-link" style="display:none;">Switch business &rsaquo;</a>
+      <div id="bizContext" style="display:none;font-size:0.78rem;margin-top:6px;">
+        <a id="parentLink" href="#" style="color:var(--accent);font-weight:700;text-decoration:none;display:none;"></a>
+        <span id="childrenInfo" style="color:#888;font-weight:600;display:none;margin-left:8px;"></span>
+      </div>
     </div>
 
     <!-- Stat tiles -->
@@ -213,6 +217,24 @@
       </div>
     </div>
 
+    <!-- Business Structure (admins only) -->
+    <div class="dash-panel" id="structurePanel" style="display:none;">
+      <div class="panel-head">
+        <span class="panel-title">&#x1F3DB;&#xFE0F; Business Structure</span>
+      </div>
+      <div class="panel-body">
+        <label style="display:block;font-size:0.72rem;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Parent business</label>
+        <select id="parentPicker" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:inherit;background:white;color:var(--text);">
+          <option value="">— None —</option>
+        </select>
+        <div id="parentSaveStatus" style="font-size:0.72rem;color:#888;margin-top:8px;line-height:1.4;">Children inherit Core Values from the parent unless overridden.</div>
+        <div id="childrenList" style="margin-top:14px;display:none;">
+          <label style="display:block;font-size:0.72rem;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Children</label>
+          <div id="childrenChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Meeting link -->
     <a class="meeting-btn" id="thisWeekMeetingBtn" href="meeting.html">
       <span>&#x1F5D3;&#xFE0F;&nbsp; Go to This Week&#x2019;s Meeting</span>
@@ -247,7 +269,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.144</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.145</p>
 
   </div>
 
@@ -472,6 +494,110 @@
       }
     }
 
+    // ── Parent / child context for the greeting row (v0.5.145) ──
+    function renderBizContext(activeRow, memberships) {
+      const ctx = document.getElementById('bizContext');
+      const parentLink = document.getElementById('parentLink');
+      const childrenInfo = document.getElementById('childrenInfo');
+      const activeOrg = activeRow.organisations;
+      let hasAny = false;
+
+      if (activeOrg.parent_organisation_id) {
+        const parent = memberships.find(m => m.organisation_id === activeOrg.parent_organisation_id);
+        if (parent && parent.organisations) {
+          const pId = parent.organisation_id;
+          const pName = parent.organisations.name;
+          parentLink.textContent = '↑ Part of ' + pName;
+          parentLink.style.display = 'inline-block';
+          parentLink.addEventListener('click', e => {
+            e.preventDefault();
+            if (window.activeOrg) window.activeOrg.set(pId, pName);
+            window.location.reload();
+          });
+          hasAny = true;
+        }
+      }
+
+      const children = memberships.filter(m =>
+        m.organisations && m.organisations.parent_organisation_id === activeOrg.id);
+      if (children.length) {
+        childrenInfo.textContent = '↓ ' + children.length + ' child ' +
+          (children.length === 1 ? 'business' : 'businesses');
+        childrenInfo.style.display = 'inline';
+        hasAny = true;
+      }
+
+      if (hasAny) ctx.style.display = '';
+    }
+
+    // ── Admin-only Business Structure panel (v0.5.145) ──
+    function wireBusinessStructure(activeRow, memberships) {
+      if (activeRow.role !== 'admin') return;
+      const activeOrg = activeRow.organisations;
+      const sameSub = memberships.filter(m =>
+        m.organisations &&
+        m.organisations.subscription_id === activeOrg.subscription_id &&
+        m.organisation_id !== activeOrg.id);
+
+      // My children = businesses whose parent is me
+      const myChildren = sameSub.filter(m =>
+        m.organisations.parent_organisation_id === activeOrg.id);
+
+      // Valid parent candidates: top-level (no parent themselves) and not my child
+      const candidates = sameSub.filter(m =>
+        !m.organisations.parent_organisation_id &&
+        !myChildren.some(c => c.organisation_id === m.organisation_id));
+
+      document.getElementById('structurePanel').style.display = '';
+
+      const picker = document.getElementById('parentPicker');
+      picker.innerHTML = '<option value="">— None —</option>' +
+        candidates.map(m =>
+          `<option value="${m.organisation_id}"${
+            m.organisation_id === activeOrg.parent_organisation_id ? ' selected' : ''
+          }>${escapeHtml(m.organisations.name)}</option>`
+        ).join('');
+
+      picker.addEventListener('change', async () => {
+        const newParentId = picker.value || null;
+        const statusEl = document.getElementById('parentSaveStatus');
+        statusEl.textContent = 'Saving...';
+        statusEl.style.color = '#888';
+        const { error } = await supabase
+          .from('organisations')
+          .update({ parent_organisation_id: newParentId })
+          .eq('id', activeOrg.id);
+        if (error) {
+          statusEl.textContent = 'Could not save: ' + error.message;
+          statusEl.style.color = '#DC2626';
+        } else {
+          statusEl.textContent = 'Saved ✓ — reloading...';
+          statusEl.style.color = '#059669';
+          // Invalidate the header switcher cache so the new tree shows everywhere
+          try { localStorage.removeItem('coach4u_biz_list_cache'); } catch (_) {}
+          setTimeout(() => window.location.reload(), 600);
+        }
+      });
+
+      if (myChildren.length) {
+        document.getElementById('childrenList').style.display = '';
+        const chipsEl = document.getElementById('childrenChips');
+        chipsEl.innerHTML = myChildren.map(c =>
+          `<button type="button" data-org-id="${c.organisation_id}" data-org-name="${escapeHtml(c.organisations.name)}"
+            style="background:rgba(13,148,136,0.08);border:1px solid rgba(13,148,136,0.2);border-radius:20px;padding:5px 12px;font-size:0.78rem;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;">
+            ↳ ${escapeHtml(c.organisations.name)}</button>`
+        ).join('');
+        chipsEl.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const cid = btn.dataset.orgId;
+            const cname = btn.dataset.orgName;
+            if (window.activeOrg) window.activeOrg.set(cid, cname);
+            window.location.reload();
+          });
+        });
+      }
+    }
+
     async function init() {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (!user || error) { window.location.href = 'login.html'; return; }
@@ -483,7 +609,7 @@
       // Resolve the user's team memberships
       const { data: memberships } = await supabase
         .from('team_members')
-        .select('organisation_id, role, organisations!inner(id, name)')
+        .select('organisation_id, role, organisations!inner(id, name, subscription_id, parent_organisation_id)')
         .eq('user_id', user.id)
         .eq('status', 'active');
 
@@ -521,6 +647,8 @@
 
       ensureSeeds();
       try {
+        renderBizContext(activeRow, memberships);
+        wireBusinessStructure(activeRow, memberships);
         await renderDashboard(activeId);
       } catch (e) {
         console.warn('Dashboard render error:', e);

@@ -166,6 +166,24 @@
     .reorder-btn:hover:not(:disabled) { background: #f0fdfa; border-color: var(--accent); color: var(--accent); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+    /* ── Parent / child grouping (v0.5.145) ── */
+    .biz-group { display: flex; flex-direction: column; gap: 12px; }
+    .biz-card.is-child {
+      margin-left: 28px;
+      border-left: 3px solid var(--accent);
+      background: #fafdfc;
+    }
+    .biz-card.is-child::before {
+      content: "↳"; position: absolute; left: -22px; top: 22px;
+      color: var(--accent); font-weight: 800; font-size: 1.15rem;
+    }
+    .parent-pill {
+      display: inline-block; font-size: 0.62rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 3px 9px; border-radius: 20px;
+      background: rgba(0,51,102,0.1); color: var(--primary);
+    }
+
     /* ── Snapshot grid ── */
     .snapshot-grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
@@ -393,7 +411,7 @@
       <button id="inviteUserBtn" class="add-btn add-btn-secondary">+ Invite User</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.144</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.145</p>
 
   </div>
 
@@ -637,7 +655,7 @@
       // The !inner join lets us filter on organisations.subscription_id.
       const memQuery = sb
         .from('team_members')
-        .select('id, organisation_id, role, status, organisations!inner(id, name, subscription_id, sort_order)')
+        .select('id, organisation_id, role, status, organisations!inner(id, name, subscription_id, sort_order, parent_organisation_id)')
         .eq('user_id', user.id)
         .eq('status', 'active');
       if (activeSub) memQuery.eq('organisations.subscription_id', activeSub.id);
@@ -806,18 +824,53 @@
         return;
       }
       // Sort by sort_order, then name (alphabetical fallback for ties / pre-v0.5.140 rows)
-      myMemberships.sort((a, b) => {
+      const sortByOrder = (a, b) => {
         const so = (a.organisations.sort_order || 0) - (b.organisations.sort_order || 0);
         if (so !== 0) return so;
         return String(a.organisations.name || '').localeCompare(String(b.organisations.name || ''));
+      };
+      myMemberships.sort(sortByOrder);
+
+      // ── Build the parent/child tree (v0.5.145) ──
+      // Top-level: memberships whose org has no parent_organisation_id.
+      // Children of those: memberships whose org's parent_organisation_id matches.
+      // Anything left over (e.g., child whose parent isn't visible to this user)
+      // is rendered at top-level so it isn't lost.
+      const idToMembership = new Map(myMemberships.map(m => [m.organisations.id, m]));
+      const childrenByParent = new Map();
+      myMemberships.forEach(m => {
+        const pid = m.organisations.parent_organisation_id;
+        if (pid && idToMembership.has(pid)) {
+          if (!childrenByParent.has(pid)) childrenByParent.set(pid, []);
+          childrenByParent.get(pid).push(m);
+        }
       });
-      wrap.innerHTML = myMemberships.map((m, idx) => {
+      // Top-level = no parent set, OR parent not visible to me
+      const topLevel = myMemberships.filter(m => {
+        const pid = m.organisations.parent_organisation_id;
+        return !pid || !idToMembership.has(pid);
+      });
+
+      // Render order: each top-level biz, immediately followed by its children
+      const renderOrder = [];
+      topLevel.forEach(parentMem => {
+        renderOrder.push({ mem: parentMem, isChild: false, hasChildren: childrenByParent.has(parentMem.organisations.id) });
+        const kids = childrenByParent.get(parentMem.organisations.id) || [];
+        kids.sort(sortByOrder);
+        kids.forEach(k => renderOrder.push({ mem: k, isChild: true, hasChildren: false }));
+      });
+
+      wrap.innerHTML = renderOrder.map((entry, idx) => {
+        const m = entry.mem;
         const orgId = m.organisations.id;
         const name  = m.organisations.name;
         const role  = m.role;
         const isAdmin = role === 'admin';
-        const isFirst = idx === 0;
-        const isLast  = idx === myMemberships.length - 1;
+        // Reorder arrows only meaningful at top level + only against other top-level rows.
+        // For child rows, reordering would require swapping inside a parent group — skip for now.
+        const topIdx  = entry.isChild ? -1 : topLevel.findIndex(t => t.organisations.id === orgId);
+        const isFirst = topIdx === 0;
+        const isLast  = topIdx === topLevel.length - 1;
         const snap = snapshotByOrg.get(orgId) || { revenue: null, rocksOnTrack: 0, rocksTotal: 0, openIssues: 0, nextMeeting: null };
 
         const revenueHtml = (snap.revenue && String(snap.revenue).trim())
@@ -835,11 +888,12 @@
           : '<span class="nm-label">&#x1F4C5; Next meeting:</span> <span class="nm-empty">None scheduled</span>';
 
         return `
-          <div class="biz-card" data-org-id="${orgId}" data-org-name="${escHtml(name)}">
+          <div class="biz-card ${entry.isChild ? 'is-child' : ''}" data-org-id="${orgId}" data-org-name="${escHtml(name)}">
             <div class="biz-card-head">
               <div class="biz-name">${escHtml(name)}</div>
+              ${entry.hasChildren ? `<span class="parent-pill">Parent</span>` : ''}
               <span class="role-pill role-${role}">${role}</span>
-              ${isAdmin && myMemberships.length > 1 ? `
+              ${isAdmin && !entry.isChild && topLevel.length > 1 ? `
                 <div class="reorder-wrap" title="Reorder">
                   <button class="reorder-btn" data-action="move-up"   ${isFirst ? 'disabled' : ''} aria-label="Move up">&uarr;</button>
                   <button class="reorder-btn" data-action="move-down" ${isLast  ? 'disabled' : ''} aria-label="Move down">&darr;</button>
@@ -919,14 +973,23 @@
       });
     }
 
-    // Swap sort_order with the adjacent biz, persist both updates, re-render.
+    // Swap sort_order with the adjacent top-level biz, persist both updates, re-render.
+    // Only top-level businesses can be reordered (children inherit their parent's slot).
     async function moveBiz(orgId, delta) {
-      const idx = myMemberships.findIndex(m => m.organisations.id === orgId);
+      const topLevelMems = myMemberships
+        .filter(m => !m.organisations.parent_organisation_id ||
+                     !myMemberships.find(x => x.organisations.id === m.organisations.parent_organisation_id))
+        .sort((a, b) => {
+          const so = (a.organisations.sort_order || 0) - (b.organisations.sort_order || 0);
+          if (so !== 0) return so;
+          return String(a.organisations.name || '').localeCompare(String(b.organisations.name || ''));
+        });
+      const idx = topLevelMems.findIndex(m => m.organisations.id === orgId);
       if (idx === -1) return;
       const swapIdx = idx + delta;
-      if (swapIdx < 0 || swapIdx >= myMemberships.length) return;
-      const a = myMemberships[idx].organisations;
-      const b = myMemberships[swapIdx].organisations;
+      if (swapIdx < 0 || swapIdx >= topLevelMems.length) return;
+      const a = topLevelMems[idx].organisations;
+      const b = topLevelMems[swapIdx].organisations;
       // Compute fresh sort_orders so ties from default-0 rows get resolved
       const aNew = (b.sort_order || 0);
       const bNew = (a.sort_order || 0);

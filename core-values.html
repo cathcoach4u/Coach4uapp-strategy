@@ -41,6 +41,38 @@
       background: #f8fafc; border-radius: 8px;
       border-left: 3px solid var(--accent);
     }
+
+    /* Inheritance banner (v0.5.145) */
+    .inherit-banner {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin: 0 16px 12px; padding: 11px 14px;
+      background: #ecfeff; border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+    .inherit-banner.is-override {
+      background: #fef3c7; border-left-color: #D97706;
+    }
+    .inherit-banner-text {
+      font-size: 0.82rem; color: var(--primary); font-weight: 700;
+      flex: 1; min-width: 0;
+    }
+    .inherit-banner-action {
+      font-size: 0.76rem; font-weight: 700; color: var(--accent);
+      background: white; border: 1.5px solid var(--accent);
+      padding: 6px 12px; border-radius: 8px; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .inherit-banner-action:hover { background: rgba(13,148,136,0.08); }
+    .inherit-banner.is-override .inherit-banner-action {
+      color: #D97706; border-color: #D97706;
+    }
+    .inherit-banner.is-override .inherit-banner-action:hover {
+      background: rgba(217,119,6,0.08);
+    }
+    .ws-input:disabled {
+      background: #f9fafb; color: #6B7280; cursor: not-allowed;
+    }
     .ws-save-bar {
       position: fixed; bottom: 56px; left: 0; right: 0;
       background: white; border-top: 1px solid #e5e7eb;
@@ -97,6 +129,11 @@
 
     <div class="ws-hint">
       <a href="learn/core-values.html">Read the Core Values guide &#x2192;</a>
+    </div>
+
+    <div class="inherit-banner" id="inheritBanner" style="display:none;">
+      <span class="inherit-banner-text" id="inheritBannerText"></span>
+      <button class="inherit-banner-action" id="inheritBannerBtn"></button>
     </div>
 
     <div class="ws-card">
@@ -169,6 +206,9 @@
     */
 
     let orgId = null;
+    let parentOrgId = null;
+    let parentOrgName = null;
+    let mode = 'local'; // 'local' | 'inherited'
     const data = {};
     const DEBOUNCE_MS = 300;
     let saveTimer = null;
@@ -186,6 +226,8 @@
     }
 
     async function saveRow() {
+      // Inherited mode shouldn't be writing — user has to click "Override locally" first
+      if (mode !== 'local') return;
       const payload = { organisation_id: orgId };
       for (let i = 1; i <= 8; i++) {
         const k = 'value_' + i;
@@ -206,29 +248,132 @@
       saveTimer = setTimeout(saveRow, DEBOUNCE_MS);
     }
 
-    async function loadRow() {
+    function applyDataToInputs() {
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const k = el.dataset.key;
+        el.value = data[k] || '';
+        el.disabled = (mode === 'inherited');
+      });
+    }
+
+    function renderBanner() {
+      const banner = document.getElementById('inheritBanner');
+      const text = document.getElementById('inheritBannerText');
+      const btn = document.getElementById('inheritBannerBtn');
+      if (!parentOrgId) {
+        // No parent set — nothing to inherit, hide banner
+        banner.style.display = 'none';
+        return;
+      }
+      banner.style.display = '';
+      if (mode === 'inherited') {
+        banner.classList.remove('is-override');
+        text.textContent = 'Inherited from ' + (parentOrgName || 'parent business');
+        btn.textContent = 'Override locally';
+        btn.onclick = overrideLocally;
+      } else {
+        banner.classList.add('is-override');
+        text.textContent = 'Overridden locally — not following ' + (parentOrgName || 'parent');
+        btn.textContent = 'Revert to parent';
+        btn.onclick = revertToParent;
+      }
+    }
+
+    async function fetchParent() {
+      // Fetch this org's parent_organisation_id + the parent's name (if any)
       const { data: row, error } = await supabase
+        .from('organisations')
+        .select('parent_organisation_id')
+        .eq('id', orgId)
+        .maybeSingle();
+      if (error || !row || !row.parent_organisation_id) return;
+      parentOrgId = row.parent_organisation_id;
+      // Try to get the parent's name (RLS lets the user read if they're a member of the parent)
+      const { data: pRow } = await supabase
+        .from('organisations')
+        .select('name')
+        .eq('id', parentOrgId)
+        .maybeSingle();
+      parentOrgName = (pRow && pRow.name) || null;
+    }
+
+    async function loadRow() {
+      // 1. Try own row
+      const { data: own, error: ownErr } = await supabase
         .from('core_values')
         .select('*')
         .eq('organisation_id', orgId)
         .maybeSingle();
-      if (error) console.warn('Load failed:', error.message);
-      const r = (row && !error) ? row : {};
-      for (let i = 1; i <= 8; i++) {
-        const k = 'value_' + i;
-        data[k] = r[k] || '';
+      if (ownErr) console.warn('Load own failed:', ownErr.message);
+
+      if (own) {
+        // Has own row → local mode
+        mode = 'local';
+        for (let i = 1; i <= 8; i++) data['value_' + i] = own['value_' + i] || '';
+        return;
       }
+
+      // 2. No own row. If parent is set, inherit from parent
+      if (parentOrgId) {
+        const { data: par, error: parErr } = await supabase
+          .from('core_values')
+          .select('*')
+          .eq('organisation_id', parentOrgId)
+          .maybeSingle();
+        if (parErr) console.warn('Load parent failed:', parErr.message);
+        if (par) {
+          mode = 'inherited';
+          for (let i = 1; i <= 8; i++) data['value_' + i] = par['value_' + i] || '';
+          return;
+        }
+      }
+
+      // 3. Neither — empty local
+      mode = 'local';
+      for (let i = 1; i <= 8; i++) data['value_' + i] = '';
+    }
+
+    async function overrideLocally() {
+      // Copy current (inherited) values into own row, switch to local mode
+      const payload = { organisation_id: orgId };
+      for (let i = 1; i <= 8; i++) payload['value_' + i] = data['value_' + i] || null;
+      const { error } = await supabase
+        .from('core_values')
+        .upsert(payload, { onConflict: 'organisation_id' });
+      if (error) {
+        alert('Could not override: ' + error.message);
+        return;
+      }
+      mode = 'local';
+      applyDataToInputs();
+      renderBanner();
+    }
+
+    async function revertToParent() {
+      if (!confirm('Revert to inherited values from ' + (parentOrgName || 'the parent') + '? Your local changes will be lost.')) return;
+      const { error } = await supabase
+        .from('core_values')
+        .delete()
+        .eq('organisation_id', orgId);
+      if (error) {
+        alert('Could not revert: ' + error.message);
+        return;
+      }
+      await loadRow();
+      applyDataToInputs();
+      renderBanner();
     }
 
     function wireWorksheet() {
       document.querySelectorAll('[data-key]').forEach(el => {
         const k = el.dataset.key;
-        el.value = data[k] || '';
         el.addEventListener('input', () => {
+          if (mode !== 'local') return; // ignore edits in inherited mode (inputs are disabled anyway)
           data[k] = el.value;
           scheduleSave();
         });
       });
+      applyDataToInputs();
     }
 
     async function init() {
@@ -247,11 +392,13 @@
       });
 
       try {
+        await fetchParent();
         await loadRow();
       } catch (e) {
         console.warn('Load error:', e);
       }
       wireWorksheet();
+      renderBanner();
       document.body.style.opacity = '1';
     }
     init();

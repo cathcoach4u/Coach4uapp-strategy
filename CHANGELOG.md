@@ -4,6 +4,47 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.145
+- **Phase 1 of parent / child business relationships.** A business can now link to a parent (e.g., IASHQ → IAS General / IAS Life / IAS Outsourcing). Flat tree, single parent per child.
+- **Data model:** new nullable column `organisations.parent_organisation_id` (FK self-referencing organisations, ON DELETE SET NULL), with a `CHECK (id <> parent_organisation_id)` constraint and an index on the FK. Depth-1 is enforced in the UI (parent picker only lists businesses that don't themselves have a parent) — no DB trigger.
+- **RLS additions** (in v0.5.145-delta.sql, additive — existing policies still cover own-org reads):
+  - `children read parent core_values` — children can `SELECT` from `core_values` rows whose `organisation_id` equals their own `parent_organisation_id`
+  - `children read parent core_focus` — same pattern (Phase 2 prep)
+  - `children read parent targets` — same pattern (Phase 3 prep)
+  - Writes are unchanged — a child still can't write the parent's strategy tables.
+- **Account dashboard (`index.html`):** the flat list of businesses becomes a tree.
+  - Parents render at top with a navy "Parent" pill.
+  - Children indented 28px, teal left border, `↳` prefix marker. Same snapshot grid; only the framing changes.
+  - Standalones (no parent, no children) sit alongside parents at top level.
+  - Reorder arrows now only appear on top-level rows (children inherit their parent's slot in the order). `moveBiz()` operates on the top-level subset only.
+- **Business dashboard (`business.html`):**
+  - New admin-only "Business Structure" panel after the Core Values panel — `Parent business: [— None —]` dropdown listing only valid candidates (top-level siblings in the same account, excluding any that are already this biz's children). Save persists the FK to the row immediately and reloads.
+  - Children of the active biz render as clickable teal chips (`↳ IAS General`) — tap to switch context to that child.
+  - New header-context row under the greeting: `↑ Part of IASHQ` if this biz has a parent (click → switches context); `↓ N child businesses` if this biz has children. Both visible to every role (admin/coach/member).
+  - Memberships query extended to include `subscription_id` + `parent_organisation_id`.
+- **Core Values inheritance (`core-values.html`):** first inheritable section end-to-end.
+  - Load logic:
+    1. Try child's own `core_values` row first
+    2. If present → `mode = 'local'`, render editable
+    3. If absent AND `parent_organisation_id` is set → fetch parent's row, render values read-only, `mode = 'inherited'`
+    4. If absent AND no parent → empty local
+  - Banner above the worksheet:
+    - Inherited: teal background, `Inherited from IASHQ` + `[Override locally]` button
+    - Overridden: amber background, `Overridden locally — not following IASHQ` + `[Revert to parent]` button
+    - No parent at all: banner hidden, page behaves as before
+  - **Override locally:** upserts the currently-displayed (inherited) values into the child's `core_values` row, switches mode → editable.
+  - **Revert to parent:** confirms, then DELETEs the child's `core_values` row, re-loads as inherited.
+  - Inputs are disabled (greyed) in inherited mode so the user can't type into what's effectively a parent's data.
+- **Out of scope (Phase 2 + 3):** Core Focus, 10-Year Vision, Targets. RLS already in place; UI wiring comes next.
+- **Verification SQL** (after running the delta):
+  ```
+  SELECT column_name, data_type FROM information_schema.columns
+  WHERE table_name='organisations' AND column_name='parent_organisation_id';
+  -- should return 1 row: parent_organisation_id | uuid
+  ```
+
+---
+
 ## v0.5.144
 - **Account nav item now appears on `index.html` and the account hubs.** User reported after v0.5.142 ship: "But if this is the case where is the account area located. Because it's not down bottom." They were looking for the new button on the account dashboard itself, but v0.5.142 had skipped that page on the (wrong) theory that a self-link was redundant.
 - **What's actually wrong with skipping it:** the bottom nav becomes inconsistent — 5 items on account-level pages vs 6 on business-level pages — so the change is invisible from the page the user naturally checks.
