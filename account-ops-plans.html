@@ -581,6 +581,7 @@
         sb.from('issues')
           .select('id, organisation_id, description, owner, status, created_at')
           .in('organisation_id', orgIds)
+          .eq('category', 'current')
           .eq('status', 'open')
           .order('created_at', { ascending: true }),
         sb.from('financial_periods')

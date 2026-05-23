@@ -615,6 +615,7 @@
           supabase.from('issues')
             .select('id, description, owner, status, created_at')
             .eq('organisation_id', orgId)
+            .eq('category', 'current')
             .eq('status', 'open')
             .order('created_at', { ascending: true }),
           supabase.from('financial_periods')

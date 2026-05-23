@@ -197,7 +197,7 @@
       const orgIds = orgs.map(o => o.id);
 
       const { data: issuesData } = await sb.from('issues').select('*')
-        .in('organisation_id', orgIds).eq('status', 'open')
+        .in('organisation_id', orgIds).eq('category', 'current').eq('status', 'open')
         .order('created_at', { ascending: false });
 
       const byOrg = new Map();

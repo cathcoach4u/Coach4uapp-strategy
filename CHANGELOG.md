@@ -4,6 +4,64 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.183
+- **Strategy + Operations restructure with a 3-way Issues split.** User: "This is the order for strategy: Financials / Core values / Marketing strategy / Leadership team / Organisational chart" + new Operations layout listing 12 Month Goal / Yearly Issues / Quarter Goals / 90 Day Numbers / Issues List / Future Issues List / Weekly Meetings.
+
+### Strategy (`strategy.html`)
+- Cards reordered: **Financials → Core Values → Marketing Strategy → Organisational Chart → Targets**.
+- The "Leadership Team" card is renamed to **Organisational Chart**. Card still links to `leadership-team.html` — the underlying worksheet keeps its name to avoid breaking deep-links and historical references.
+- **Core Focus** is removed from Strategy. It moves to Operations as **12 Month Goal** (links to `targets.html`).
+- Targets card description trimmed to `10-year, 5-year, 3-year and 12-month goals`.
+
+### Operations (`operations.html`)
+- Rebuilt as 7 cards in the new order:
+  1. **🎯 12 Month Goal** — `targets.html`
+  2. **⚡ Yearly Issues** — `issues.html?category=yearly`
+  3. **🏆 Quarter Goals** — `goals.html`
+  4. **📊 90 Day Numbers** — `scorecard.html`
+  5. **📋 Issues List** — `issues.html?category=current`
+  6. **⏳ Future Issues List** — `issues.html?category=future`
+  7. **🗓️ Weekly Meetings** — `meeting.html`
+- The 3 issues cards are a real category split, not a label swap.
+
+### Issues (`issues.html`) — categorised
+- Reads `?category=` from the URL (`yearly` | `current` | `future`, defaults to `current` if missing or invalid).
+- `<h1>` + sub-paragraph + `document.title` swap based on category:
+  - `yearly` → "⚡ Yearly Issues — Long-horizon issues to surface at annual planning."
+  - `current` → "📋 Issues List — This week and this quarter — discuss and resolve."
+  - `future` → "⏳ Future Issues List — Backlog of things to address later — not urgent yet."
+- The Supabase `from('issues').select()` query gains `.eq('category', CATEGORY)` so each card only shows its own bucket.
+- New **Category** `<select>` in the add/edit modal (Yearly / Current / Future). New issues default to the current view's category; existing issues can be re-classified by changing the dropdown and saving.
+- Insert + update payloads now include `category`.
+
+### Other callers filtered to `category='current'`
+The operational dashboards/one-pagers should ignore yearly + backlog items so the weekly meeting view stays clean:
+- `business.html` — own-mode "Open Issues" count + parent-mode child-rollup query.
+- `one-page-operations.html` — printable ops doc Open Issues column.
+- `account-ops-plans.html` — cross-business ops carousel Open Issues column.
+- `account-issues.html` — account-level issues carousel.
+- `run-meeting.html` — IDS section link `issues.html` → `issues.html?category=current`.
+
+### SQL — `supabase/v0.5.183-delta.sql`
+```sql
+ALTER TABLE public.issues
+  ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT 'current';
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'issues_category_check') THEN
+    ALTER TABLE public.issues
+      ADD CONSTRAINT issues_category_check
+      CHECK (category IN ('yearly', 'current', 'future'));
+  END IF;
+END$$;
+
+CREATE INDEX IF NOT EXISTS issues_org_category_idx
+  ON public.issues(organisation_id, category);
+```
+Existing rows backfill to `current` so day-1 the Issues List card on Operations looks identical to today's Issues view.
+
+---
+
 ## v0.5.182
 - **Trim Targets card titles to just the timeframe.** User: "Change the targets to each target / 10 year, 5 year etc."
 - Dropped the "Goal" suffix from each card on `targets.html`. Net titles:
