@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Setup | Your Business Coach</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#003366">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Your Business Coach">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { opacity: 0; transition: opacity 0.2s ease; background: #f4f6f9; }
+    .container { padding-bottom: 88px; }
+
+    .page-header { padding: 20px 16px 8px; }
+    .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
+    .page-sub { font-size: 0.82rem; color: #666; margin: 0; line-height: 1.5; }
+
+    .form-card {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      margin: 12px 16px; padding: 18px 16px 14px;
+    }
+    .form-field { margin-bottom: 14px; }
+    .form-field:last-child { margin-bottom: 0; }
+    .form-label {
+      display: block; font-size: 0.7rem; font-weight: 800; color: #888;
+      text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
+    }
+    .form-input, .form-textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 0.92rem; font-family: inherit; color: var(--text);
+      background: white; transition: border-color .12s;
+      box-sizing: border-box;
+    }
+    .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+    .form-textarea { min-height: 84px; resize: vertical; line-height: 1.45; }
+    .form-help { font-size: 0.72rem; color: #aaa; margin-top: 4px; line-height: 1.4; }
+
+    .save-status {
+      font-size: 0.78rem; color: #888;
+      padding: 0 16px; margin-top: 8px;
+    }
+    .save-status.ok    { color: #0F766E; }
+    .save-status.err   { color: #DC2626; }
+
+    /* Bottom nav (3-tab account area, v0.5.153) */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid #e5e7eb;
+      display: flex; z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+    .bottom-nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 8px 0 6px; text-decoration: none;
+      color: #aaa; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      gap: 3px; transition: color 0.15s;
+    }
+    .bottom-nav-item.active, .bottom-nav-item:hover { color: #0D9488; text-decoration: none; }
+    .bottom-nav-icon { font-size: 20px; line-height: 1; }
+  </style>
+  <script src="js/active-org.js" defer></script>
+  <script src="js/mobile-keyboard.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <span class="header-title">Your Business Coach</span>
+        <span id="activeBizName" class="biz-pill"></span>
+      </div>
+      <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">&#x2699;&#xFE0F; Account Setup</h1>
+      <p class="page-sub">The account name and invoicing details used across this client account.</p>
+    </div>
+
+    <div class="form-card">
+      <div class="form-field">
+        <label class="form-label" for="acctNameInput">Account name</label>
+        <input class="form-input" id="acctNameInput" type="text" maxlength="120" placeholder="e.g. SARUBA"/>
+        <div class="form-help">Shown at the top of the dashboard and on invoices.</div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="billingEmailInput">Billing email</label>
+        <input class="form-input" id="billingEmailInput" type="email" maxlength="120" placeholder="invoices@example.com"/>
+        <div class="form-help">Where invoices and billing notifications get sent. Separate from your login email.</div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="billingAddressInput">Billing address</label>
+        <textarea class="form-textarea" id="billingAddressInput" maxlength="500" placeholder="Street&#10;City, State Postcode&#10;Country"></textarea>
+        <div class="form-help">Postal address that appears on your invoices.</div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="taxIdInput">Tax ID (ABN / VAT / company number)</label>
+        <input class="form-input" id="taxIdInput" type="text" maxlength="64" placeholder="e.g. ABN 12 345 678 901"/>
+        <div class="form-help">Optional. The legal identifier that appears on your invoices.</div>
+      </div>
+    </div>
+
+    <div class="save-status" id="saveStatus">Changes save automatically.</div>
+
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.153</p>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="index.html" title="Business management">
+      <span class="bottom-nav-icon">&#x1F4BC;</span><span>Businesses</span>
+    </a>
+    <a class="bottom-nav-item" href="account-users.html" title="User management">
+      <span class="bottom-nav-icon">&#x1F465;</span><span>Users</span>
+    </a>
+    <a class="bottom-nav-item active" href="account-setup.html" title="Account setup">
+      <span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Setup</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const sb = createClient(
+      'https://eekefsuaefgpqmjdyniy.supabase.co',
+      'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
+    );
+
+    const DEBOUNCE_MS = 400;
+    let sub = null;
+    let saveTimer = null;
+    const original = { name:'', billing_email:'', billing_address:'', billing_tax_id:'' };
+
+    function setStatus(text, kind) {
+      const el = document.getElementById('saveStatus');
+      el.textContent = text;
+      el.className = 'save-status' + (kind ? ' ' + kind : '');
+    }
+
+    async function loadSub(user) {
+      // Pick the active subscription (cached in localStorage by active-org.js),
+      // otherwise the first one this user owns.
+      const cachedId = (window.activeOrg && window.activeOrg.getSubscription && window.activeOrg.getSubscription()) || null;
+      const { data: subs } = await sb
+        .from('subscriptions')
+        .select('id, name, billing_email, billing_address, billing_tax_id, owner_user_id, created_at')
+        .eq('owner_user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (!subs || !subs.length) {
+        window.location.href = 'setup.html';
+        return null;
+      }
+      const active = subs.find(s => s.id === cachedId) || subs[0];
+      if (window.activeOrg && active) {
+        window.activeOrg.setSubscription(active.id, active.name);
+      }
+      return active;
+    }
+
+    function applyToForm() {
+      document.getElementById('acctNameInput').value      = sub.name || '';
+      document.getElementById('billingEmailInput').value  = sub.billing_email   || '';
+      document.getElementById('billingAddressInput').value= sub.billing_address || '';
+      document.getElementById('taxIdInput').value         = sub.billing_tax_id  || '';
+      original.name             = sub.name || '';
+      original.billing_email    = sub.billing_email   || '';
+      original.billing_address  = sub.billing_address || '';
+      original.billing_tax_id   = sub.billing_tax_id  || '';
+    }
+
+    async function save() {
+      if (!sub) return;
+      const name           = document.getElementById('acctNameInput').value.trim();
+      const billingEmail   = document.getElementById('billingEmailInput').value.trim();
+      const billingAddress = document.getElementById('billingAddressInput').value.trim();
+      const billingTaxId   = document.getElementById('taxIdInput').value.trim();
+
+      if (!name) {
+        setStatus('Account name is required.', 'err');
+        return;
+      }
+
+      // Only UPDATE the fields that actually changed
+      const patch = {};
+      if (name !== original.name)                       patch.name            = name;
+      if (billingEmail   !== original.billing_email)    patch.billing_email   = billingEmail   || null;
+      if (billingAddress !== original.billing_address)  patch.billing_address = billingAddress || null;
+      if (billingTaxId   !== original.billing_tax_id)   patch.billing_tax_id  = billingTaxId   || null;
+      if (!Object.keys(patch).length) return;
+
+      patch.updated_at = new Date().toISOString();
+      setStatus('Saving…');
+      const { error } = await sb.from('subscriptions').update(patch).eq('id', sub.id);
+      if (error) {
+        setStatus('Could not save: ' + (error.message || 'unknown'), 'err');
+        return;
+      }
+      Object.assign(original, {
+        name: name,
+        billing_email: billingEmail,
+        billing_address: billingAddress,
+        billing_tax_id: billingTaxId
+      });
+      sub.name = name;
+      sub.billing_email = billingEmail;
+      sub.billing_address = billingAddress;
+      sub.billing_tax_id = billingTaxId;
+      // Keep the active-org cache in sync so the account name shows up elsewhere
+      if (window.activeOrg && window.activeOrg.setSubscription) {
+        window.activeOrg.setSubscription(sub.id, name);
+      }
+      setStatus('Saved ✓', 'ok');
+      clearTimeout(setStatus._t);
+      setStatus._t = setTimeout(() => setStatus('Changes save automatically.', ''), 1500);
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(save, DEBOUNCE_MS);
+    }
+
+    async function init() {
+      const { data: { user }, error } = await sb.auth.getUser();
+      if (!user || error) { window.location.href = 'login.html'; return; }
+      const { data: profile } = await sb.from('users').select('membership_status').eq('id', user.id).single();
+      if (!profile || profile.membership_status !== 'active') {
+        window.location.href = 'inactive.html'; return;
+      }
+
+      sub = await loadSub(user);
+      if (!sub) return;
+      applyToForm();
+
+      ['acctNameInput','billingEmailInput','billingAddressInput','taxIdInput'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', scheduleSave);
+        el.addEventListener('blur',  save);
+      });
+
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        await sb.auth.signOut(); window.location.href = 'login.html';
+      });
+
+      document.body.style.opacity = '1';
+    }
+    init();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+  </script>
+</body>
+</html>

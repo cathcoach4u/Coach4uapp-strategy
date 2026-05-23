@@ -404,10 +404,7 @@
     <!-- Section A: Account header -->
     <div class="acct-header">
       <h1 class="acct-title" id="accountName">&#x1F3E2; Your account</h1>
-      <p class="acct-sub">Your account &mdash; switch between businesses, see across them, manage your team.</p>
-      <div class="acct-actions">
-        <a href="#" id="renameAccountLink" class="acct-link" style="display:none;">Rename account &rsaquo;</a>
-      </div>
+      <p class="acct-sub">&#x1F4BC; Business Management &mdash; add, rename, delete businesses and wire up the parent/child structure of your account.</p>
     </div>
 
 
@@ -420,39 +417,11 @@
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
     </div>
 
-    <!-- Section E: Users (Team) -->
-    <div class="section" id="team">
-      <div class="section-head">
-        <span class="section-title">&#x1F465; Your Team <span class="section-meta" id="userSectionMeta"></span></span>
-        <button id="inviteUserHeaderBtn" class="section-action">+ Invite User</button>
-      </div>
-      <div id="userList" class="user-list"></div>
-      <button id="inviteUserBtn" class="add-btn add-btn-secondary">+ Invite User</button>
-    </div>
-
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.152</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.153</p>
 
   </div>
 
-  <!-- Rename Account modal -->
-  <div class="modal-overlay hidden" id="renameModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Rename account</span>
-        <button class="modal-close" id="renameClose">&times;</button>
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Account / company name *</label>
-        <input type="text" class="modal-input" id="renameInput" placeholder="e.g. SARUBA" maxlength="80"/>
-        <div class="modal-help">This is the parent that owns your businesses (what shows on your invoice).</div>
-        <div class="modal-err" id="renameErr"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="renameCancel">Cancel</button>
-        <button class="btn-primary" id="renameSave">Save</button>
-      </div>
-    </div>
-  </div>
+  <!-- Rename Account modal removed in v0.5.153 — moved to account-setup.html -->
 
   <!-- New Client Account modal -->
   <div class="modal-overlay hidden" id="newAcctModal">
@@ -540,94 +509,7 @@
     </div>
   </div>
 
-  <!-- Edit team member modal (v0.5.151) -->
-  <div class="modal-overlay hidden" id="userEditModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Edit team member</span>
-        <button class="modal-close" id="userEditClose">&times;</button>
-      </div>
-      <div class="modal-field">
-        <div id="userEditWho" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-          <div class="user-avatar" id="userEditAvatar" style="width:40px;height:40px;font-size:0.95rem;">?</div>
-          <div style="min-width:0;">
-            <div id="userEditName" style="font-size:0.95rem;font-weight:700;color:var(--primary);"></div>
-            <div id="userEditEmail" style="font-size:0.78rem;color:#888;word-break:break-all;"></div>
-          </div>
-        </div>
-        <label class="modal-label">Display name</label>
-        <input type="text" class="modal-input" id="userEditDisplayName" maxlength="80" placeholder="e.g. Cath Liddell"/>
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Access per business</label>
-        <div id="userEditAccessList" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>
-        <div class="modal-help" style="margin-top:8px;">Pick a role per business — or "— No access —" to remove them. Admins can edit everything; Coaches can edit data and invite teammates; Members can read.</div>
-        <div class="modal-err" id="userEditErr"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="userEditCancel">Cancel</button>
-        <button class="btn-primary" id="userEditSave">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Invite User modal -->
-  <div class="modal-overlay hidden" id="inviteModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Invite a teammate</span>
-        <button class="modal-close" id="inviteClose">&times;</button>
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Email *</label>
-        <input type="email" class="modal-input" id="inviteEmail" placeholder="name@company.com" autocomplete="off"/>
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Role</label>
-        <select class="modal-select" id="inviteRole">
-          <option value="member">Member &mdash; can read team data</option>
-          <option value="admin">Admin &mdash; can edit everything</option>
-          <option value="coach">Coach &mdash; admin rights, not billed as a user</option>
-        </select>
-        <p style="font-size:.72rem;color:#888;margin:6px 0 0;line-height:1.45;">
-          <strong>Coach</strong> is for service providers (e.g. your business coach) who edit alongside the team but shouldn&rsquo;t consume a paid seat.
-        </p>
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Display name (optional)</label>
-        <input type="text" class="modal-input" id="inviteDisplay" placeholder="e.g. Lou Henderson" maxlength="80"/>
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Business access *</label>
-        <div class="biz-check-list" id="inviteBizList"></div>
-        <div class="modal-help">Pick one or more businesses to give this person access to.</div>
-      </div>
-      <div class="modal-err" id="inviteErr"></div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="inviteCancel">Cancel</button>
-        <button class="btn-primary" id="inviteSend">Send invite</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Remove Member confirm modal -->
-  <div class="modal-overlay hidden" id="removeMemberModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Remove team member</span>
-        <button class="modal-close" id="removeMemberClose">&times;</button>
-      </div>
-      <div class="confirm-note">
-        Remove <strong id="removeMemberName"></strong> from <strong id="removeMemberOrg"></strong>?
-        They&rsquo;ll lose access immediately. You can re-invite them anytime.
-      </div>
-      <div class="modal-err" id="removeMemberErr"></div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="removeMemberCancel">Cancel</button>
-        <button class="btn-primary danger" id="removeMemberConfirm">Remove</button>
-      </div>
-    </div>
-  </div>
+  <!-- User-management modals moved to account-users.html in v0.5.153 -->
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -675,8 +557,7 @@
 
     /* ============== state ============== */
     let myMemberships = [];   // caller's active team_members (scoped to active subscription's orgs)
-    let teamRows = [];        // all team_members in orgs where caller is admin (not removed)
-    let teamGroups = new Map(); // user-key → group, populated by renderUsers; used by the edit modal
+    // teamRows + teamGroups removed in v0.5.153 — team data now lives on account-users.html
     let sub = null;           // ACTIVE subscription row
     let allSubs = [];         // every subscription the user owns (for the switcher)
     let openMenuEl = null;    // currently open ⋮ menu
@@ -727,36 +608,19 @@
         return;
       }
 
-      // 3) Team rows across orgs where the caller can manage team (admin or coach)
-      const adminOrgIds = myMemberships
-        .filter(m => m.role === 'admin' || m.role === 'coach')
-        .map(m => m.organisation_id);
-      const teamPromise = adminOrgIds.length
-        ? sb.from('team_members')
-            .select('id, organisation_id, user_id, invited_email, role, status, display_name, organisations!inner(id, name)')
-            .in('organisation_id', adminOrgIds)
-            .neq('status', 'removed')
-        : Promise.resolve({ data: [], error: null });
-
-      // Team data only — snapshot fetches (targets / rocks / issues / meetings)
-      // dropped in v0.5.149: those used to power the stat tiles + per-biz snapshot
-      // grid, both removed when the account dashboard became a compact admin table.
-      const teamResult = await teamPromise;
-      teamRows = (teamResult && !teamResult.error) ? (teamResult.data || []) : [];
+      // Team-row fetch + snapshot fetches removed in v0.5.153 when the dashboard
+      // split into Businesses / Users / Setup. Team data now lives on account-users.html;
+      // per-biz snapshots were dropped in v0.5.149.
     }
 
     /* ============== render: account header ============== */
     function renderAccountHeader() {
       const el = document.getElementById('accountName');
-      const link = document.getElementById('renameAccountLink');
       if (sub && sub.name && sub.name.trim()) {
         el.innerHTML = '&#x1F3E2; ' + escHtml(sub.name);
-        link.textContent = 'Rename account ›';
       } else {
         el.innerHTML = '&#x1F3E2; Your account <span style="font-size:.7em;color:#888;font-weight:600;">(unnamed)</span>';
-        link.textContent = 'Set account name ›';
       }
-      link.style.display = 'inline-block';
     }
 
     function renderSwitcher() {
@@ -1051,259 +915,14 @@
       if (openMenuEl) { openMenuEl.classList.add('hidden'); openMenuEl = null; }
     });
 
-    /* ============== render: users ============== */
-    function renderUsers() {
-      const wrap = document.getElementById('userList');
-      const meta = document.getElementById('userSectionMeta');
-
-      if (!teamRows.length) {
-        meta.textContent = '';
-        wrap.innerHTML = '<div class="empty-state">Only admins see the team list. Once you&rsquo;re admin of a business, teammates appear here.</div>';
-        return;
-      }
-
-      // Group by user_id (signed-up) OR invited_email (pending)
-      const groups = new Map();
-      teamRows.forEach(r => {
-        const key = r.user_id ? ('u:' + r.user_id) : ('e:' + (r.invited_email || '').toLowerCase());
-        if (!groups.has(key)) {
-          groups.set(key, {
-            key,
-            user_id: r.user_id,
-            invited_email: r.invited_email,
-            display_name: r.display_name,
-            rows: []
-          });
-        }
-        const g = groups.get(key);
-        if (!g.display_name && r.display_name) g.display_name = r.display_name;
-        g.rows.push(r);
-      });
-
-      meta.textContent = '(' + groups.size + ')';
-
-      const cards = [];
-      for (const g of groups.values()) {
-        const isMe = g.user_id === user.id;
-        const nameDisplay = g.display_name
-          || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
-          || g.invited_email
-          || '(unnamed teammate)';
-        const emailDisplay = isMe ? user.email : (g.invited_email || '');
-        const ini = initials(nameDisplay || emailDisplay);
-
-        const orgRows = g.rows.map(r => {
-          const isPending = r.status === 'pending';
-          const rolePill  = isPending
-            ? '<span class="role-pill role-pending">Pending</span>'
-            : '<span class="role-pill role-' + r.role + '">' + r.role + '</span>';
-          const canRemove = !isMe;
-          const removeBtn = canRemove
-            ? `<button class="user-remove-btn" data-action="remove-member" data-member-id="${r.id}" data-member-name="${escHtml(nameDisplay)}" data-org-name="${escHtml(r.organisations.name)}">Remove</button>`
-            : '';
-          return `
-            <div class="user-org-row">
-              <span class="user-org-name">${escHtml(r.organisations.name)}</span>
-              ${rolePill}
-              ${removeBtn}
-            </div>`;
-        }).join('');
-
-        cards.push(`
-          <div class="user-card" data-user-key="${escHtml(g.key)}" role="button" tabindex="0">
-            <div class="user-avatar">${escHtml(ini)}</div>
-            <div class="user-body">
-              <div class="user-name">${escHtml(nameDisplay)} ${isMe ? '<span style="font-size:.7em;color:#888;font-weight:600;">(you)</span>' : ''}</div>
-              ${emailDisplay ? '<div class="user-email">' + escHtml(emailDisplay) + '</div>' : ''}
-              <div class="user-orgs">${orgRows}</div>
-              <div class="user-edit-hint">Tap to edit access &rsaquo;</div>
-            </div>
-          </div>`);
-      }
-      wrap.innerHTML = cards.join('');
-
-      // Stash groups for the edit modal to look up by data-user-key
-      teamGroups = new Map(Array.from(groups.entries()));
-
-      wrap.querySelectorAll('[data-action="remove-member"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          openRemoveMember(btn.dataset.memberId, btn.dataset.memberName, btn.dataset.orgName);
-        });
-      });
-      wrap.querySelectorAll('.user-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          // Ignore clicks on inline buttons (Remove)
-          if (e.target.closest('button')) return;
-          const g = teamGroups.get(card.dataset.userKey);
-          if (g) openUserEditModal(g);
-        });
-      });
-    }
-
-    /* ============== edit team member modal (v0.5.151) ============== */
-    // State for the modal — captured when opened, used by saveUserEdit.
-    let userEditTarget = null;  // the group object from renderUsers (user_id|invited_email, rows[], etc.)
-
-    function openUserEditModal(group) {
-      userEditTarget = group;
-      const errEl = document.getElementById('userEditErr');
-      errEl.textContent = '';
-
-      const isMe = group.user_id === user.id;
-      // We can only INVITE to a new biz when we have an email — pending invites
-      // keep theirs in invited_email; the current user knows their own.
-      const knownEmail = group.invited_email || (isMe ? user.email : null);
-
-      const nameDisplay = group.display_name
-        || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
-        || group.invited_email
-        || '(unnamed teammate)';
-      const emailDisplay = isMe ? user.email : (group.invited_email || '');
-
-      document.getElementById('userEditAvatar').textContent = initials(nameDisplay || emailDisplay);
-      document.getElementById('userEditName').textContent = nameDisplay + (isMe ? ' (you)' : '');
-      document.getElementById('userEditEmail').textContent = emailDisplay || '(no email on file)';
-      document.getElementById('userEditDisplayName').value = group.display_name || '';
-
-      // List every biz I'm admin of in the active account; for each, show the user's current role
-      const adminOrgs = myMemberships.filter(m => m.role === 'admin');
-      const listEl = document.getElementById('userEditAccessList');
-
-      listEl.innerHTML = adminOrgs.map(am => {
-        const org = am.organisations;
-        const existing = group.rows.find(r => r.organisation_id === org.id && r.status !== 'removed');
-        const currentRole = existing ? existing.role : 'no_access';
-        const canAddIfMissing = !!knownEmail;
-        const disabledOpts = !existing && !canAddIfMissing;
-        const hint = disabledOpts ? '<div style="font-size:0.66rem;color:#aaa;font-style:italic;margin-top:2px;">No email on file — use Invite User to add</div>' : '';
-        return `
-          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
-            <div style="min-width:0;">
-              <div style="font-size:0.85rem;font-weight:700;color:var(--primary);">${escHtml(org.name)}</div>
-              ${hint}
-            </div>
-            <select class="user-edit-role-pick" data-org-id="${escHtml(org.id)}" data-member-id="${escHtml(existing ? existing.id : '')}" data-orig="${escHtml(currentRole)}"
-              ${disabledOpts ? '' : ''}
-              style="padding:7px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:0.82rem;background:white;font-family:inherit;color:var(--text);min-width:140px;">
-              <option value="no_access"${currentRole === 'no_access' ? ' selected' : ''}>— No access —</option>
-              <option value="member"${currentRole === 'member' ? ' selected' : ''}${disabledOpts ? ' disabled' : ''}>Member</option>
-              <option value="coach"${currentRole === 'coach' ? ' selected' : ''}${disabledOpts ? ' disabled' : ''}>Coach</option>
-              <option value="admin"${currentRole === 'admin' ? ' selected' : ''}${disabledOpts ? ' disabled' : ''}>Admin</option>
-            </select>
-          </div>`;
-      }).join('') || '<div style="font-size:0.82rem;color:#888;">You aren\'t admin of any business in this account.</div>';
-
-      openModal('userEditModal');
-    }
-
-    async function saveUserEdit() {
-      if (!userEditTarget) return;
-      const errEl = document.getElementById('userEditErr');
-      const saveBtn = document.getElementById('userEditSave');
-      errEl.textContent = '';
-
-      const isMe = userEditTarget.user_id === user.id;
-      const knownEmail = userEditTarget.invited_email || (isMe ? user.email : null);
-      const newDisplayName = document.getElementById('userEditDisplayName').value.trim();
-      const pickers = Array.from(document.querySelectorAll('.user-edit-role-pick'));
-
-      // Collect per-biz changes
-      const ops = [];
-      for (const p of pickers) {
-        const orgId    = p.dataset.orgId;
-        const memberId = p.dataset.memberId || null;
-        const origRole = p.dataset.orig || 'no_access';
-        const newRole  = p.value;
-        if (newRole === origRole) continue;
-
-        if (newRole === 'no_access') {
-          // Soft-remove via the existing RPC (it guards against last-admin)
-          if (memberId) ops.push(sb.rpc('remove_team_member', { member_id: memberId }));
-        } else if (memberId) {
-          // Existing row, just change the role
-          ops.push(sb.from('team_members').update({ role: newRole }).eq('id', memberId));
-        } else {
-          // New row — need an email to call invite_team_member
-          if (!knownEmail) continue; // UI already disabled this option, but be safe
-          ops.push(sb.rpc('invite_team_member', {
-            business_id: orgId,
-            email: knownEmail,
-            role: newRole
-          }));
-        }
-      }
-
-      // Display name change — apply across this user's existing rows
-      if ((newDisplayName || '') !== (userEditTarget.display_name || '')) {
-        const memberIds = userEditTarget.rows.filter(r => r.status !== 'removed').map(r => r.id);
-        if (memberIds.length) {
-          ops.push(sb.from('team_members').update({ display_name: newDisplayName || null }).in('id', memberIds));
-        }
-      }
-
-      if (!ops.length) {
-        closeModal('userEditModal');
-        return;
-      }
-
-      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
-      const results = await Promise.all(ops);
-      const firstErr = results.find(r => r.error);
-      if (firstErr) {
-        saveBtn.disabled = false; saveBtn.textContent = 'Save';
-        errEl.textContent = 'Could not save: ' + (firstErr.error.message || 'unknown error');
-        return;
-      }
-      closeModal('userEditModal');
-      window.location.reload();
-    }
-
     /* ============== modal helpers ============== */
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-    // Wire user-edit modal buttons
-    document.getElementById('userEditClose').addEventListener('click', () => closeModal('userEditModal'));
-    document.getElementById('userEditCancel').addEventListener('click', () => closeModal('userEditModal'));
-    document.getElementById('userEditSave').addEventListener('click', saveUserEdit);
+    // User-management modal wireup moved to account-users.html in v0.5.153
 
     // (Structure modal removed in v0.5.149 — inline parent picker on each biz card replaces it.)
 
-
-    /* ============== rename account ============== */
-    const renameLinkEl = document.getElementById('renameAccountLink');
-    const renameInput  = document.getElementById('renameInput');
-    const renameErr    = document.getElementById('renameErr');
-    const renameSave   = document.getElementById('renameSave');
-    renameLinkEl.addEventListener('click', (e) => {
-      e.preventDefault();
-      renameInput.value = (sub && sub.name) ? sub.name : '';
-      renameErr.textContent = '';
-      openModal('renameModal');
-      setTimeout(() => renameInput.focus(), 50);
-    });
-    document.getElementById('renameClose').addEventListener('click', () => closeModal('renameModal'));
-    document.getElementById('renameCancel').addEventListener('click', () => closeModal('renameModal'));
-    renameSave.addEventListener('click', async () => {
-      const newName = renameInput.value.trim();
-      if (!newName) { renameErr.textContent = 'Please enter a name.'; return; }
-      if (!sub || !sub.id) { renameErr.textContent = 'No active account to rename.'; return; }
-      renameSave.disabled = true; renameSave.textContent = 'Saving…';
-      // Direct UPDATE via RLS (owner_user_id check) — scopes to the ACTIVE subscription
-      // rather than the legacy update_account_name RPC which hit every sub owned by the user.
-      const { error } = await sb
-        .from('subscriptions')
-        .update({ name: newName, updated_at: new Date().toISOString() })
-        .eq('id', sub.id);
-      if (error) {
-        renameErr.textContent = error.message || 'Save failed.';
-        renameSave.disabled = false; renameSave.textContent = 'Save';
-        return;
-      }
-      window.location.reload();
-    });
 
     /* ============== add business ============== */
     const addName = document.getElementById('addName');
@@ -1398,117 +1017,12 @@
       await refresh();
     });
 
-    /* ============== invite user ============== */
-    const inviteEmail   = document.getElementById('inviteEmail');
-    const inviteRole    = document.getElementById('inviteRole');
-    const inviteDisplay = document.getElementById('inviteDisplay');
-    const inviteBizList = document.getElementById('inviteBizList');
-    const inviteErr     = document.getElementById('inviteErr');
-    const inviteSend    = document.getElementById('inviteSend');
-
-    function populateInviteBizList() {
-      const adminMems = myMemberships.filter(m => m.role === 'admin' || m.role === 'coach');
-      const activeId  = (window.activeOrg && window.activeOrg.get()) || null;
-      if (!adminMems.length) {
-        inviteBizList.innerHTML = '<div style="font-size:.85rem;color:#888;padding:6px;">You aren&rsquo;t an admin of any business yet.</div>';
-        return;
-      }
-      inviteBizList.innerHTML = adminMems.map(m => {
-        const orgId = m.organisations.id;
-        const name  = m.organisations.name;
-        const checked = orgId === activeId ? 'checked' : '';
-        return `
-          <label class="biz-check-row">
-            <input type="checkbox" value="${orgId}" ${checked}/>
-            <span>${escHtml(name)}</span>
-          </label>`;
-      }).join('');
-    }
-
-    function openInviteUser() {
-      inviteEmail.value = '';
-      inviteRole.value = 'member';
-      inviteDisplay.value = '';
-      inviteErr.textContent = '';
-      populateInviteBizList();
-      openModal('inviteModal');
-      setTimeout(() => inviteEmail.focus(), 50);
-    }
-    document.getElementById('inviteUserBtn').addEventListener('click', openInviteUser);
-    document.getElementById('inviteUserHeaderBtn').addEventListener('click', openInviteUser);
-    document.getElementById('inviteClose').addEventListener('click', () => closeModal('inviteModal'));
-    document.getElementById('inviteCancel').addEventListener('click', () => closeModal('inviteModal'));
-
-    inviteSend.addEventListener('click', async () => {
-      const email = inviteEmail.value.trim();
-      const role  = inviteRole.value;
-      const display = inviteDisplay.value.trim();
-      const selected = Array.from(inviteBizList.querySelectorAll('input[type=checkbox]:checked'))
-                            .map(c => c.value);
-
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        inviteErr.textContent = 'Please enter a valid email address.'; return;
-      }
-      if (!selected.length) {
-        inviteErr.textContent = 'Pick at least one business.'; return;
-      }
-
-      inviteSend.disabled = true; inviteSend.textContent = 'Sending…';
-      inviteErr.textContent = '';
-
-      const errors = [];
-      for (const bizId of selected) {
-        const { error } = await sb.rpc('invite_team_member', {
-          business_id: bizId,
-          email: email,
-          role: role,
-          display_name: display || null
-        });
-        if (error) errors.push(error.message || 'invite failed');
-      }
-      inviteSend.disabled = false; inviteSend.textContent = 'Send invite';
-      if (errors.length) {
-        inviteErr.textContent = errors.join(' — ');
-        return;
-      }
-      closeModal('inviteModal');
-      await refresh();
-    });
-
-    /* ============== remove member ============== */
-    const removeMemberNameEl  = document.getElementById('removeMemberName');
-    const removeMemberOrgEl   = document.getElementById('removeMemberOrg');
-    const removeMemberErr     = document.getElementById('removeMemberErr');
-    const removeMemberConfirm = document.getElementById('removeMemberConfirm');
-    let removeMemberTargetId  = null;
-    function openRemoveMember(memberId, name, orgName) {
-      removeMemberTargetId = memberId;
-      removeMemberNameEl.textContent = name;
-      removeMemberOrgEl.textContent  = orgName;
-      removeMemberErr.textContent    = '';
-      openModal('removeMemberModal');
-    }
-    document.getElementById('removeMemberClose').addEventListener('click', () => closeModal('removeMemberModal'));
-    document.getElementById('removeMemberCancel').addEventListener('click', () => closeModal('removeMemberModal'));
-    removeMemberConfirm.addEventListener('click', async () => {
-      removeMemberConfirm.disabled = true; removeMemberConfirm.textContent = 'Removing…';
-      const { error } = await sb.rpc('remove_team_member', { member_id: removeMemberTargetId });
-      removeMemberConfirm.disabled = false; removeMemberConfirm.textContent = 'Remove';
-      if (error) {
-        removeMemberErr.textContent = error.message || 'Remove failed.';
-        return;
-      }
-      closeModal('removeMemberModal');
-      await refresh();
-    });
-
     /* ============== boot ============== */
     async function refresh() {
       await loadAll();
       renderSwitcher();
       renderAccountHeader();
       renderBusinesses();
-      renderUsers();
     }
 
     /* ============== switcher + new client account ============== */
@@ -1571,9 +1085,14 @@
   </script>
 
   <nav class="bottom-nav">
-    <a class="bottom-nav-item active" href="index.html" title="Account dashboard">
-      <span class="bottom-nav-icon">&#x1F3DB;&#xFE0F;</span>
-      <span>Account</span>
+    <a class="bottom-nav-item active" href="index.html" title="Business management">
+      <span class="bottom-nav-icon">&#x1F4BC;</span><span>Businesses</span>
+    </a>
+    <a class="bottom-nav-item" href="account-users.html" title="User management">
+      <span class="bottom-nav-icon">&#x1F465;</span><span>Users</span>
+    </a>
+    <a class="bottom-nav-item" href="account-setup.html" title="Account setup">
+      <span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Setup</span>
     </a>
   </nav>
 

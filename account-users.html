@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users | Your Business Coach</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#003366">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Your Business Coach">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { opacity: 0; transition: opacity 0.2s ease; background: #f4f6f9; }
+    .container { padding-bottom: 88px; }
+
+    .page-header { padding: 20px 16px 8px; }
+    .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
+    .page-sub { font-size: 0.82rem; color: #666; margin: 0 0 12px; line-height: 1.5; }
+
+    .section { padding: 0 16px 16px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+    .section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); }
+    .section-meta { font-size: 0.72rem; color: #888; font-weight: 600; }
+    .section-action {
+      font-size: 0.78rem; font-weight: 700; color: var(--accent);
+      background: none; border: none; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px; font-family: inherit;
+      transition: background .15s;
+    }
+    .section-action:hover { background: rgba(13,148,136,0.08); }
+
+    /* ── Users / team cards ── */
+    .user-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .user-card {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 14px 14px; display: flex; align-items: flex-start; gap: 12px;
+      cursor: pointer; transition: border-color .12s, box-shadow .12s;
+    }
+    .user-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(13,148,136,0.1); }
+    .user-edit-hint { font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-top: 4px; }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #003366 0%, #0D9488 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .user-body { flex: 1; min-width: 0; }
+    .user-name { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+    .user-email { font-size: 0.78rem; color: #888; margin-bottom: 8px; word-break: break-all; }
+    .user-orgs { display: flex; flex-direction: column; gap: 4px; }
+    .user-org-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; color: var(--text);
+      flex-wrap: wrap;
+    }
+    .user-org-name { font-weight: 600; color: var(--primary); }
+    .user-remove-btn {
+      background: none; border: none; cursor: pointer;
+      color: #b91c1c; font-size: 0.72rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px;
+      font-family: inherit;
+    }
+    .user-remove-btn:hover { background: #fef2f2; text-decoration: underline; }
+    .role-pill {
+      display: inline-block; font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.4px; padding: 3px 9px; border-radius: 20px;
+    }
+    .role-admin   { background: #dbeafe; color: #1e40af; }
+    .role-coach   { background: #ede9fe; color: #6d28d9; }
+    .role-member  { background: #f3f4f6; color: #6B7280; }
+    .role-pending { background: #fef3c7; color: #92400e; font-style: italic; }
+
+    .empty-state {
+      text-align: center; padding: 26px 16px; color: #888;
+      background: #f8fafc; border-radius: 12px; border: 1.5px dashed #d4d4d4;
+      font-size: 0.88rem;
+    }
+    .add-btn {
+      display: block; width: 100%; padding: 13px;
+      background: var(--accent); color: white;
+      border: none; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; text-align: center; text-decoration: none;
+      transition: background .15s; font-family: inherit;
+    }
+    .add-btn:hover { background: var(--accent-dark); color: white; text-decoration: none; }
+
+    /* ── Modals ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: white; border-radius: 16px; padding: 26px; max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.2); max-height: 92vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-title { font-weight: 700; color: var(--primary); font-size: 1.05rem; }
+    .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; line-height: 1; padding: 0 4px; }
+    .modal-field { margin-bottom: 14px; }
+    .modal-label { font-weight: 600; color: var(--primary); font-size: 0.86rem; margin-bottom: 6px; display: block; }
+    .modal-input, .modal-select { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.95rem; color: var(--text); font-family: inherit; background: white; box-sizing: border-box; }
+    .modal-input:focus, .modal-select:focus { outline: none; border-color: var(--accent); }
+    .modal-help { font-size: 11px; color: #888; margin-top: 4px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+    .modal-err { font-size: 0.83rem; color: #b91c1c; margin-top: 6px; min-height: 1em; }
+    .btn-primary { padding: 9px 18px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary.danger { background: #b91c1c; }
+    .btn-primary.danger:hover { background: #991b1b; }
+    .btn-secondary { padding: 9px 18px; background: white; color: var(--primary); border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+    .biz-check-list {
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 200px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 10px; background: #f8fafc;
+    }
+    .biz-check-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.88rem; color: var(--text);
+      cursor: pointer; padding: 4px 2px;
+    }
+    .biz-check-row input { cursor: pointer; }
+
+    .confirm-note {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+      padding: 12px; font-size: 0.85rem; color: #7f1d1d; line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    /* Bottom nav (3-tab account area) */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid #e5e7eb;
+      display: flex; z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+    .bottom-nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 8px 0 6px; text-decoration: none;
+      color: #aaa; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      gap: 3px; transition: color 0.15s;
+    }
+    .bottom-nav-item.active, .bottom-nav-item:hover { color: #0D9488; text-decoration: none; }
+    .bottom-nav-icon { font-size: 20px; line-height: 1; }
+  </style>
+  <script src="js/active-org.js" defer></script>
+  <script src="js/mobile-keyboard.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <span class="header-title">Your Business Coach</span>
+        <span id="activeBizName" class="biz-pill"></span>
+      </div>
+      <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">&#x1F465; User Management</h1>
+      <p class="page-sub">People with access to businesses in this account. Tap a user to change their per-business roles or remove them.</p>
+    </div>
+
+    <div class="section" id="team">
+      <div class="section-head">
+        <span class="section-title">Members <span class="section-meta" id="userSectionMeta"></span></span>
+        <button id="inviteUserHeaderBtn" class="section-action">+ Invite User</button>
+      </div>
+      <div id="userList" class="user-list"></div>
+      <button id="inviteUserBtn" class="add-btn">+ Invite User</button>
+    </div>
+
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.153</p>
+  </div>
+
+  <!-- Edit team member modal -->
+  <div class="modal-overlay hidden" id="userEditModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Edit team member</span>
+        <button class="modal-close" id="userEditClose">&times;</button>
+      </div>
+      <div class="modal-field">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div class="user-avatar" id="userEditAvatar" style="width:40px;height:40px;font-size:0.95rem;">?</div>
+          <div style="min-width:0;">
+            <div id="userEditName" style="font-size:0.95rem;font-weight:700;color:var(--primary);"></div>
+            <div id="userEditEmail" style="font-size:0.78rem;color:#888;word-break:break-all;"></div>
+          </div>
+        </div>
+        <label class="modal-label">Display name</label>
+        <input type="text" class="modal-input" id="userEditDisplayName" maxlength="80" placeholder="e.g. Cath Liddell"/>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Access per business</label>
+        <div id="userEditAccessList" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>
+        <div class="modal-help" style="margin-top:8px;">Pick a role per business — or "— No access —" to remove them. Admins can edit everything; Coaches can edit data and invite teammates; Members can read.</div>
+        <div class="modal-err" id="userEditErr"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="userEditCancel">Cancel</button>
+        <button class="btn-primary" id="userEditSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite User modal -->
+  <div class="modal-overlay hidden" id="inviteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Invite a teammate</span>
+        <button class="modal-close" id="inviteClose">&times;</button>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Email *</label>
+        <input type="email" class="modal-input" id="inviteEmail" placeholder="name@company.com" autocomplete="off"/>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Role</label>
+        <select class="modal-select" id="inviteRole">
+          <option value="member">Member &mdash; can read team data</option>
+          <option value="admin">Admin &mdash; can edit everything</option>
+          <option value="coach">Coach &mdash; admin rights, not billed as a user</option>
+        </select>
+        <p style="font-size:.72rem;color:#888;margin:6px 0 0;line-height:1.45;">
+          <strong>Coach</strong> is for service providers (e.g. your business coach) who edit alongside the team but shouldn&rsquo;t consume a paid seat.
+        </p>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Display name (optional)</label>
+        <input type="text" class="modal-input" id="inviteDisplay" placeholder="e.g. Lou Henderson" maxlength="80"/>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Business access *</label>
+        <div class="biz-check-list" id="inviteBizList"></div>
+        <div class="modal-help">Pick one or more businesses to give this person access to.</div>
+      </div>
+      <div class="modal-err" id="inviteErr"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="inviteCancel">Cancel</button>
+        <button class="btn-primary" id="inviteSend">Send invite</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remove Member confirm modal -->
+  <div class="modal-overlay hidden" id="removeMemberModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Remove team member</span>
+        <button class="modal-close" id="removeMemberClose">&times;</button>
+      </div>
+      <div class="confirm-note">
+        Remove <strong id="removeMemberName"></strong> from <strong id="removeMemberOrg"></strong>?
+        They&rsquo;ll lose access immediately. You can re-invite them anytime.
+      </div>
+      <div class="modal-err" id="removeMemberErr"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="removeMemberCancel">Cancel</button>
+        <button class="btn-primary danger" id="removeMemberConfirm">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="index.html" title="Business management">
+      <span class="bottom-nav-icon">&#x1F4BC;</span><span>Businesses</span>
+    </a>
+    <a class="bottom-nav-item active" href="account-users.html" title="User management">
+      <span class="bottom-nav-icon">&#x1F465;</span><span>Users</span>
+    </a>
+    <a class="bottom-nav-item" href="account-setup.html" title="Account setup">
+      <span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Setup</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const sb = createClient(
+      'https://eekefsuaefgpqmjdyniy.supabase.co',
+      'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
+    );
+
+    /* ============== utilities ============== */
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+    function initials(nameOrEmail) {
+      const s = (nameOrEmail || '').trim();
+      if (!s) return '?';
+      const parts = s.split(/[\s@._-]+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return s.slice(0, 2).toUpperCase();
+    }
+
+    /* ============== state ============== */
+    let user            = null;
+    let sub             = null;
+    let myMemberships   = [];   // caller's active team_members in the active sub's orgs
+    let teamRows        = [];   // every active+pending team_member row in orgs I admin/coach
+    let teamGroups      = new Map();
+    let userEditTarget  = null;
+
+    /* ============== modal helpers ============== */
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    /* ============== load ============== */
+    async function loadAll() {
+      // 1) Active subscription
+      const cachedId = (window.activeOrg && window.activeOrg.getSubscription && window.activeOrg.getSubscription()) || null;
+      const { data: subs } = await sb
+        .from('subscriptions')
+        .select('id, name, owner_user_id, created_at')
+        .eq('owner_user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (!subs || !subs.length) { window.location.href = 'setup.html'; return; }
+      sub = subs.find(s => s.id === cachedId) || subs[0];
+      if (window.activeOrg) window.activeOrg.setSubscription(sub.id, sub.name);
+
+      // 2) My memberships in this account
+      const memQuery = sb.from('team_members')
+        .select('id, organisation_id, role, status, organisations!inner(id, name, subscription_id)')
+        .eq('user_id', user.id).eq('status', 'active')
+        .eq('organisations.subscription_id', sub.id);
+      const { data: mems } = await memQuery;
+      myMemberships = mems || [];
+
+      // 3) Every team member row in orgs where I admin/coach
+      const adminOrgIds = myMemberships
+        .filter(m => m.role === 'admin' || m.role === 'coach')
+        .map(m => m.organisation_id);
+      if (!adminOrgIds.length) { teamRows = []; return; }
+
+      const { data: rows } = await sb
+        .from('team_members')
+        .select('id, organisation_id, user_id, invited_email, role, status, display_name, organisations!inner(id, name)')
+        .in('organisation_id', adminOrgIds)
+        .neq('status', 'removed');
+      teamRows = rows || [];
+    }
+
+    /* ============== render ============== */
+    function renderUsers() {
+      const wrap = document.getElementById('userList');
+      const meta = document.getElementById('userSectionMeta');
+      if (!teamRows.length) {
+        meta.textContent = '';
+        wrap.innerHTML = '<div class="empty-state">You aren&rsquo;t admin of any business in this account yet, so there&rsquo;s no team to show.</div>';
+        return;
+      }
+
+      // Group by user_id (signed-up) OR invited_email (pending)
+      const groups = new Map();
+      teamRows.forEach(r => {
+        const key = r.user_id ? ('u:' + r.user_id) : ('e:' + (r.invited_email || '').toLowerCase());
+        if (!groups.has(key)) {
+          groups.set(key, { key, user_id: r.user_id, invited_email: r.invited_email,
+                            display_name: r.display_name, rows: [] });
+        }
+        const g = groups.get(key);
+        if (!g.display_name && r.display_name) g.display_name = r.display_name;
+        g.rows.push(r);
+      });
+      meta.textContent = '(' + groups.size + ')';
+
+      const cards = [];
+      for (const g of groups.values()) {
+        const isMe = g.user_id === user.id;
+        const nameDisplay = g.display_name
+          || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
+          || g.invited_email
+          || '(unnamed teammate)';
+        const emailDisplay = isMe ? user.email : (g.invited_email || '');
+        const ini = initials(nameDisplay || emailDisplay);
+
+        const orgRows = g.rows.map(r => {
+          const isPending = r.status === 'pending';
+          const rolePill  = isPending
+            ? '<span class="role-pill role-pending">Pending</span>'
+            : '<span class="role-pill role-' + r.role + '">' + r.role + '</span>';
+          const canRemove = !isMe;
+          const removeBtn = canRemove
+            ? `<button class="user-remove-btn" data-action="remove-member" data-member-id="${r.id}" data-member-name="${escHtml(nameDisplay)}" data-org-name="${escHtml(r.organisations.name)}">Remove</button>`
+            : '';
+          return `
+            <div class="user-org-row">
+              <span class="user-org-name">${escHtml(r.organisations.name)}</span>
+              ${rolePill}
+              ${removeBtn}
+            </div>`;
+        }).join('');
+
+        cards.push(`
+          <div class="user-card" data-user-key="${escHtml(g.key)}" role="button" tabindex="0">
+            <div class="user-avatar">${escHtml(ini)}</div>
+            <div class="user-body">
+              <div class="user-name">${escHtml(nameDisplay)} ${isMe ? '<span style="font-size:.7em;color:#888;font-weight:600;">(you)</span>' : ''}</div>
+              ${emailDisplay ? '<div class="user-email">' + escHtml(emailDisplay) + '</div>' : ''}
+              <div class="user-orgs">${orgRows}</div>
+              <div class="user-edit-hint">Tap to edit access &rsaquo;</div>
+            </div>
+          </div>`);
+      }
+      wrap.innerHTML = cards.join('');
+      teamGroups = groups;
+
+      wrap.querySelectorAll('[data-action="remove-member"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          openRemoveMember(btn.dataset.memberId, btn.dataset.memberName, btn.dataset.orgName);
+        });
+      });
+      wrap.querySelectorAll('.user-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return;
+          const g = teamGroups.get(card.dataset.userKey);
+          if (g) openUserEditModal(g);
+        });
+      });
+    }
+
+    /* ============== edit team member modal ============== */
+    function openUserEditModal(group) {
+      userEditTarget = group;
+      const errEl = document.getElementById('userEditErr');
+      errEl.textContent = '';
+      const isMe = group.user_id === user.id;
+      const knownEmail = group.invited_email || (isMe ? user.email : null);
+      const nameDisplay = group.display_name
+        || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
+        || group.invited_email || '(unnamed teammate)';
+      const emailDisplay = isMe ? user.email : (group.invited_email || '');
+
+      document.getElementById('userEditAvatar').textContent = initials(nameDisplay || emailDisplay);
+      document.getElementById('userEditName').textContent = nameDisplay + (isMe ? ' (you)' : '');
+      document.getElementById('userEditEmail').textContent = emailDisplay || '(no email on file)';
+      document.getElementById('userEditDisplayName').value = group.display_name || '';
+
+      const adminOrgs = myMemberships.filter(m => m.role === 'admin');
+      const listEl = document.getElementById('userEditAccessList');
+      listEl.innerHTML = adminOrgs.map(am => {
+        const org = am.organisations;
+        const existing = group.rows.find(r => r.organisation_id === org.id && r.status !== 'removed');
+        const currentRole = existing ? existing.role : 'no_access';
+        const disabledOpts = !existing && !knownEmail;
+        const hint = disabledOpts ? '<div style="font-size:0.66rem;color:#aaa;font-style:italic;margin-top:2px;">No email on file — use Invite User to add</div>' : '';
+        return `
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+            <div style="min-width:0;">
+              <div style="font-size:0.85rem;font-weight:700;color:var(--primary);">${escHtml(org.name)}</div>
+              ${hint}
+            </div>
+            <select class="user-edit-role-pick" data-org-id="${escHtml(org.id)}" data-member-id="${escHtml(existing ? existing.id : '')}" data-orig="${escHtml(currentRole)}"
+              style="padding:7px 9px;border:1.5px solid var(--border);border-radius:6px;font-size:0.82rem;background:white;font-family:inherit;color:var(--text);min-width:140px;">
+              <option value="no_access"${currentRole === 'no_access' ? ' selected' : ''}>— No access —</option>
+              <option value="member"${currentRole === 'member' ? ' selected' : ''}${disabledOpts ? ' disabled' : ''}>Member</option>
+              <option value="coach"${currentRole === 'coach' ? ' selected' : ''}${disabledOpts ? ' disabled' : ''}>Coach</option>
+              <option value="admin"${currentRole === 'admin' ? ' selected' : ''}${disabledOpts ? ' disabled' : ''}>Admin</option>
+            </select>
+          </div>`;
+      }).join('') || '<div style="font-size:0.82rem;color:#888;">You aren\'t admin of any business in this account.</div>';
+      openModal('userEditModal');
+    }
+
+    async function saveUserEdit() {
+      if (!userEditTarget) return;
+      const errEl = document.getElementById('userEditErr');
+      const saveBtn = document.getElementById('userEditSave');
+      errEl.textContent = '';
+      const isMe = userEditTarget.user_id === user.id;
+      const knownEmail = userEditTarget.invited_email || (isMe ? user.email : null);
+      const newDisplayName = document.getElementById('userEditDisplayName').value.trim();
+      const pickers = Array.from(document.querySelectorAll('.user-edit-role-pick'));
+
+      const ops = [];
+      for (const p of pickers) {
+        const orgId    = p.dataset.orgId;
+        const memberId = p.dataset.memberId || null;
+        const origRole = p.dataset.orig || 'no_access';
+        const newRole  = p.value;
+        if (newRole === origRole) continue;
+        if (newRole === 'no_access') {
+          if (memberId) ops.push(sb.rpc('remove_team_member', { member_id: memberId }));
+        } else if (memberId) {
+          ops.push(sb.from('team_members').update({ role: newRole }).eq('id', memberId));
+        } else {
+          if (!knownEmail) continue;
+          ops.push(sb.rpc('invite_team_member', { business_id: orgId, email: knownEmail, role: newRole }));
+        }
+      }
+      if ((newDisplayName || '') !== (userEditTarget.display_name || '')) {
+        const memberIds = userEditTarget.rows.filter(r => r.status !== 'removed').map(r => r.id);
+        if (memberIds.length) {
+          ops.push(sb.from('team_members').update({ display_name: newDisplayName || null }).in('id', memberIds));
+        }
+      }
+      if (!ops.length) { closeModal('userEditModal'); return; }
+
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      const results = await Promise.all(ops);
+      const firstErr = results.find(r => r.error);
+      if (firstErr) {
+        saveBtn.disabled = false; saveBtn.textContent = 'Save';
+        errEl.textContent = 'Could not save: ' + (firstErr.error.message || 'unknown error');
+        return;
+      }
+      closeModal('userEditModal');
+      window.location.reload();
+    }
+
+    document.getElementById('userEditClose').addEventListener('click', () => closeModal('userEditModal'));
+    document.getElementById('userEditCancel').addEventListener('click', () => closeModal('userEditModal'));
+    document.getElementById('userEditSave').addEventListener('click', saveUserEdit);
+
+    /* ============== invite user ============== */
+    const inviteEmail   = document.getElementById('inviteEmail');
+    const inviteRole    = document.getElementById('inviteRole');
+    const inviteDisplay = document.getElementById('inviteDisplay');
+    const inviteBizList = document.getElementById('inviteBizList');
+    const inviteErr     = document.getElementById('inviteErr');
+    const inviteSend    = document.getElementById('inviteSend');
+
+    function populateInviteBizList() {
+      const adminMems = myMemberships.filter(m => m.role === 'admin' || m.role === 'coach');
+      const activeId  = (window.activeOrg && window.activeOrg.get()) || null;
+      if (!adminMems.length) {
+        inviteBizList.innerHTML = '<div style="font-size:.85rem;color:#888;padding:6px;">You aren&rsquo;t an admin of any business yet.</div>';
+        return;
+      }
+      inviteBizList.innerHTML = adminMems.map(m => {
+        const orgId = m.organisations.id;
+        const name  = m.organisations.name;
+        const checked = orgId === activeId ? 'checked' : '';
+        return `
+          <label class="biz-check-row">
+            <input type="checkbox" value="${orgId}" ${checked}/>
+            <span>${escHtml(name)}</span>
+          </label>`;
+      }).join('');
+    }
+    function openInviteUser() {
+      inviteEmail.value = ''; inviteRole.value = 'member';
+      inviteDisplay.value = ''; inviteErr.textContent = '';
+      populateInviteBizList();
+      openModal('inviteModal');
+      setTimeout(() => inviteEmail.focus(), 50);
+    }
+    document.getElementById('inviteUserBtn').addEventListener('click', openInviteUser);
+    document.getElementById('inviteUserHeaderBtn').addEventListener('click', openInviteUser);
+    document.getElementById('inviteClose').addEventListener('click', () => closeModal('inviteModal'));
+    document.getElementById('inviteCancel').addEventListener('click', () => closeModal('inviteModal'));
+
+    inviteSend.addEventListener('click', async () => {
+      const email = inviteEmail.value.trim();
+      const role  = inviteRole.value;
+      const display = inviteDisplay.value.trim();
+      const selected = Array.from(inviteBizList.querySelectorAll('input[type=checkbox]:checked')).map(c => c.value);
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        inviteErr.textContent = 'Please enter a valid email address.'; return;
+      }
+      if (!selected.length) {
+        inviteErr.textContent = 'Pick at least one business.'; return;
+      }
+      inviteSend.disabled = true; inviteSend.textContent = 'Sending…';
+      inviteErr.textContent = '';
+      const errors = [];
+      for (const bizId of selected) {
+        const { error } = await sb.rpc('invite_team_member', {
+          business_id: bizId, email: email, role: role,
+          display_name: display || null
+        });
+        if (error) errors.push(error.message || 'invite failed');
+      }
+      inviteSend.disabled = false; inviteSend.textContent = 'Send invite';
+      if (errors.length) { inviteErr.textContent = errors.join(' — '); return; }
+      closeModal('inviteModal');
+      await loadAll();
+      renderUsers();
+    });
+
+    /* ============== remove member ============== */
+    const removeMemberNameEl  = document.getElementById('removeMemberName');
+    const removeMemberOrgEl   = document.getElementById('removeMemberOrg');
+    const removeMemberErr     = document.getElementById('removeMemberErr');
+    const removeMemberConfirm = document.getElementById('removeMemberConfirm');
+    let removeMemberTargetId  = null;
+    function openRemoveMember(memberId, name, orgName) {
+      removeMemberTargetId = memberId;
+      removeMemberNameEl.textContent = name;
+      removeMemberOrgEl.textContent  = orgName;
+      removeMemberErr.textContent    = '';
+      openModal('removeMemberModal');
+    }
+    document.getElementById('removeMemberClose').addEventListener('click', () => closeModal('removeMemberModal'));
+    document.getElementById('removeMemberCancel').addEventListener('click', () => closeModal('removeMemberModal'));
+    removeMemberConfirm.addEventListener('click', async () => {
+      removeMemberConfirm.disabled = true; removeMemberConfirm.textContent = 'Removing…';
+      const { error } = await sb.rpc('remove_team_member', { member_id: removeMemberTargetId });
+      removeMemberConfirm.disabled = false; removeMemberConfirm.textContent = 'Remove';
+      if (error) { removeMemberErr.textContent = error.message || 'Remove failed.'; return; }
+      closeModal('removeMemberModal');
+      await loadAll();
+      renderUsers();
+    });
+
+    /* ============== boot ============== */
+    async function boot() {
+      const { data: { user: u }, error } = await sb.auth.getUser();
+      if (!u || error) { window.location.href = 'login.html'; return; }
+      user = u;
+      const { data: profile } = await sb.from('users').select('membership_status').eq('id', user.id).single();
+      if (!profile || profile.membership_status !== 'active') {
+        window.location.href = 'inactive.html'; return;
+      }
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        await sb.auth.signOut(); window.location.href = 'login.html';
+      });
+      await loadAll();
+      renderUsers();
+      document.body.style.opacity = '1';
+    }
+    boot();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+  </script>
+</body>
+</html>

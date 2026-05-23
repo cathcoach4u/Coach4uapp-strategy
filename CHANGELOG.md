@@ -4,6 +4,40 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.153
+- **Account dashboard split into three tabbed pages.** User: "The accounts area needs to have 3 different areas. Business management, user management and setup of of accounts name (invoicing information)" + "Tabs at the bottom like the other pages are structured."
+- **New bottom nav at the account level** (`index.html` / `account-users.html` / `account-setup.html`):
+  ```
+  💼 Businesses  👥 Users  ⚙️ Setup
+  ```
+  Each tab is `active` on its own page. Replaces the single 🏛️ Account tab from v0.5.146.
+- **`index.html` becomes the Businesses page.** Strips:
+  - The "Your Team" section (HTML + section markup)
+  - The user-edit / invite / remove-member modals (3 modals)
+  - `renderUsers()`, `openUserEditModal()`, `saveUserEdit()`, `populateInviteBizList()`, invite + remove JS blocks (~210 lines)
+  - The team-rows fetch inside `loadAll()` — only `subscriptions` + `team_members` (own memberships) are loaded now
+  - `teamRows` + `teamGroups` state vars
+  - The rename-account modal + JS (moved to Setup)
+  - The "Rename account ›" inline link in the account header
+  - Subtitle copy updated to read "💼 Business Management — add, rename, delete businesses and wire up the parent/child structure of your account."
+- **`account-users.html` (new).** Self-contained team-management page:
+  - Same `.site-header` + biz pill chrome (from `js/active-org.js`)
+  - "👥 User Management" page header + section title "Members (count)" + Invite User
+  - Same `.user-card` UI with "Tap to edit access ›" hint
+  - Same Edit-team-member modal (display name + per-business role pickers, picker options `— No access — / Member / Coach / Admin`)
+  - Same Invite User modal + Remove Member confirm modal
+  - Same save handler: `remove_team_member` RPC for no-access, direct UPDATE for role changes on existing rows, `invite_team_member` RPC for new access when email is on file
+  - Independent data fetch: subs → my memberships in active sub → team_members in admin orgs
+- **`account-setup.html` (new).** Auto-saving form for the account / invoicing details:
+  - Fields: **Account name** (required), **Billing email**, **Billing address** (textarea), **Tax ID (ABN / VAT / company number)**
+  - 400ms debounced auto-save on input + immediate save on blur. Status label below the card flips between "Changes save automatically.", "Saving…", "Saved ✓", or "Could not save: …".
+  - Direct `UPDATE subscriptions` against the active subscription (RLS via `owner_user_id = auth.uid()` — unchanged).
+  - Keeps `activeOrg.setSubscription(sub.id, name)` in sync after a name change so the cached account label updates across other pages.
+- **Both new pages have a `v0.5.153` footer label** and register the service worker for PWA install consistency.
+- **No SQL change** — the `subscriptions.billing_email`, `billing_address`, `billing_tax_id` columns already shipped in `v0.5.152-delta.sql`, along with the `team_members` RLS hotfix that unblocks the Edit-team-member save.
+
+---
+
 ## v0.5.152
 - **SQL-only release.** Hotfix the broken save on the v0.5.151 Edit-team-member modal, plus add billing fields for the upcoming Account Setup page.
 - **(1) Hotfix — RLS policy on `team_members`.** User report: "Could not save: permission denied for table users". The error came from the long-standing `"invited user accepts own invite"` policy, whose `USING` clause SELECTed `email` from `auth.users` — which the `authenticated` role doesn't have permission to read in current Supabase. The previous code paths (single-row UPDATEs on team_members) seem to have dodged that policy evaluation; the multi-row `.in('id', memberIds)` UPDATE introduced in v0.5.151 hit it.
