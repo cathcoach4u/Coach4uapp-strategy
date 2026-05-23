@@ -62,17 +62,17 @@
       font-size: 0.75rem; font-weight: 700;
     }
 
-    /* ── Meeting button ── */
+    /* ── Meeting button ── (centred in v0.5.177 to match .view-plan-btn) */
     .meeting-btn {
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: center;
       margin: 0 16px 10px; padding: 13px 16px;
       background: var(--accent); color: white;
       border-radius: 10px; text-decoration: none;
-      font-size: 0.88rem; font-weight: 700;
+      font-size: 0.9rem; font-weight: 700;
+      text-align: center;
       transition: background 0.15s;
     }
     .meeting-btn:hover { background: var(--accent-dark); color: white; text-decoration: none; }
-    .meeting-btn-arrow { font-size: 18px; }
 
     /* Page header — same pattern as Planning / Strategy / Operations / Learn (v0.5.176) */
     .ws-header { padding: 20px 16px 0; }
@@ -266,10 +266,7 @@
     <div id="standardMode">
     <!-- v0.5.174 — Quick actions moved here from Planning / Strategy / Operations -->
     <div class="quick-actions">
-      <a class="meeting-btn" id="runWeeklyMeetingBtn" href="meeting.html">
-        <span>&#x1F5D3;&#xFE0F;&nbsp; Run Weekly Meeting</span>
-        <span class="meeting-btn-arrow">&#x203A;</span>
-      </a>
+      <a class="meeting-btn" id="runWeeklyMeetingBtn" href="meeting.html">&#x1F5D3;&#xFE0F;&nbsp; Run Weekly Meeting</a>
       <a class="view-plan-btn" href="one-page-plan.html">&#x1F4CB;&nbsp; View One-Page Plan</a>
       <a class="view-plan-btn" href="one-page-operations.html">&#x1F4CB;&nbsp; View One-Page Operations</a>
     </div>
@@ -349,10 +346,7 @@
     <!-- ── Parent mode — group rollup view, shown when this biz has children (v0.5.155) ── -->
     <div id="parentMode" style="display:none;">
       <div class="quick-actions">
-        <a class="meeting-btn" id="runWeeklyMeetingBtnParent" href="meeting.html">
-          <span>&#x1F5D3;&#xFE0F;&nbsp; Run Weekly Meeting</span>
-          <span class="meeting-btn-arrow">&#x203A;</span>
-        </a>
+        <a class="meeting-btn" id="runWeeklyMeetingBtnParent" href="meeting.html">&#x1F5D3;&#xFE0F;&nbsp; Run Weekly Meeting</a>
         <a class="view-plan-btn" href="one-page-plan.html">&#x1F4CB;&nbsp; View One-Page Plan</a>
         <a class="view-plan-btn" href="one-page-operations.html">&#x1F4CB;&nbsp; View One-Page Operations</a>
       </div>
@@ -430,7 +424,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.176</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.177</p>
 
   </div>
 

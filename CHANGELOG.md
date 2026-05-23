@@ -4,6 +4,15 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.177
+- **Center the "Run Weekly Meeting" button on the home page.** User: "Run weekly meeting box needs to be centred."
+- The button was using `display: flex; justify-content: space-between;` with a label-span on the left and a `›` arrow-span on the right. That made the label sit hard-left in a button right above two centred view-plan buttons — visually jarring.
+- **CSS:** `justify-content: space-between` → `justify-content: center`. Added `text-align: center`. Font-size bumped 0.88rem → 0.9rem so it matches `.view-plan-btn` exactly. Dropped the unused `.meeting-btn-arrow` rule.
+- **HTML:** removed the `<span>label</span><span class="meeting-btn-arrow">›</span>` two-span markup; the anchor now contains plain inline content (`🗓️ Run Weekly Meeting`). Both occurrences updated — `#runWeeklyMeetingBtn` in standardMode and `#runWeeklyMeetingBtnParent` in parentMode.
+- **No SQL.**
+
+---
+
 ## v0.5.176
 - **Add the same heading + sub pattern to Home and Learn, completing the five-hub consistency.** User: "Have home and learn with the same headings."
 - **Home (`business.html`):**
