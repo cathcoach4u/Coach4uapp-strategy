@@ -4,6 +4,26 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.174
+- **Consolidate the three primary actions onto the home page.** User: "Move one page plan to home page and remove it from planning and strategy and also move run weekly meetings and view one page operations to home and remove it from operations."
+- **Added to `business.html`** at the top of both `<div id="standardMode">` and `<div id="parentMode">`:
+  ```html
+  <div class="quick-actions">
+    <a class="meeting-btn" id="runWeeklyMeetingBtn">🗓️ Run Weekly Meeting ›</a>
+    <a class="view-plan-btn" href="one-page-plan.html">📋 View One-Page Plan</a>
+    <a class="view-plan-btn" href="one-page-operations.html">📋 View One-Page Operations</a>
+  </div>
+  ```
+  Parent mode uses `runWeeklyMeetingBtnParent` as the id so both can co-exist in markup; only one is visible at a time depending on which mode renders.
+- **New JS `wireRunMeetingButton(btnId, activeId)`** in `business.html` — same create-or-open-this-week's-meeting logic as the old button on `operations.html`, parametrised so it can be called once per mode (standard + parent).
+- **Removed from `business.html`:** the "Go to This Week's Meeting" `<a class="meeting-btn" id="thisWeekMeetingBtn">` that used to sit between the Core Values and This Week panels; the JS line that rewrote its `href`. The Next-Meeting stat tile and "View Meeting ›" link inside the This Week panel still navigate to the meeting row when one exists.
+- **Removed from `planning.html`** + **`strategy.html`:** the `<a class="view-plan-btn" href="one-page-plan.html">View One-Page Plan</a>` block. Those hubs now lead straight into their activity cards.
+- **Removed from `operations.html`:** both the `<a class="meeting-btn" id="runWeeklyMeetingBtn">` and the `<a class="view-plan-btn" href="one-page-operations.html">` blocks; plus the `wireRunMeetingButton()` function definition + its call inside `init()` (~38 lines of JS).
+- **CSS added to `business.html`:** `.quick-actions { padding: 12px 0 0; }` and `.view-plan-btn { ... }` — same pattern as the operations.html button it used to live in.
+- **No SQL.**
+
+---
+
 ## v0.5.173
 - **Hotfix: green pill missing on home page.** User: "There is no green pill heading on Home Screen."
 - **Cause:** in v0.5.164, when the navy header on `business.html` was decluttered (removed the `← Account` back link), the `<span id="activeBizName" class="biz-pill"></span>` was also dropped. As long as the v0.5.163 in-body BUSINESS row existed, the missing span didn't matter — the user could still switch businesses via that row. v0.5.172 removed the in-body row expecting the active-org.js pill to take over, but the script needs that span element to exist in the navy header. Without it, `relocatePillToSubToolbar()` finds nothing to relocate and the pill silently fails to render. No console error because the script defends with `if (!pill) return`.

@@ -154,13 +154,8 @@
 
   <div class="container">
     <div class="activities-section">
-      <a class="meeting-btn" id="runWeeklyMeetingBtn" href="meeting.html">
-        &#x1F5D3;&#xFE0F;&nbsp; Run Weekly Meeting
-      </a>
-
-      <a class="view-plan-btn" href="one-page-operations.html">
-        &#x1F4CB;&nbsp; View One-Page Operations
-      </a>
+      <!-- Run Weekly Meeting + View One-Page Operations moved to
+           business.html quick-actions in v0.5.174 -->
 
       <div class="activity-grid">
         <a class="activity-card" href="scorecard.html">
@@ -237,45 +232,9 @@
       document.getElementById('signOutBtn').addEventListener('click', async () => {
         await supabase.auth.signOut(); window.location.href = 'login.html';
       });
-      wireRunMeetingButton();
+      // wireRunMeetingButton removed in v0.5.174 — button moved to business.html
     }
 
-    // Run Weekly Meeting: open this-week's existing meeting, otherwise create one and open it.
-    function wireRunMeetingButton() {
-      const btn = document.getElementById('runWeeklyMeetingBtn');
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const orgId = window.activeOrg && window.activeOrg.get();
-        if (!orgId) { window.location.href = 'business.html'; return; }
-        // This-week Monday in ISO
-        const d = new Date();
-        const day = d.getDay();
-        d.setDate(d.getDate() + ((day === 0 ? -6 : 1) - day));
-        const mondayIso = d.toISOString().slice(0, 10);
-        // Try existing meeting for this week
-        const { data: existing } = await supabase
-          .from('meetings')
-          .select('id')
-          .eq('organisation_id', orgId)
-          .eq('meeting_date', mondayIso)
-          .maybeSingle();
-        let meetingId = existing && existing.id;
-        if (!meetingId) {
-          const q = 'Q' + (Math.floor(new Date().getMonth() / 3) + 1) + ' ' + new Date().getFullYear();
-          const { data: created, error } = await supabase
-            .from('meetings')
-            .insert({ organisation_id: orgId, meeting_date: mondayIso, status: 'scheduled', quarter: q })
-            .select('id')
-            .single();
-          if (error) {
-            alert('Could not start meeting: ' + error.message);
-            return;
-          }
-          meetingId = created.id;
-        }
-        window.location.href = 'run-meeting.html?id=' + meetingId;
-      });
-    }
     init();
   </script>
 </body>
