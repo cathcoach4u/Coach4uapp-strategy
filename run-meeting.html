@@ -178,7 +178,7 @@
           <span style="font-size:.8rem;color:#888;font-family:inherit;">Target: 90 min</span>
         </div>
         <div id="agenda-accordion">
-          ${agendaSection(1,'Segue &#x2014; Good News','5 min',renderSegue())}
+          ${agendaSection(1,'Good News','5 min',renderSegue())}
           ${agendaSection(2,'Numbers Review','5 min','<p style="font-size:.88rem;color:#888;font-family:inherit;">Review your weekly numbers. <a href="scorecard.html" style="color:var(--accent);">Open Weekly Numbers &#x2192;</a></p>')}
           ${agendaSection(3,'Priorities Review','5 min','<p style="font-size:.88rem;color:#888;font-family:inherit;">Review quarterly goals. <a href="goals.html" style="color:var(--accent);">Open Goals &#x2192;</a></p>')}
           ${agendaSection(4,'Customer &amp; Team Highlights','5 min',renderHeadlines())}
@@ -228,7 +228,7 @@
     return `<div class="agenda-section"><button class="agenda-toggle"><div class="agenda-num">${num}</div><div class="agenda-title-text">${title}</div><span class="agenda-time">${time}</span><span class="agenda-arrow">&#x25BC;</span></button><div class="agenda-content">${content}</div></div>`;
   }
   function renderSegue(){
-    return `<p style="font-size:.88rem;color:#666;font-family:inherit;">Start with 1 minute each: share a piece of good news &#x2014; personal or professional.</p>`;
+    return `<p style="font-size:.88rem;color:#666;font-family:inherit;">Share a good news item to start the meeting &#x2014; personal or professional.</p>`;
   }
   function renderHeadlines(){
     const items=_headlines;

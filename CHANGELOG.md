@@ -4,6 +4,32 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.203
+- **Renamed weekly-meeting section 1: "Segue — Good News" → "Good News".** User: "Change 'Segue — Good News'. To just share a good news item."
+
+### Change
+- `run-meeting.html` — agenda section 1 title:
+  ```js
+  agendaSection(1, 'Segue — Good News', '5 min', renderSegue())
+  → agendaSection(1, 'Good News', '5 min', renderSegue())
+  ```
+- `run-meeting.html` — renderSegue() description simplified:
+  - Before: *"Start with 1 minute each: share a piece of good news — personal or professional."*
+  - After: *"Share a good news item to start the meeting — personal or professional."*
+- `learn/weekly-team-meeting.html` — the guide's section 1 entry updated to match:
+  - Before: *"Segue — 5 min. Each person: one personal good news, one business good news. Sets the tone…"*
+  - After: *"Good News — 5 min. Each person shares one piece of good news — personal or professional. Sets the tone…"*
+
+### Why
+"Segue" is EOS-specific jargon; the user wanted simpler framing. Continues the v0.5.116 de-jargoning work that removed other EOS terms ("Level 10", "Headlines" as a section name, "IDS", etc.).
+
+### No data changes
+Section 1 has no stored state — it's purely an instructional paragraph at the top of each meeting. The headlines list (which DOES persist) lives in agenda section 4 "Customer & Team Highlights" via the `meeting_headlines` table; that section is unchanged.
+
+### No SQL.
+
+---
+
 ## v0.5.202
 - **Dropped stat tiles + added Open Issues panel + renamed This Quarter → Quarterly Goals.** User: "Open issues, goals on track, none next meeting not needed on the dashboards home pages. ... wouldn't it just be easier to have the areas visible ie where is says open issues. Can't we just list the issues list. And review quarterly goals. Can it just show the goals."
 
