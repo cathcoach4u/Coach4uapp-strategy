@@ -4,6 +4,19 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.173
+- **Hotfix: green pill missing on home page.** User: "There is no green pill heading on Home Screen."
+- **Cause:** in v0.5.164, when the navy header on `business.html` was decluttered (removed the `← Account` back link), the `<span id="activeBizName" class="biz-pill"></span>` was also dropped. As long as the v0.5.163 in-body BUSINESS row existed, the missing span didn't matter — the user could still switch businesses via that row. v0.5.172 removed the in-body row expecting the active-org.js pill to take over, but the script needs that span element to exist in the navy header. Without it, `relocatePillToSubToolbar()` finds nothing to relocate and the pill silently fails to render. No console error because the script defends with `if (!pill) return`.
+- **Fix:** added `<span id="activeBizName" class="biz-pill"></span>` back to `business.html`'s `.header-left`, exactly where every other business-level page has it. On boot, `active-org.js`:
+  1. Finds the empty span
+  2. Sets its text to `🏢 IASHQ`
+  3. Calls `relocatePillToSubToolbar()` — wraps it in a `<div class="biz-switcher-bar">` after the header
+  4. Calls `renderBizSwitcher()` — since the IAS HQ account has 2+ businesses, replaces the span with a `<select>` populated by `fetchBizList()`
+- Net result: the green pill (and its dropdown of IASHQ / IAS General / IAS Life / IAS Outsourcing) now appears in the standard sub-toolbar position on the home page, matching every other business-level page.
+- **No SQL.**
+
+---
+
 ## v0.5.172
 - **Remove the in-body BUSINESS: row from `business.html`** — the home page now uses the same compact green pill (`js/active-org.js`'s sub-toolbar) as every other business-level page. User: "Show business: I want the green pill size the same as the other pages."
 - **Why:** the in-body BUSINESS row added in v0.5.163 was a wide full-width affordance with a `BUSINESS:` label + a stretched `<select>`. Other business-level pages (planning / strategy / operations / etc.) just had a small teal pill in the sub-toolbar. Home page looked bigger / different. Two patterns for the same control.
