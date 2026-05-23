@@ -4,6 +4,29 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.151
+- **User cards on the account dashboard become clickable** with a new "Edit team member" modal. User: "I can't click into it. There needs more options the user as they can be admin some or all."
+- **`renderUsers()` changes:**
+  - `.user-card` markup gets `data-user-key`, `role="button"`, `tabindex="0"`, and a small `Tap to edit access ›` hint at the bottom.
+  - `.user-card { cursor: pointer; transition: border .12s, box-shadow .12s; }` plus a hover state matching the biz cards.
+  - After render, every group object (the `Map` keyed by `u:user_id` or `e:invited_email`) is stashed in a new `teamGroups` state map so the click handler can look up the right group.
+  - Click handler ignores clicks on inline buttons (the existing Remove button still works).
+- **New modal `#userEditModal`:** avatar + name + email at the top, a Display name input, then a per-business "Access" list. For every business the **current user** is admin of in the active account, one row: business name + a 4-option role picker (`— No access — / Member / Coach / Admin`).
+- **Save handler `saveUserEdit()`:**
+  - Each picker stores its original value in `data-orig`; only changed pickers are committed.
+  - `no_access` on a row that exists → `remove_team_member(member_id)` RPC (soft-removes, guards against last admin).
+  - Role change on an existing row → direct `UPDATE team_members SET role = … WHERE id = member_id`.
+  - New role on a missing row → `invite_team_member(business_id, email, role)` RPC, but only when an email is available (see caveat).
+  - Display name change → bulk `UPDATE team_members SET display_name = … WHERE id IN (…)` across the user's existing rows.
+  - All ops fire in parallel via `Promise.all`; if any fail, the first error surfaces in the modal and the page doesn't reload.
+- **Caveat — email availability:** the v0.5.x schema clears `team_members.invited_email` when a user signs up (via the `link_pending_invites` trigger on `auth.users`). That means for already-signed-up users we don't have an email at hand, and the `invite_team_member` RPC needs one. The modal handles this by:
+  - Disabling Member/Coach/Admin options on no-access rows when no email is on file
+  - Showing an inline hint: *"No email on file — use Invite User to add"*
+  - Pending invites and the current user still have full add capability.
+- **Follow-up worth doing:** a small `SECURITY DEFINER` RPC `get_email_for_team_admin(target_user_id)` that returns the email for a user the caller is admin/coach of. Would let the modal add already-signed-up users to new businesses in one tap. Deferred.
+
+---
+
 ## v0.5.150
 - **Two fixes on the account dashboard biz table.**
 - **(1) Mobile layout** — names like "IAS General" / "IAS Outsourcing" were wrapping mid-word on phones because the `biz-card-head` row was crammed with: name + Parent pill + admin pill + reorder buttons + Open + ⋮. With `flex: 1` on the name and `flex-wrap: wrap` on the parent, the name shrank instead of wrapping the OTHER items.
