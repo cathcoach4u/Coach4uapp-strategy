@@ -4,6 +4,28 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.175
+- **Add page-title + sub-description to Strategy and Operations hubs, matching Planning.** User: "The planning page has a heading a description. Do the same heading and sub detail under in the operations and operations."
+- Both hubs (`strategy.html`, `operations.html`) were going straight from the navy header / active-org pill into the activity cards — no page identity, no orienting copy. The Planning page already had a `.ws-header` block above its cards from a previous build.
+- **Inserted in each file:**
+  ```html
+  <div class="ws-header">
+    <h1 class="ws-title">🧭 Strategy</h1>
+    <p class="ws-sub">The foundations of your business — Core Values, Core Focus, Targets, Marketing and your Leadership Team.</p>
+  </div>
+  ```
+  (Operations title is `⚙️ Operations` with sub *"Your weekly cadence — track the numbers, run team meetings, ship quarterly goals, surface and resolve issues."*)
+- **CSS added** to both files (each maintains its own `<style>` block):
+  ```css
+  .ws-header { padding: 20px 16px 0; }
+  .ws-title { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
+  .ws-sub { font-size: 0.85rem; color: #666; margin: 0 0 20px; line-height: 1.5; }
+  ```
+  These are the same rules planning.html uses — values copied verbatim so the three hubs are visually consistent.
+- **No SQL.**
+
+---
+
 ## v0.5.174
 - **Consolidate the three primary actions onto the home page.** User: "Move one page plan to home page and remove it from planning and strategy and also move run weekly meetings and view one page operations to home and remove it from operations."
 - **Added to `business.html`** at the top of both `<div id="standardMode">` and `<div id="parentMode">`:
