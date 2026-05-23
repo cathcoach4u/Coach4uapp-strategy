@@ -4,6 +4,27 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.214
+- **Removed the Child Businesses panel from the parent dashboard.** User: "Child business on dashboard just taking up real estate. Remove."
+
+### Change — `business.html`
+- The `<div class="dash-panel">` inside `parentMode` containing **🏢 Child Businesses** + `#childCards` is gone.
+- The 22 lines of JS in `renderParentMode` that built the child cards (`children.map(...) → cardsEl.innerHTML` + the click handlers calling `window.activeOrg.set` + reload) are also gone.
+
+### Net effect
+For parent businesses (e.g. IASHQ), the dashboard now appends only **💰 Group Financials** below the standard layout. Standard layout above is unchanged: Quick Actions → Year Flow → 1-Year Goal → Core Values → Quarterly Goals → Open Issues → Open To-Dos.
+
+### Children are still reachable
+- **Biz switcher dropdown** in the navy header (the green pill, populated by `active-org.js`) — every business in the active subscription is listed.
+- **Account tab** in the bottom-nav → `index.html` — full list of businesses with Open buttons + management actions.
+
+### Cleanup deferred
+The `.child-card`, `.child-card-head`, `.child-card-arrow`, `.child-card-name`, `.child-card-open`, `.child-card-mini` CSS rules are left in place — small, harmless, and would only need to come back if the panel is restored.
+
+### No SQL.
+
+---
+
 ## v0.5.213
 - **Two scorecard.html bugs reported from the meeting → figures flow.** User: "I click on the weekly meeting and then click on numbers. It doesn't show the persistent green button still. And also when I'm in this page from meeting and I click on home it doesn't work."
 

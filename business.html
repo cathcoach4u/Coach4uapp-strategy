@@ -424,18 +424,12 @@
         </div>
       </div>
 
-      <!-- Child Businesses — kept (tap to switch active biz) -->
-      <div class="dash-panel">
-        <div class="panel-head">
-          <span class="panel-title">&#x1F3E2; Child Businesses</span>
-        </div>
-        <div class="panel-body">
-          <div id="childCards"></div>
-        </div>
-      </div>
+      <!-- v0.5.214 — Child Businesses panel removed (user: "just taking up
+           real estate"). The biz switcher dropdown in the navy header + the
+           Account tab → index.html still let users navigate to children. -->
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.213</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.214</p>
 
   </div>
 
@@ -836,26 +830,9 @@
       };
       setFin('groupRevenueTarget', parsedAnyTarget ? fmtMoney(totalTarget) : '—', !parsedAnyTarget);
       setFin('groupProfit',        finRows.length ? fmtMoney(totalRev - totalExp) : '—', !finRows.length);
-
-      // ── Child Businesses cards (tap → switch active biz) ──
-      const cardsEl = document.getElementById('childCards');
-      cardsEl.innerHTML = children.map(c => `
-          <div class="child-card" data-org-id="${escapeHtml(c.id)}" data-org-name="${escapeHtml(c.name)}">
-            <div class="child-card-head">
-              <span class="child-card-arrow">↳</span>
-              <span class="child-card-name">${escapeHtml(c.name)}</span>
-              <span class="child-card-open">Open ›</span>
-            </div>
-          </div>`).join('');
-
-      cardsEl.querySelectorAll('.child-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const oid = card.dataset.orgId;
-          const oname = card.dataset.orgName;
-          if (window.activeOrg) window.activeOrg.set(oid, oname);
-          window.location.reload();
-        });
-      });
+      // v0.5.214 — Child Businesses card-list removed (user said it was just
+      // taking up real estate). Biz switcher dropdown in the navy header +
+      // Account tab still let users navigate to children.
     }
 
     // ── Parent / child context for the greeting row (v0.5.145) ──
