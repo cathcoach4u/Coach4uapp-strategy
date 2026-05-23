@@ -163,22 +163,26 @@
     .financial-value.empty { color: #aaa; }
     .financial-sub { font-size: 0.6rem; color: #aaa; }
 
+    /* Child cards on parent dashboard — match the .biz-card styling from
+       the account dashboard (border-radius, padding, name font, gap). v0.5.162 */
     .child-card {
-      background: white; border: 1.5px solid var(--border); border-radius: 10px;
-      padding: 12px 14px; margin-bottom: 8px;
-      cursor: pointer; transition: border-color .12s, box-shadow .12s;
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 10px;
+      cursor: pointer; transition: border-color .12s, box-shadow .15s;
+      position: relative;
     }
     .child-card:last-child { margin-bottom: 0; }
-    .child-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(13,148,136,0.1); }
+    .child-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(13,148,136,0.1); }
     .child-card-head {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 10px;
     }
-    .child-card-arrow { color: var(--accent); font-size: 1.1rem; font-weight: 800; line-height: 1; }
+    .child-card-arrow { color: var(--accent); font-size: 1.15rem; font-weight: 800; line-height: 1; }
     .child-card-name {
       flex: 1; min-width: 0;
-      font-size: 0.95rem; font-weight: 800; color: var(--primary);
+      font-size: 1.05rem; font-weight: 800; color: var(--primary);
     }
-    .child-card-open { font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+    .child-card-open { font-size: 0.78rem; color: var(--accent); font-weight: 700; }
     .child-card-mini {
       display: flex; gap: 12px; flex-wrap: wrap;
       font-size: 0.74rem; color: #666;
@@ -187,6 +191,11 @@
     .child-card-mini .label { color: #888; font-weight: 600; }
     .child-card-mini .val   { color: var(--primary); font-weight: 800; }
     .child-card-mini .val.empty { color: #aaa; font-weight: 700; }
+    /* Mobile parity with .biz-card-head media query on account dashboard */
+    @media (max-width: 600px) {
+      .child-card-head { gap: 6px; row-gap: 8px; }
+      .child-card-name { flex-basis: 100%; flex-grow: 1; font-size: 1rem; line-height: 1.25; margin-bottom: 2px; }
+    }
 
     /* ── Bottom nav ── */
     .bottom-nav {
@@ -390,7 +399,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.161</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.162</p>
 
   </div>
 

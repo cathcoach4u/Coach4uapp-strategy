@@ -4,6 +4,23 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.162
+- **Match child-card styling on parent dashboard to biz-card styling on account dashboard.** User: "The sections in parent and child fix the look of the name of business to match the account."
+- The `.child-card` rules in `business.html` parent-mode were close to but not identical to `.biz-card` in `index.html`. The biz name in child cards appeared smaller (0.95rem vs 1.05rem) and the cards had a tighter corner-radius and padding.
+- Updated to mirror the account dashboard:
+  - `border-radius: 10px → 12px`
+  - `padding: 12px 14px → 14px 16px`
+  - `child-card-head { gap: 8px → 10px; flex-wrap: wrap; }`
+  - `child-card-name { font-size: 0.95rem → 1.05rem; }`
+  - `child-card-arrow { font-size: 1.1rem → 1.15rem; }`
+  - `child-card-open { font-size: 0.7rem → 0.78rem; }`
+  - hover transition `box-shadow .12s → .15s` to match
+  - `position: relative` added so a future indent marker (↳ pseudo-element) can hang off the left
+- Added a `@media (max-width: 600px)` block matching the account dashboard: `.child-card-name { flex-basis: 100%; font-size: 1rem; }` so the name takes its own row on phones and the open/arrow row drops below.
+- **No SQL.**
+
+---
+
 ## v0.5.161
 - **Match the switcher dropdown width across all three account-level tabs.** User: "This version still is different on first page" (after v0.5.160 moved the New-Client button to its own row).
 - Root cause: `.switcher-select` on `index.html` had `min-width: 180px` only. On `account-users.html` + `account-setup.html` (where I added the switcher in v0.5.158) the rule was `min-width: 180px; flex: 1; max-width: 100%;`. Result: Businesses dropdown stayed at 180px with empty space; Users/Setup stretched full-width.
