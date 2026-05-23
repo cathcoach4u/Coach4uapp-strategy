@@ -241,9 +241,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-left">
-        <a href="index.html" class="header-back">&#x2190; Account</a>
         <span class="header-title">Your Business Coach</span>
-        <span id="activeBizName" class="biz-pill"></span>
       </div>
       <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
     </div>
@@ -258,12 +256,11 @@
       <span class="switcher-label">Business:</span>
       <select id="businessSwitcher" class="switcher-select"></select>
     </div>
-    <div class="biz-extra-action">
-      <div id="bizContext" style="display:none;font-size:0.78rem;">
+    <div class="biz-extra-action" id="bizContextRow" style="display:none;">
+      <div id="bizContext" style="font-size:0.78rem;">
         <a id="parentLink" href="#" style="color:var(--accent);font-weight:700;text-decoration:none;display:none;"></a>
         <span id="childrenInfo" style="color:#888;font-weight:600;display:none;margin-left:8px;"></span>
       </div>
-      <a href="index.html" class="switch-biz-link">Account dashboard &rsaquo;</a>
     </div>
 
     <!-- ── Standard dashboard (own org's data) — hidden when this biz is a parent ── -->
@@ -420,7 +417,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.163</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.164</p>
 
   </div>
 
@@ -831,7 +828,11 @@
         hasAny = true;
       }
 
-      if (hasAny) ctx.style.display = '';
+      if (hasAny) {
+        const row = document.getElementById('bizContextRow');
+        if (row) row.style.display = '';
+        ctx.style.display = '';
+      }
     }
 
     async function init() {

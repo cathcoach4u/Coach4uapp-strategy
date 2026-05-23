@@ -4,6 +4,19 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.164
+- **Removed redundant back/up nav from the parent + child business dashboard.** User: "I think the parent and child pages don't need back arrows and links at the top as they can use the tabs."
+- **Dropped from `business.html`:**
+  - The `<a href="index.html" class="header-back">← Account</a>` link in the navy header
+  - The `<a href="index.html" class="switch-biz-link">Account dashboard ›</a>` link in the v0.5.163 `.biz-extra-action` row
+  - The `<span id="activeBizName" class="biz-pill"></span>` from the header-left (left over from before the v0.5.141 sub-toolbar pill move and now redundant — the in-body `BUSINESS: [▾]` switcher is the identifier)
+- **Improved:** wrapped the `↑ Part of <parent>` / `↓ N child businesses` context line in a `#bizContextRow` that's hidden by default. `renderBizContext` only shows it when there's actual parent/child info to display — so standalone businesses no longer have an empty action row taking up space.
+- **Why it's safe:** the bottom-nav 🏛️ Account tab (added v0.5.142, kept across all business-level pages) gets you back to the account dashboard in one tap. No navigation path is lost.
+- **Out of scope:** other business-level pages (strategy.html, operations.html, goals.html, issues.html, etc.) still have `← Home` / `← Strategy` / `← Operations` chains in their navy headers. They could get the same treatment in a follow-up — the user only flagged parent/child (business.html) pages this round.
+- **No SQL.**
+
+---
+
 ## v0.5.163
 - **Business dashboard gets a `BUSINESS: [▾]` switcher row mirroring `ACCOUNT: [▾]` on the account tabs.** User: "Yes to 1 [BUSINESS: switcher row]. I just like consistency."
 - **Removed from `business.html`:**
