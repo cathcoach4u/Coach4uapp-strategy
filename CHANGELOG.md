@@ -4,6 +4,21 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.186
+- **Tidier toolbar on phones for the one-page plan + operations.** User screenshot of `one-page-plan.html` on iPhone showed the white screen-toolbar cramming 4 elements (`← Strategy` + page title + biz pill + Print button) into ~390px width — the page title was truncated to "One-P..." and the biz pill clipped to "I...".
+
+### Hide the toolbar page title on phones (≤ 600px)
+Below 600px viewport, `.toolbar-title` is set to `display: none`. The page title ("One-Page Business Plan" / "One-Page Operations") is redundant on a phone because the navy doc-header right below the toolbar already renders it prominently as `.doc-plan-title` ("ONE-PAGE BUSINESS PLAN" in large letterspaced caps). Dropping it from the toolbar frees enough room for the biz pill ("🏢 IASHQ") to render its full text. Desktop (> 600px) still shows the title in the toolbar.
+
+### Trim the Print button label
+"🖨️ Print / PDF" → "🖨️ Print" everywhere. Modern browsers' print dialog always includes "Save as PDF" anyway, so the "/ PDF" was redundant. On phones (≤ 600px), the button also gets a smaller padding (`8px 12px` vs `8px 14px`) and font-size (`0.78rem` vs `0.82rem`) so it takes less horizontal space.
+
+### Net effect
+- Phone toolbar: **`← Strategy · 🏢 IASHQ · 🖨️ Print`** — no truncation, all elements readable.
+- Desktop toolbar: **`← Strategy · One-Page Business Plan · 🏢 IASHQ · Print`** — unchanged.
+
+---
+
 ## v0.5.185
 - **One-page plan + one-page operations: screen-first layout for phones + portrait tablets.** User: "I really like the one page printed plan but can this information appear online screen first. ... I just think for those people that prefer to see it on screen."
 

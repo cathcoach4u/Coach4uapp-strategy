@@ -59,6 +59,17 @@
     .toolbar-hint { font-size: 0.72rem; color: #999; }
     @media (max-width: 600px) { .toolbar-hint { display: none; } }
 
+    /* v0.5.186 — on phones the toolbar has too many competing elements
+       (back link + page title + biz pill + Print button) so the title +
+       biz pill end up truncated to ellipsis. Hide the toolbar title on
+       phones — the doc header below already renders "ONE-PAGE OPERATIONS"
+       prominently, so it's redundant. Frees room for the biz pill to show
+       the full business name. */
+    @media (max-width: 600px) { .toolbar-title { display: none; } }
+    @media (max-width: 600px) {
+      .print-btn { padding: 8px 12px; font-size: 0.78rem; }
+    }
+
     .print-btn {
       display: flex;
       align-items: center;
@@ -363,7 +374,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <span class="toolbar-hint">Tap Print to save as PDF or print landscape A4</span>
-      <button class="print-btn" onclick="window.print()">&#x1F5A8;&nbsp; Print / PDF</button>
+      <button class="print-btn" onclick="window.print()">&#x1F5A8;&nbsp; Print</button>
     </div>
   </div>
 
