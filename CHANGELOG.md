@@ -4,6 +4,21 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.178
+- **Align heading positions across the 5 hub pages.** User: "If you look at each page the headings all start at a different spot. Should all be consistent."
+- **Root cause:** `css/style.css` line 161 sets a global `.container { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }`, with a `@media (max-width: 640px)` override to `padding: 20px 16px`. Four hubs (Home / Planning / Strategy / Operations) overrode only `padding-bottom: 80px` (or 88px) in their inline `<style>` blocks. CSS cascade: their other three sides inherited the global rule, so the heading sat ~32px (or ~20px on mobile) below the container top edge and ~20px (16px mobile) from the left. `learning-vault.html` used the shorthand `padding: 0 0 90px`, which **fully resets** all four sides to 0/0/90/0 — its heading sat at the container's top-left corner.
+- **Net visible difference on mobile:** Learn heading ~20px below container top, 16px from left edge. Other four hubs: heading ~40px below, ~32px from left edge. ~20px horizontal + ~20-32px vertical misalignment.
+- **Fix:** changed the four hubs' container rule from `padding-bottom: Xpx` to `padding: 0 0 Xpx;` (full shorthand) — same form Learn was already using:
+  - `business.html`: `padding-bottom: 88px` → `padding: 0 0 88px;`
+  - `planning.html`: `padding-bottom: 80px` → `padding: 0 0 80px;`
+  - `strategy.html`: same
+  - `operations.html`: same
+  - `learning-vault.html`: already correct (`padding: 0 0 90px`)
+- The `.ws-header` (and `.vault-header`) `padding: 20px 16px 0;` is now the sole thing controlling where each heading sits — identical on all five pages.
+- **No SQL.**
+
+---
+
 ## v0.5.177
 - **Center the "Run Weekly Meeting" button on the home page.** User: "Run weekly meeting box needs to be centred."
 - The button was using `display: flex; justify-content: space-between;` with a label-span on the left and a `›` arrow-span on the right. That made the label sit hard-left in a button right above two centred view-plan buttons — visually jarring.
