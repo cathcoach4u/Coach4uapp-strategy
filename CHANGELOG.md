@@ -4,6 +4,19 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.182
+- **Trim Targets card titles to just the timeframe.** User: "Change the targets to each target / 10 year, 5 year etc."
+- Dropped the "Goal" suffix from each card on `targets.html`. Net titles:
+  - "10-Year Goal" → "10-Year"
+  - "5-Year Goal" → "5-Year"
+  - "3-Year Goal" → "3-Year"
+  - "12-Month Goal" → "12-Month"
+- The Strategy hub still labels the section "Targets" (the worksheet title `🎯 Targets` is unchanged), so each card being just the timeframe reads cleanly.
+- Card descriptions, placeholders, columns (`ten_year`, `five_year`, `three_year_desc`, `one_year_goals`) and save logic unchanged.
+- **No SQL.**
+
+---
+
 ## v0.5.181
 - **Simplify the Targets worksheet: one text box per timeframe + new 5-Year Goal.** User: "Change targets and move to individual boxes for 10 year goal / 5 year goal / 3 year goal / 12 month goal."
 - **Before:** 3 worksheet cards.
