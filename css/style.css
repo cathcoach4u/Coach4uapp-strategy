@@ -136,6 +136,23 @@ select.biz-pill option { background: white; color: var(--text); font-weight: 600
 }
 .sign-out-btn:hover { background: rgba(255,255,255,0.25); color: white; }
 
+/* v0.5.165 — Account icon button in top-right of business-level page headers.
+   Replaces the Account tab in the bottom nav so working on a business feels
+   in-flow; navigating to the account area becomes an intentional top-right tap. */
+.header-account-btn {
+  background: rgba(255,255,255,0.15); color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-sm);
+  width: 32px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1;
+  text-decoration: none;
+  margin-left: auto;
+  margin-right: 8px;
+  transition: background 0.2s;
+}
+.header-account-btn:hover { background: rgba(255,255,255,0.25); color: white; text-decoration: none; }
+
 /* ----- Layout ----- */
 .container { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
 .page-title { font-size: 28px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }

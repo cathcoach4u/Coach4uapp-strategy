@@ -4,6 +4,19 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.165
+- **Move the Account control off the bottom nav on every business-level page.** User: "I just think the flow of working on the account is not as good when it is clicked on. Need an intentional reason to go to the account area."
+- **New CSS class `.header-account-btn`** in `css/style.css`: white-translucent rounded button, 32×28, hosts the `🏛️` glyph, `margin-left: auto` so it sits flush right inside `.header-inner` and pulls the existing `.sign-out-btn` along with it.
+- **HTML change on 22 business-level pages** (Python regex pass):
+  - Inserted `<a href="index.html" class="header-account-btn" title="Account dashboard" aria-label="Account dashboard">🏛️</a>` immediately before the `<button id="signOutBtn">` element in the navy header
+  - Removed the `<a class="bottom-nav-item" href="index.html">…Account…</a>` element from the bottom nav (handles both single-line and multi-line markup)
+- **Files patched (22):** `annual-sessions.html`, `business.html`, `core-focus.html`, `core-values.html`, `financials.html`, `goals.html`, `issues.html`, `leadership-team.html`, `learning-vault.html`, `marketing-strategy.html`, `meeting.html`, `operations.html`, `planning.html`, `quarterly-sessions.html`, `run-annual-session.html`, `run-meeting.html`, `run-quarterly-session.html`, `run-team-checkin.html`, `scorecard.html`, `strategy.html`, `targets.html`, `team-checkins.html`. Script reports `injected button on 22 files, removed Account nav from 22 files`.
+- **Net effect:** the bottom nav on business pages goes from 5 items (Planning / Strategy / Operations / Learn / Account) → **4 items** (Planning / Strategy / Operations / Learn). Working in a business feels in-flow. To leave, the user taps the small Account icon at the top-right — a more intentional gesture than tapping inside the bottom nav.
+- **Account-level pages (`index.html` / `account-users.html` / `account-setup.html`) untouched** — they already have no Account button (they ARE account-level) and use their own 3-tab bottom nav.
+- **No SQL.**
+
+---
+
 ## v0.5.164
 - **Removed redundant back/up nav from the parent + child business dashboard.** User: "I think the parent and child pages don't need back arrows and links at the top as they can use the tabs."
 - **Dropped from `business.html`:**
