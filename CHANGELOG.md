@@ -4,6 +4,14 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.161
+- **Match the switcher dropdown width across all three account-level tabs.** User: "This version still is different on first page" (after v0.5.160 moved the New-Client button to its own row).
+- Root cause: `.switcher-select` on `index.html` had `min-width: 180px` only. On `account-users.html` + `account-setup.html` (where I added the switcher in v0.5.158) the rule was `min-width: 180px; flex: 1; max-width: 100%;`. Result: Businesses dropdown stayed at 180px with empty space; Users/Setup stretched full-width.
+- Fix: added the missing `flex: 1; max-width: 100%;` declarations to `index.html`'s `.switcher-select` rule. The `Account: [dropdown ▾]` row now renders pixel-identically on all three tabs.
+- **No SQL.**
+
+---
+
 ## v0.5.160
 - **Make the `Account:` row identical across the three account-level tabs.** User: "Account : is different on first page to the other 2."
 - The `+ New client account` button was inline with the switcher on `index.html` (`<div class="acct-switcher">…<button class="switcher-btn">+ New client account</button></div>`). The button:
