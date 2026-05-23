@@ -4,6 +4,65 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.197
+- **Planning Cadence inheritance — children inherit parent's dates by default.** User: "Will these dates appear on parent and child versions?" + "Yes" (to adding inheritance).
+
+Mirrors the v0.5.145 inheritance pattern (Core Values / Core Focus / Targets). For most holding companies the planning rhythm is shared across the whole group — you do annual planning together, quarterly sessions together. This change lets the parent set the cadence once and every child reads the same dates by default.
+
+### Schema — `supabase/v0.5.197-delta.sql`
+One additive SELECT policy on `business_cadence`:
+```sql
+CREATE POLICY "children read parent cadence" ON public.business_cadence
+  FOR SELECT
+  USING (
+    organisation_id IN (
+      SELECT parent_organisation_id
+      FROM public.organisations
+      WHERE id IN (SELECT public.user_org_ids(auth.uid()))
+        AND parent_organisation_id IS NOT NULL
+    )
+  );
+```
+A user can SELECT a cadence row if its `organisation_id` is the `parent_organisation_id` of any org they're a member of. INSERT/UPDATE/DELETE still require admin+coach on the row's org — the new policy is read-only and purely additive.
+
+### `cadence.html` — inheritance UI
+- Detects this org's `parent_organisation_id` and loads own + parent cadence in parallel.
+- Picks a mode:
+  - `own` — has own row, no parent.
+  - `inherited` — no own row but parent has one. Inputs disabled, populated with parent's dates.
+  - `override` — own row AND parent has one. Inputs enabled, populated with own dates.
+  - `empty` — no own, no inherit-able parent.
+- New banner element at the top of the form:
+  - **Inherited mode**: teal `📥 Inherited from <Parent>. These dates flow down from the parent. [Override locally]`.
+  - **Override mode**: amber `✏️ Overridden locally from <Parent>. This business has its own dates. [Revert to parent]`.
+- **Override locally** button → snapshots the parent's row into a new own row, switches to override mode.
+- **Revert to parent** button → confirm prompt → deletes the own row → switches back to inherited mode (data is re-populated from the parent's row).
+- `saveRow` + `scheduleSave` are no-ops when `mode === 'inherited'` (defence in depth — inputs are already disabled).
+- On first save in `empty` mode, the row is created and the form transitions to `own` (or `override` if a parent has its own row too).
+- `ws-input:disabled` styling: greyed-out background, `cursor: not-allowed`, muted text colour.
+
+### `business.html` — Year Flow falls back to parent
+`loadAndRenderYearFlow(orgId, targetId)` now:
+1. Tries to load this org's own cadence row.
+2. If empty, looks up `organisations.parent_organisation_id` for this org and tries the parent's cadence.
+3. Renders whichever it finds.
+
+Child dashboards now transparently show the parent's Year Flow timeline without any UI change — same dates, no banner (inheritance is silent on the dashboard, the cadence page is where it's explicit).
+
+### `one-page-plan.html` — plan-year anchor falls back to parent
+The cadence query in the doc header runs the same fallback: own → parent → calendar year. So a child biz's one-pager shows the parent's plan year (e.g. `Apr 2026 – Mar 2027`) without needing its own cadence row.
+
+### Out of scope
+- `account-plans.html` (cross-business strategy carousel) wasn't updated. Each business's plan-year label there still keys off its own cadence row only. Easy follow-up if needed — add `parent_organisation_id` to the orgs select and check the byOrg map for the parent's cadence before falling back to the calendar year.
+
+### How to use
+1. Run the v0.5.197 SQL.
+2. On IASHQ, set the Planning Cadence dates (annual + Q1/Q2/Q3 + weekly).
+3. Switch to a child biz (IAS General, IAS Life, IAS Outsourcing). The Year Flow on the home dashboard now shows IASHQ's dates. The Cadence page shows a teal "Inherited from IASHQ" banner with the inputs disabled.
+4. To set different dates for a child, open the Cadence page on that child and tap **Override locally** — a fresh copy of the parent's dates becomes editable, and the banner turns amber. Tap **Revert to parent** to undo.
+
+---
+
 ## v0.5.196
 - **Year Flow panel now appears on the parent dashboard too.** User: "This is not appearing on this version."
 

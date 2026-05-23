@@ -38,6 +38,27 @@
     }
     .summary-line.muted { color: #999; font-weight: 500; font-style: italic; }
 
+    /* v0.5.197 — parent → child inheritance banner */
+    .inherit-banner {
+      padding: 12px 14px; border-radius: 8px;
+      margin: 0 16px 14px;
+      font-size: 0.85rem; line-height: 1.45;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+    }
+    .inherit-banner.hidden { display: none; }
+    .inherit-banner.inherited { background: #ecfdf5; color: #047857; border-left: 3px solid var(--accent); }
+    .inherit-banner.overridden { background: #fef3c7; color: #92400e; border-left: 3px solid #f59e0b; }
+    .inherit-banner-btn {
+      background: white; border: 1px solid currentColor;
+      padding: 6px 14px; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 700;
+      color: inherit; cursor: pointer;
+      transition: opacity 0.15s; white-space: nowrap;
+    }
+    .inherit-banner-btn:hover { opacity: 0.85; }
+    .ws-input:disabled, .ws-select:disabled { background: #fafbfc; color: #777; cursor: not-allowed; }
+
     .ws-save-bar { position: fixed; bottom: 56px; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); z-index: 90; }
     .save-status { font-size: 0.78rem; color: #888; }
     .ws-btn { padding: 9px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.15s; }
@@ -68,6 +89,9 @@
       <h1 class="ws-title">&#x1F4C5; Planning Cadence</h1>
       <p class="ws-sub">When you run your annual planning, quarterly sessions, and weekly team meeting. The annual planning date anchors your plan year &mdash; the One-Page Plan uses it.</p>
     </div>
+
+    <!-- v0.5.197 — parent → child inheritance banner -->
+    <div class="inherit-banner hidden" id="inheritBanner"></div>
 
     <!-- Annual Planning -->
     <div class="ws-card">
@@ -200,6 +224,18 @@
     const data = {};
     let saveTimer = null;
 
+    // v0.5.197 — inheritance state
+    let mode = 'empty';        // 'own' | 'inherited' | 'override' | 'empty'
+    let parentId = null;
+    let parentName = null;
+    let parentCad = null;
+    let ownExists = false;
+
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    }
+
     function setStatus(text, color) {
       const el = document.getElementById('saveStatus');
       if (!el) return;
@@ -265,6 +301,7 @@
     }
 
     async function saveRow() {
+      if (mode === 'inherited') return;  // v0.5.197 — don't save when viewing parent's row
       const payload = { organisation_id: orgId, updated_at: new Date().toISOString() };
       FIELDS.forEach(k => { payload[k] = data[k] || null; });
       const { error } = await supabase
@@ -279,32 +316,146 @@
         }
         return;
       }
+      // First save transitions 'empty' → 'own' (or 'override' if a parent exists with data)
+      if (!ownExists) {
+        ownExists = true;
+        mode = (parentId && parentCad) ? 'override' : 'own';
+        applyModeUI();
+      }
       flashSaved();
     }
     function scheduleSave() {
+      if (mode === 'inherited') return;  // v0.5.197 — inputs are disabled anyway, but guard.
       setStatus('Saving…', '#c98a00');
       clearTimeout(saveTimer);
       saveTimer = setTimeout(saveRow, DEBOUNCE_MS);
     }
 
+    // v0.5.197 — Load this org's metadata + own cadence + (if child) parent cadence,
+    // then determine mode and populate the form's data dict.
     async function loadRow() {
-      const { data: row, error } = await supabase
-        .from('business_cadence')
-        .select('*')
-        .eq('organisation_id', orgId)
+      // 1. Fetch this org's parent_organisation_id
+      const orgMetaRes = await supabase
+        .from('organisations')
+        .select('parent_organisation_id')
+        .eq('id', orgId)
         .maybeSingle();
-      if (error) {
-        console.warn('Load cadence failed:', error.message);
-        if (/business_cadence/.test(error.message) && /does not exist/i.test(error.message)) {
+      if (orgMetaRes.data && orgMetaRes.data.parent_organisation_id) {
+        parentId = orgMetaRes.data.parent_organisation_id;
+      }
+
+      // 2. Fetch own cadence + (if child) parent's cadence + parent's name in parallel.
+      const promises = [
+        supabase.from('business_cadence').select('*').eq('organisation_id', orgId).maybeSingle()
+      ];
+      if (parentId) {
+        promises.push(
+          supabase.from('business_cadence').select('*').eq('organisation_id', parentId).maybeSingle(),
+          supabase.from('organisations').select('name').eq('id', parentId).maybeSingle()
+        );
+      }
+      const results = await Promise.all(promises);
+      const ownRes = results[0];
+      const parentRes = parentId ? results[1] : { data: null };
+      const parentMetaRes = parentId ? results[2] : { data: null };
+
+      // Detect missing-table error (migration not applied yet)
+      if (ownRes.error) {
+        if (/business_cadence/.test(ownRes.error.message) && /does not exist/i.test(ownRes.error.message)) {
           setStatus('Schema not migrated yet — run supabase/v0.5.192-delta.sql', '#c33');
+        } else {
+          console.warn('Load cadence failed:', ownRes.error.message);
         }
         return;
       }
-      const r = row || {};
-      FIELDS.forEach(k => {
-        // dates/times come back as ISO strings; <input type="date|time"> accepts them as-is.
-        data[k] = r[k] || '';
-      });
+
+      const ownRow = ownRes.data || null;
+      parentCad = (parentRes && !parentRes.error) ? parentRes.data : null;
+      parentName = (parentMetaRes && parentMetaRes.data && parentMetaRes.data.name) || null;
+      ownExists = !!ownRow;
+
+      // Determine mode
+      if (ownExists && parentId && parentCad) {
+        mode = 'override';
+      } else if (ownExists) {
+        mode = 'own';
+      } else if (parentId && parentCad) {
+        mode = 'inherited';
+      } else {
+        mode = 'empty';
+      }
+
+      // Populate form data from the right source
+      const sourceRow = (mode === 'inherited') ? (parentCad || {}) : (ownRow || {});
+      FIELDS.forEach(k => { data[k] = sourceRow[k] || ''; });
+    }
+
+    function applyModeUI() {
+      const banner = document.getElementById('inheritBanner');
+      if (!banner) return;
+
+      if (mode === 'inherited') {
+        const who = parentName ? '<strong>' + escHtml(parentName) + '</strong>' : 'parent business';
+        banner.className = 'inherit-banner inherited';
+        banner.innerHTML =
+          `<div>📥 Inherited from ${who}. These dates flow down from the parent.</div>` +
+          `<button class="inherit-banner-btn" id="overrideBtn">Override locally</button>`;
+        document.getElementById('overrideBtn').addEventListener('click', overrideLocally);
+      } else if (mode === 'override') {
+        const who = parentName ? ' from <strong>' + escHtml(parentName) + '</strong>' : '';
+        banner.className = 'inherit-banner overridden';
+        banner.innerHTML =
+          `<div>✏️ Overridden locally${who}. This business has its own dates.</div>` +
+          `<button class="inherit-banner-btn" id="revertBtn">Revert to parent</button>`;
+        document.getElementById('revertBtn').addEventListener('click', revertToParent);
+      } else {
+        banner.className = 'inherit-banner hidden';
+        banner.innerHTML = '';
+      }
+
+      // Disable inputs in inherited mode (read-only view of parent's dates).
+      const disabled = (mode === 'inherited');
+      document.querySelectorAll('[data-key]').forEach(el => { el.disabled = disabled; });
+    }
+
+    async function overrideLocally() {
+      // Snapshot parent's cadence row into this org's own row, then switch to override mode.
+      setStatus('Creating local copy…', '#c98a00');
+      const payload = { organisation_id: orgId, updated_at: new Date().toISOString() };
+      FIELDS.forEach(k => { payload[k] = (parentCad && parentCad[k]) || null; });
+      const { error } = await supabase
+        .from('business_cadence')
+        .upsert(payload, { onConflict: 'organisation_id' });
+      if (error) {
+        setStatus('Could not override: ' + error.message, '#c33');
+        return;
+      }
+      ownExists = true;
+      mode = 'override';
+      applyModeUI();
+      flashSaved();
+    }
+
+    async function revertToParent() {
+      if (!confirm('Revert to ' + (parentName || 'parent') + '\'s planning cadence? Your local dates will be deleted.')) return;
+      setStatus('Reverting…', '#c98a00');
+      const { error } = await supabase
+        .from('business_cadence')
+        .delete()
+        .eq('organisation_id', orgId);
+      if (error) {
+        setStatus('Could not revert: ' + error.message, '#c33');
+        return;
+      }
+      ownExists = false;
+      mode = parentCad ? 'inherited' : 'empty';
+      // Re-populate data from parent (or clear) and refresh inputs.
+      const src = (mode === 'inherited') ? (parentCad || {}) : {};
+      FIELDS.forEach(k => { data[k] = src[k] || ''; });
+      document.querySelectorAll('[data-key]').forEach(el => { el.value = data[el.dataset.key] || ''; });
+      applyModeUI();
+      renderSummaries();
+      flashSaved();
     }
 
     function wireForm() {
@@ -343,6 +494,7 @@
 
       try { await loadRow(); } catch (e) { console.warn('Load error:', e); }
       wireForm();
+      applyModeUI();
       document.body.style.opacity = '1';
     }
     init();

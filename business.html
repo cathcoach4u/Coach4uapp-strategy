@@ -473,7 +473,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.196</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.197</p>
 
   </div>
 
@@ -701,6 +701,8 @@
     }
 
     // Shared loader so both standardMode and parentMode can render the Year Flow.
+    // v0.5.197 — falls back to the parent biz's cadence when this org has no
+    // own row (mirrors the v0.5.145 children-read-parent inheritance pattern).
     async function loadAndRenderYearFlow(orgId, targetId) {
       try {
         const { data: cad, error: cadErr } = await supabase
@@ -711,9 +713,30 @@
         if (cadErr) {
           console.warn('Year flow load:', cadErr.message);
           renderYearFlow(null, targetId);
-        } else {
-          renderYearFlow(cad, targetId);
+          return;
         }
+        if (cad) {
+          renderYearFlow(cad, targetId);
+          return;
+        }
+        // No own cadence — see if this org has a parent biz with one.
+        const { data: orgRow } = await supabase
+          .from('organisations')
+          .select('parent_organisation_id')
+          .eq('id', orgId)
+          .maybeSingle();
+        if (orgRow && orgRow.parent_organisation_id) {
+          const { data: parentCad } = await supabase
+            .from('business_cadence')
+            .select('*')
+            .eq('organisation_id', orgRow.parent_organisation_id)
+            .maybeSingle();
+          if (parentCad) {
+            renderYearFlow(parentCad, targetId);
+            return;
+          }
+        }
+        renderYearFlow(null, targetId);
       } catch (e) {
         console.warn('Year flow load error:', e);
         renderYearFlow(null, targetId);

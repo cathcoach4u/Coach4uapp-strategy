@@ -692,15 +692,36 @@
       setYearLabel(null);  // tentative default while we fetch
       // v0.5.193 — prefer last_annual_planning_date (when the plan year actually
       // started); fall back to annual_planning_date if that's not set.
-      supabase.from('business_cadence')
-        .select('last_annual_planning_date, annual_planning_date')
-        .eq('organisation_id', orgId)
-        .maybeSingle()
-        .then(({ data: cad, error: cadErr }) => {
-          if (cadErr) { console.warn('Cadence load:', cadErr.message); return; }
-          if (!cad) return;
+      // v0.5.197 — if this org has no cadence row but has a parent biz, fall back
+      // to the parent's cadence so child businesses inherit the plan year.
+      (async () => {
+        const { data: cad, error: cadErr } = await supabase
+          .from('business_cadence')
+          .select('last_annual_planning_date, annual_planning_date')
+          .eq('organisation_id', orgId)
+          .maybeSingle();
+        if (cadErr) { console.warn('Cadence load:', cadErr.message); return; }
+        if (cad) {
           setYearLabel(cad.last_annual_planning_date || cad.annual_planning_date);
-        });
+          return;
+        }
+        // No own row — check for parent cadence.
+        const { data: orgRow } = await supabase
+          .from('organisations')
+          .select('parent_organisation_id')
+          .eq('id', orgId)
+          .maybeSingle();
+        if (orgRow && orgRow.parent_organisation_id) {
+          const { data: parentCad } = await supabase
+            .from('business_cadence')
+            .select('last_annual_planning_date, annual_planning_date')
+            .eq('organisation_id', orgRow.parent_organisation_id)
+            .maybeSingle();
+          if (parentCad) {
+            setYearLabel(parentCad.last_annual_planning_date || parentCad.annual_planning_date);
+          }
+        }
+      })();
 
       // Build the 24-month window: 12 past + 12 future (current included in future)
       const today = new Date();
