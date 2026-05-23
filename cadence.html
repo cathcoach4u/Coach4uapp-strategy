@@ -72,32 +72,76 @@
     <!-- Annual Planning -->
     <div class="ws-card">
       <div class="ws-card-title">Annual Planning</div>
-      <div class="ws-card-desc">One full day per year to refresh the long-term plan and set Q1 goals. This date anchors your plan year (e.g. <em>Apr 2026 &ndash; Mar 2027</em>).</div>
-      <label class="ws-label" for="annual-date">Next annual planning date</label>
-      <input type="date" id="annual-date" class="ws-input" data-key="annual_planning_date" />
+      <div class="ws-card-desc">One or two days a year to refresh the long-term plan and set Q1 goals. The most recent date anchors your plan year (e.g. <em>Apr 2026 &ndash; Mar 2027</em>).</div>
+
+      <label class="ws-label" for="last-annual-date">Last annual planning date</label>
+      <input type="date" id="last-annual-date" class="ws-input" data-key="last_annual_planning_date" />
+
+      <label class="ws-label" style="margin-top:14px;">Next annual planning</label>
+      <div class="q-grid">
+        <div>
+          <label class="ws-label" for="annual-date" style="font-size:0.66rem;color:#888;">Day 1</label>
+          <input type="date" id="annual-date" class="ws-input" data-key="annual_planning_date" />
+        </div>
+        <div>
+          <label class="ws-label" for="annual-date-2" style="font-size:0.66rem;color:#888;">Day 2 (optional)</label>
+          <input type="date" id="annual-date-2" class="ws-input" data-key="annual_planning_date_2" />
+        </div>
+      </div>
+
       <div class="summary-line muted" id="annual-summary">No annual planning date set yet.</div>
     </div>
 
     <!-- Quarterly Sessions -->
     <div class="ws-card">
       <div class="ws-card-title">Quarterly Sessions</div>
-      <div class="ws-card-desc">Half- or full-day session each quarter to review the last 90 days and lock in the next 90. Leave any blank if you don&rsquo;t run that one.</div>
+      <div class="ws-card-desc">Half- or full-day session each quarter to review the last 90 days and lock in the next 90. Day 2 is optional &mdash; use it if the session runs across two days.</div>
+
+      <label class="ws-label" style="margin-top:6px;">Q1 session</label>
       <div class="q-grid">
         <div>
-          <label class="ws-label" for="q1-date">Q1 session</label>
+          <label class="ws-label" for="q1-date" style="font-size:0.66rem;color:#888;">Day 1</label>
           <input type="date" id="q1-date" class="ws-input" data-key="q1_session_date" />
         </div>
         <div>
-          <label class="ws-label" for="q2-date">Q2 session</label>
+          <label class="ws-label" for="q1-date-2" style="font-size:0.66rem;color:#888;">Day 2 (optional)</label>
+          <input type="date" id="q1-date-2" class="ws-input" data-key="q1_session_date_2" />
+        </div>
+      </div>
+
+      <label class="ws-label" style="margin-top:14px;">Q2 session</label>
+      <div class="q-grid">
+        <div>
+          <label class="ws-label" for="q2-date" style="font-size:0.66rem;color:#888;">Day 1</label>
           <input type="date" id="q2-date" class="ws-input" data-key="q2_session_date" />
         </div>
         <div>
-          <label class="ws-label" for="q3-date">Q3 session</label>
+          <label class="ws-label" for="q2-date-2" style="font-size:0.66rem;color:#888;">Day 2 (optional)</label>
+          <input type="date" id="q2-date-2" class="ws-input" data-key="q2_session_date_2" />
+        </div>
+      </div>
+
+      <label class="ws-label" style="margin-top:14px;">Q3 session</label>
+      <div class="q-grid">
+        <div>
+          <label class="ws-label" for="q3-date" style="font-size:0.66rem;color:#888;">Day 1</label>
           <input type="date" id="q3-date" class="ws-input" data-key="q3_session_date" />
         </div>
         <div>
-          <label class="ws-label" for="q4-date">Q4 session</label>
+          <label class="ws-label" for="q3-date-2" style="font-size:0.66rem;color:#888;">Day 2 (optional)</label>
+          <input type="date" id="q3-date-2" class="ws-input" data-key="q3_session_date_2" />
+        </div>
+      </div>
+
+      <label class="ws-label" style="margin-top:14px;">Q4 session</label>
+      <div class="q-grid">
+        <div>
+          <label class="ws-label" for="q4-date" style="font-size:0.66rem;color:#888;">Day 1</label>
           <input type="date" id="q4-date" class="ws-input" data-key="q4_session_date" />
+        </div>
+        <div>
+          <label class="ws-label" for="q4-date-2" style="font-size:0.66rem;color:#888;">Day 2 (optional)</label>
+          <input type="date" id="q4-date-2" class="ws-input" data-key="q4_session_date_2" />
         </div>
       </div>
     </div>
@@ -146,10 +190,15 @@
       'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
     );
 
-    // v0.5.192 — Planning Cadence: per-org rhythm settings (business_cadence table).
+    // v0.5.192/193 — Planning Cadence: per-org rhythm settings (business_cadence table).
+    // v0.5.193 adds last_annual_planning_date + *_date_2 for each session.
     const FIELDS = [
-      'annual_planning_date',
-      'q1_session_date', 'q2_session_date', 'q3_session_date', 'q4_session_date',
+      'last_annual_planning_date',
+      'annual_planning_date', 'annual_planning_date_2',
+      'q1_session_date', 'q1_session_date_2',
+      'q2_session_date', 'q2_session_date_2',
+      'q3_session_date', 'q3_session_date_2',
+      'q4_session_date', 'q4_session_date_2',
       'weekly_meeting_day', 'weekly_meeting_time'
     ];
     const DEBOUNCE_MS = 350;
@@ -190,14 +239,17 @@
     }
 
     function renderSummaries() {
-      // Annual summary — show "Plan year: <annual_date> – <annual_date + 1 year>"
+      // Annual summary — plan year anchored by last_annual_planning_date if set,
+      // else by annual_planning_date (the next one), else hidden.
       const aSum = document.getElementById('annual-summary');
-      if (data.annual_planning_date) {
-        const start = new Date(data.annual_planning_date + 'T00:00:00');
+      const anchor = data.last_annual_planning_date || data.annual_planning_date;
+      if (anchor) {
+        const start = new Date(anchor + 'T00:00:00');
         const end = new Date(start); end.setFullYear(end.getFullYear() + 1); end.setDate(end.getDate() - 1);
         const opts = { month: 'short', year: 'numeric' };
+        const which = data.last_annual_planning_date ? '' : ' (anchored from next session)';
         aSum.textContent = 'Plan year: ' + start.toLocaleDateString('en-AU', opts) +
-                           ' – ' + end.toLocaleDateString('en-AU', opts);
+                           ' – ' + end.toLocaleDateString('en-AU', opts) + which;
         aSum.classList.remove('muted');
       } else {
         aSum.textContent = 'No annual planning date set yet.';

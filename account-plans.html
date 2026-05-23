@@ -605,7 +605,10 @@
       const ms = data.marketing || {};
       const team = data.team || [];
 
-      const year = planYearLabel(data.cadence && data.cadence.annual_planning_date);
+      // v0.5.193 — prefer last_annual_planning_date (anchors the current plan year),
+      // fall back to annual_planning_date (the upcoming session) if not set.
+      const cad = data.cadence || {};
+      const year = planYearLabel(cad.last_annual_planning_date || cad.annual_planning_date);
 
       return `
         <div class="doc-preview">
@@ -779,7 +782,7 @@
           .gte('period', isoMonth(PAST[0]))
           .lte('period', isoMonth(FUTURE[FUTURE.length - 1])),
         sb.from('business_cadence')
-          .select('organisation_id, annual_planning_date')
+          .select('organisation_id, last_annual_planning_date, annual_planning_date')
           .in('organisation_id', orgIds)
       ]);
 

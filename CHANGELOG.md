@@ -4,6 +4,46 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.193
+- **Planning Cadence extensions: last-annual date + 2nd-day per session.** User: "Add in planning cadence — Last annual planning date. And add 2 dates for every session in case they want to do more than one."
+
+### Schema — `supabase/v0.5.193-delta.sql`
+6 nullable `date` columns added to `business_cadence`:
+```sql
+ALTER TABLE public.business_cadence
+  ADD COLUMN IF NOT EXISTS last_annual_planning_date date,
+  ADD COLUMN IF NOT EXISTS annual_planning_date_2     date,
+  ADD COLUMN IF NOT EXISTS q1_session_date_2          date,
+  ADD COLUMN IF NOT EXISTS q2_session_date_2          date,
+  ADD COLUMN IF NOT EXISTS q3_session_date_2          date,
+  ADD COLUMN IF NOT EXISTS q4_session_date_2          date;
+```
+No RLS change — the v0.5.192 policies cover the new columns automatically.
+
+### `cadence.html` — form layout
+- **Annual Planning card** now stacks:
+  - `Last annual planning date` (when the last one happened — the new plan-year anchor)
+  - `Next annual planning` → `Day 1` + `Day 2 (optional)` in a 2-column grid
+- **Quarterly Sessions card** — each quarter is now its own labeled block with `Day 1` + `Day 2 (optional)` side-by-side:
+  ```
+  Q1 session
+    [Day 1]    [Day 2 (optional)]
+  Q2 session
+    [Day 1]    [Day 2 (optional)]
+  …
+  ```
+- The plan-year summary line at the bottom of the Annual card now prefers `last_annual_planning_date` if set; otherwise uses `annual_planning_date` with the suffix `"(anchored from next session)"` so the user knows which date is driving the label.
+- `FIELDS` array bumped from 7 entries to 13 to include all new columns. Same upsert pattern; auto-save still 350ms debounce.
+
+### Plan-year anchor — One-Page Plan + carousel
+- `one-page-plan.html` — the `business_cadence` query now selects both `last_annual_planning_date` and `annual_planning_date`; the doc-header year label picks `last_annual_planning_date` first (because that's when the current plan year actually started), then falls back to `annual_planning_date`, then to the current calendar year.
+- `account-plans.html` — same precedence applied per business in the carousel. The `cadence` object on each org now holds both dates and `planYearLabel(...)` picks the right anchor.
+
+### Why
+A business does annual planning on (say) Apr 1, 2026 — that's when the current plan year *started*. The "next" annual planning date (Apr 1, 2027) is the *end* of the plan year, not the start. Using `last_annual_planning_date` as the anchor produces a more honest "Plan year: Apr 2026 – Mar 2027" label on the One-Page Plan.
+
+---
+
 ## v0.5.192
 - **Planning Cadence — per-business rhythm record + plan-year anchor on the one-page plan.** User: "One page plan dates are 10 years. This isn't correct. It's only ever one year some might start at different times so where does the date get listed" + "In planning I want to be able to allocate dates for annual planning date then the quarterly sessions. Then a day to list the weekly day and time."
 
