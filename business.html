@@ -16,38 +16,15 @@
     body { opacity: 0; transition: opacity 0.2s ease; background: #f4f6f9; }
     .container { padding-bottom: 88px; }
 
-    /* ── Business switcher (v0.5.163) — mirrors .acct-switcher on the account tabs ── */
-    /* Hide the sub-toolbar pill from active-org.js — the in-body switcher below replaces it */
-    .biz-switcher-bar { display: none !important; }
-
-    .biz-switcher {
-      display: flex; align-items: center; gap: 10px;
-      padding: 16px 16px 0; flex-wrap: wrap;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 14px; margin-bottom: 6px;
-    }
-    .switcher-label {
-      font-size: 0.7rem; color: #888; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .switcher-select {
-      padding: 7px 10px; border-radius: 8px;
-      border: 1px solid var(--border);
-      font-family: inherit; font-size: 0.88rem; font-weight: 700;
-      color: var(--primary); background: white;
-      min-width: 180px; cursor: pointer;
-      flex: 1; max-width: 100%;
-    }
+    /* v0.5.172 — Removed the in-body BUSINESS: [▾] row that was added in v0.5.163.
+       The compact green pill from js/active-org.js (in .biz-switcher-bar below the
+       navy header) is now the canonical business switcher on this page too, matching
+       every other business-level page. Just keep .biz-extra-action for the parent /
+       child context line. */
     .biz-extra-action {
       display: flex; justify-content: space-between; align-items: center;
       padding: 0 16px 8px; gap: 12px; flex-wrap: wrap;
     }
-    .switch-biz-link {
-      display: inline-block;
-      font-size: 0.72rem; font-weight: 700; color: var(--accent);
-      text-decoration: none; letter-spacing: 0.3px;
-    }
-    .switch-biz-link:hover { text-decoration: underline; }
 
     /* ── Stat tiles ── */
     .stat-row {
@@ -250,13 +227,11 @@
 
   <div class="container">
 
-    <!-- Business switcher (v0.5.163) — mirrors the ACCOUNT: switcher pattern on
-         index.html / account-users.html / account-setup.html. Replaces the big
-         greeting heading + date that used to live here. -->
-    <div class="biz-switcher" id="bizSwitcherRow" style="display:none;">
-      <span class="switcher-label">Business:</span>
-      <select id="businessSwitcher" class="switcher-select"></select>
-    </div>
+    <!-- v0.5.172 — Removed the in-body BUSINESS: [▾] row that was added in
+         v0.5.163. The compact green pill from js/active-org.js (in the sub-toolbar
+         below the navy header) is the canonical business switcher on every
+         business-level page, including this one. The parent/child context line
+         stays here as a separate row. -->
     <div class="biz-extra-action" id="bizContextRow" style="display:none;">
       <div id="bizContext" style="font-size:0.78rem;">
         <a id="parentLink" href="#" style="color:var(--accent);font-weight:700;text-decoration:none;display:none;"></a>
@@ -418,7 +393,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.171</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.172</p>
 
   </div>
 
@@ -870,52 +845,6 @@
       // Cache the resolved business name so other business-level pages can render the header pill
       if (window.activeOrg && activeRow.organisations) {
         window.activeOrg.set(activeId, activeRow.organisations.name);
-      }
-
-      // Populate the BUSINESS: [▾] switcher row (v0.5.163). Mirrors the ACCOUNT
-      // switcher on the account tabs — same CSS, same change-handler pattern.
-      // Scope (v0.5.166): only show businesses in the SAME parent-child group as the
-      // active biz. If active is a parent → parent + its children. If active is a
-      // child → its parent + all siblings (children of that parent). If active is
-      // a standalone → just itself. This keeps the dropdown focused on the group
-      // you're working with (e.g., IAS HQ + IAS General/Life/Outsourcing) rather
-      // than listing every business across every account you own.
-      const activeOrg = activeRow.organisations;
-      let groupMems;
-      // "Parent of the group" — same value whether the active biz IS the parent
-      // (so groupParentId = activeOrg.id) or is one of its children (groupParentId
-      // = activeOrg.parent_organisation_id). Used to keep the parent at the top
-      // of the dropdown (v0.5.168).
-      const groupParentId = activeOrg.parent_organisation_id || activeOrg.id;
-      groupMems = memberships.filter(m =>
-        m.organisation_id === groupParentId ||
-        (m.organisations && m.organisations.parent_organisation_id === groupParentId)
-      );
-      // Sort: parent first, then children alphabetically (v0.5.168). Without this
-      // the dropdown reflects the raw membership order — e.g., IASHQ showed at the
-      // bottom because the natural sort put "IAS General/Life/Outsourcing" before it.
-      groupMems.sort((a, b) => {
-        if (a.organisation_id === groupParentId) return -1;
-        if (b.organisation_id === groupParentId) return 1;
-        return String(a.organisations.name || '').localeCompare(String(b.organisations.name || ''));
-      });
-      const bizSwitcherRow = document.getElementById('bizSwitcherRow');
-      const bizSel = document.getElementById('businessSwitcher');
-      if (bizSwitcherRow && bizSel) {
-        bizSwitcherRow.style.display = 'flex';
-        bizSel.innerHTML = groupMems.map(m => {
-          const id   = m.organisation_id;
-          const name = (m.organisations && m.organisations.name) || '(Unnamed business)';
-          const sel  = id === activeId ? ' selected' : '';
-          return '<option value="' + id + '"' + sel + '>' + escapeHtml(name) + '</option>';
-        }).join('');
-        bizSel.addEventListener('change', () => {
-          const newId = bizSel.value;
-          const m = groupMems.find(x => x.organisation_id === newId);
-          if (!m) return;
-          if (window.activeOrg) window.activeOrg.set(newId, m.organisations.name);
-          window.location.reload();
-        });
       }
 
       ensureSeeds();

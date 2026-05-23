@@ -4,6 +4,20 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.172
+- **Remove the in-body BUSINESS: row from `business.html`** — the home page now uses the same compact green pill (`js/active-org.js`'s sub-toolbar) as every other business-level page. User: "Show business: I want the green pill size the same as the other pages."
+- **Why:** the in-body BUSINESS row added in v0.5.163 was a wide full-width affordance with a `BUSINESS:` label + a stretched `<select>`. Other business-level pages (planning / strategy / operations / etc.) just had a small teal pill in the sub-toolbar. Home page looked bigger / different. Two patterns for the same control.
+- **Removed from `business.html`:**
+  - `<div class="biz-switcher" id="bizSwitcherRow">` HTML block
+  - `.biz-switcher` / `.switcher-label` / `.switcher-select` CSS rules
+  - `.biz-switcher-bar { display: none !important; }` rule (was hiding the active-org.js pill on this page only)
+  - The JS that computed `groupParentId`, filtered + sorted `groupMems`, and populated the `<select>` (~40 lines)
+- **What stays:** the `.biz-extra-action` wrapper still hosts the `↑ Part of …` / `↓ N children` parent/child indicator. The `active-org.js` pill now appears on this page in the standard sub-toolbar position, matching the rest of the app.
+- **Trade-off:** parent-child group scoping (v0.5.166 + v0.5.168) was specific to the in-body dropdown. The `active-org.js` pill scopes to the active subscription instead. For the current user (Cath, IAS HQ subscription contains exactly IASHQ + 3 IAS children), same result. If a user later puts multiple unrelated groups inside one subscription, the active-org pill would show all of them — could be addressed by updating `active-org.js` to apply the same parent-child scoping.
+- **No SQL.**
+
+---
+
 ## v0.5.171
 - **Restyle the top-right Account button from a square chip to a teal pill.** User: "It's the square look instead of the green pill on top right."
 - **CSS change in `css/style.css`** on `.header-account-btn`:
