@@ -4,6 +4,22 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.199
+- **Dropped the 12 Month Issues card from the Operations hub.** User: "I noticed there is a 12 month issues and an issues list. This doesn't look right." Picked the "Drop 12 Month Issues" option — long-horizon items belong in the annual planning session, not on the day-to-day Operations hub.
+
+### Change — `operations.html`
+- Removed the activity-card pointing at `issues.html?category=yearly`.
+- New card order: 12 Month Goal → Quarter Goals → 90 Day Numbers → Issues List → Future Issues List → Weekly Meetings (6 cards, was 7).
+- Updated the comment block at the top of the activity grid.
+
+### No SQL, no data loss
+- The `issues.category` column still accepts `'yearly'`, `'current'`, `'future'`.
+- Existing issues tagged `yearly` are still in the database.
+- The Category dropdown inside the issues add/edit modal still has the "12 Month Issues — long-horizon" option, so anyone can still classify a new issue as yearly or re-classify an existing one.
+- Direct URL `issues.html?category=yearly` still works — page header + filter logic still render correctly. Annual planning sessions can surface yearly issues; they just don't have a top-level hub shortcut.
+
+---
+
 ## v0.5.198
 - **Operations one-pager: 4-column flow + new 12 Month Goals column.** User: "Operations one page — Start with 12 month goals, Then issues, Then quarterly goals, Then weekly numbers."
 
