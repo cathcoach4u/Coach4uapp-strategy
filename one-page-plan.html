@@ -669,15 +669,35 @@
       const orgId = window.activeOrg && window.activeOrg.get();
       if (!orgId) { window.location.href = 'index.html'; return; }
 
-      // Populate the printed-doc header — business name + year span
+      // Populate the printed-doc header — business name + plan year.
+      // v0.5.192: plan year now comes from business_cadence.annual_planning_date.
+      // Falls back to current calendar year if no cadence is set.
       const companyEl = document.getElementById('opp-company');
       const cachedName = window.activeOrg.getName && window.activeOrg.getName();
       if (companyEl) companyEl.textContent = cachedName || '—';
       const yearEl = document.getElementById('opp-doc-year');
-      if (yearEl) {
-        const y = new Date().getFullYear();
-        yearEl.textContent = y + ' – ' + (y + 10);
-      }
+      const setYearLabel = (annualDateIso) => {
+        if (!yearEl) return;
+        if (annualDateIso) {
+          const start = new Date(annualDateIso + 'T00:00:00');
+          const end = new Date(start);
+          end.setFullYear(end.getFullYear() + 1);
+          end.setDate(end.getDate() - 1);
+          const fmt = (d) => d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+          yearEl.textContent = fmt(start) + ' – ' + fmt(end);
+        } else {
+          yearEl.textContent = String(new Date().getFullYear());
+        }
+      };
+      setYearLabel(null);  // tentative default while we fetch
+      supabase.from('business_cadence')
+        .select('annual_planning_date')
+        .eq('organisation_id', orgId)
+        .maybeSingle()
+        .then(({ data: cad, error: cadErr }) => {
+          if (cadErr) { console.warn('Cadence load:', cadErr.message); return; }
+          setYearLabel(cad && cad.annual_planning_date);
+        });
 
       // Build the 24-month window: 12 past + 12 future (current included in future)
       const today = new Date();

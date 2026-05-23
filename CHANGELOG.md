@@ -4,6 +4,50 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.192
+- **Planning Cadence — per-business rhythm record + plan-year anchor on the one-page plan.** User: "One page plan dates are 10 years. This isn't correct. It's only ever one year some might start at different times so where does the date get listed" + "In planning I want to be able to allocate dates for annual planning date then the quarterly sessions. Then a day to list the weekly day and time."
+
+### Schema — `supabase/v0.5.192-delta.sql`
+New `business_cadence` table — one row per organisation:
+```sql
+CREATE TABLE public.business_cadence (
+  organisation_id      uuid PRIMARY KEY REFERENCES public.organisations(id) ON DELETE CASCADE,
+  annual_planning_date date,
+  q1_session_date      date,
+  q2_session_date      date,
+  q3_session_date      date,
+  q4_session_date      date,
+  weekly_meeting_day   text CHECK (weekly_meeting_day IS NULL OR weekly_meeting_day IN
+                                   ('monday','tuesday','wednesday','thursday','friday','saturday','sunday')),
+  weekly_meeting_time  time,
+  updated_at           timestamptz NOT NULL DEFAULT now()
+);
+```
+RLS: members read, admins+coaches write (via existing `user_org_ids` / `user_admin_org_ids` helpers — same pattern as every other org-scoped table).
+
+### New page: `cadence.html`
+- Three cards:
+  1. **Annual Planning** — single date input. The date anchors the plan year (drives the One-Page Plan's date label).
+  2. **Quarterly Sessions** — 4 date inputs (Q1–Q4) in a 2-column grid. Any can be blank.
+  3. **Weekly Team Meeting** — day-of-week dropdown + time input.
+- Auto-saves on change with 350ms debounce.
+- Inline summaries:
+  - Annual: *"Plan year: Apr 2026 – Mar 2027"* (a 12-month window from the annual date).
+  - Weekly: *"Weekly meeting: Mondays at 9:00am"*.
+- Defensive: if the `business_cadence` table doesn't exist yet, the save status shows *"Schema not migrated yet — run supabase/v0.5.192-delta.sql"*.
+
+### Entry point
+- New **📅 Planning Cadence** card added to the top of `planning.html`'s activity grid (above Annual / Quarterly / Team Check-ins).
+
+### One-Page Plan now uses the cadence
+- `one-page-plan.html` — the doc-header right-side year label changed from `${currentYear} – ${currentYear + 10}` (which read as if the whole plan was 10 years) to a 12-month window driven by `business_cadence.annual_planning_date`. If a cadence is set: `Apr 2026 – Mar 2027`. If not: just the current calendar year (`2026`). The cadence is fetched in parallel after init renders, so the label updates as soon as it loads — no visible flash.
+- `account-plans.html` — same upgrade for the cross-business carousel. The Promise.all goes from 6 → 7 queries (adds `business_cadence` for all orgs at once), and each business card's plan-year label is computed from that business's own cadence. Defensive: if the cadence query errors (migration not applied), each org falls back to the calendar year.
+
+### Why this matters
+Different businesses run their planning year on different calendars (fiscal year Jul–Jun, calendar Jan–Dec, custom). The cadence record makes this explicit and lets every other page (one-pagers, carousels, and future reminders/dashboards) pull from a single source of truth instead of guessing from the current date.
+
+---
+
 ## v0.5.191
 - **Full audit + cleanup of header back links.** User: "Those backlinks are not needed? Do full audit for back links."
 

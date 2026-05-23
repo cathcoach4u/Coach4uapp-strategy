@@ -586,6 +586,18 @@
         </div>`;
     }
 
+    // v0.5.192 — plan year label from business_cadence.annual_planning_date,
+    // falling back to current calendar year when no cadence is set.
+    function planYearLabel(annualDateIso) {
+      if (!annualDateIso) return String(new Date().getFullYear());
+      const start = new Date(annualDateIso + 'T00:00:00');
+      const end = new Date(start);
+      end.setFullYear(end.getFullYear() + 1);
+      end.setDate(end.getDate() - 1);
+      const fmt = (d) => d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+      return fmt(start) + ' – ' + fmt(end);
+    }
+
     function renderPlanCard(org, data, past, future) {
       const cv = data.coreValues || null;
       const cf = data.coreFocus || {};
@@ -593,7 +605,7 @@
       const ms = data.marketing || {};
       const team = data.team || [];
 
-      const year = new Date().getFullYear();
+      const year = planYearLabel(data.cadence && data.cadence.annual_planning_date);
 
       return `
         <div class="doc-preview">
@@ -753,8 +765,9 @@
       const PAST   = []; for (let i = 12; i >= 1; i--) PAST.push(addMonthsUTC(thisMonthStart, -i));
       const FUTURE = []; for (let i = 0; i < 12; i++)  FUTURE.push(addMonthsUTC(thisMonthStart, i));
 
-      // 6 parallel queries scoped to orgIds
-      const [cvRes, cfRes, tgRes, msRes, ltRes, finRes] = await Promise.all([
+      // v0.5.192 — 7 parallel queries scoped to orgIds (added business_cadence
+      // for the per-business plan-year label in the doc header).
+      const [cvRes, cfRes, tgRes, msRes, ltRes, finRes, cadRes] = await Promise.all([
         sb.from('core_values').select('*').in('organisation_id', orgIds),
         sb.from('core_focus').select('*').in('organisation_id', orgIds),
         sb.from('targets').select('*').in('organisation_id', orgIds),
@@ -764,14 +777,18 @@
           .select('organisation_id, period, revenue, expenses')
           .in('organisation_id', orgIds)
           .gte('period', isoMonth(PAST[0]))
-          .lte('period', isoMonth(FUTURE[FUTURE.length - 1]))
+          .lte('period', isoMonth(FUTURE[FUTURE.length - 1])),
+        sb.from('business_cadence')
+          .select('organisation_id, annual_planning_date')
+          .in('organisation_id', orgIds)
       ]);
 
       // Build per-org data map
       const byOrg = new Map();
       orgs.forEach(o => byOrg.set(o.id, {
         coreValues: null, coreFocus: {}, targets: {}, marketing: {}, team: [],
-        finByPeriod: new Map()
+        finByPeriod: new Map(),
+        cadence: null
       }));
 
       (cvRes.data || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.coreValues = r; });
@@ -786,6 +803,13 @@
           expenses: r.expenses === null ? null : Number(r.expenses)
         });
       });
+      // cadRes may be null/error if the migration hasn't been applied yet — that's fine,
+      // each org's cadence stays null and the plan-year label falls back to the calendar year.
+      if (cadRes && !cadRes.error) {
+        (cadRes.data || []).forEach(r => {
+          const e = byOrg.get(r.organisation_id); if (e) e.cadence = r;
+        });
+      }
 
       // Show the data-layer-pending banner if every business returned empty plan data
       const anyData = orgs.some(o => {

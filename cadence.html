@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planning Cadence | Your Business Coach</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#003366">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { opacity: 0; transition: opacity 0.2s ease; }
+    .container { padding-bottom: 140px; }
+    .ws-header { padding: 20px 16px 0; }
+    .ws-title { font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
+    .ws-sub { font-size: 0.83rem; color: #666; margin: 0 0 20px; line-height: 1.45; }
+    .ws-card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 18px 16px; margin: 0 16px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .ws-card-title { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 6px; }
+    .ws-card-desc { font-size: 0.78rem; color: #888; margin-bottom: 14px; line-height: 1.4; }
+    .ws-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--primary); display: block; margin: 6px 0 4px; }
+    .ws-input, .ws-select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.92rem; color: var(--text);
+      font-family: inherit; background: white; transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+    .ws-input:focus, .ws-select:focus { outline: none; border-color: var(--accent); }
+    /* 2-column grid for Q1..Q4, weekly day+time */
+    .q-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 480px) { .q-grid { grid-template-columns: 1fr; } }
+
+    .summary-line {
+      font-size: 0.85rem; color: var(--primary); font-weight: 600;
+      margin-top: 6px; line-height: 1.45;
+    }
+    .summary-line.muted { color: #999; font-weight: 500; font-style: italic; }
+
+    .ws-save-bar { position: fixed; bottom: 56px; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); z-index: 90; }
+    .save-status { font-size: 0.78rem; color: #888; }
+    .ws-btn { padding: 9px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+    .ws-btn:hover { background: var(--accent-dark); }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+    .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0 6px; text-decoration: none; color: #aaa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; gap: 3px; transition: color 0.15s; }
+    .bottom-nav-item.active, .bottom-nav-item:hover { color: #0D9488; text-decoration: none; }
+    .bottom-nav-icon { font-size: 20px; line-height: 1; }
+  </style>
+  <script src="js/active-session.js" defer></script>
+  <script src="js/mobile-keyboard.js" defer></script>
+  <script src="js/active-org.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <span class="header-title">Your Business Coach</span>
+        <span id="activeBizName" class="biz-pill"></span>
+      </div>
+      <a href="index.html" class="header-account-btn" title="Account dashboard"><span>&#x1F3DB;&#xFE0F;</span><span>Account</span></a>
+      <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="ws-header">
+      <h1 class="ws-title">&#x1F4C5; Planning Cadence</h1>
+      <p class="ws-sub">When you run your annual planning, quarterly sessions, and weekly team meeting. The annual planning date anchors your plan year &mdash; the One-Page Plan uses it.</p>
+    </div>
+
+    <!-- Annual Planning -->
+    <div class="ws-card">
+      <div class="ws-card-title">Annual Planning</div>
+      <div class="ws-card-desc">One full day per year to refresh the long-term plan and set Q1 goals. This date anchors your plan year (e.g. <em>Apr 2026 &ndash; Mar 2027</em>).</div>
+      <label class="ws-label" for="annual-date">Next annual planning date</label>
+      <input type="date" id="annual-date" class="ws-input" data-key="annual_planning_date" />
+      <div class="summary-line muted" id="annual-summary">No annual planning date set yet.</div>
+    </div>
+
+    <!-- Quarterly Sessions -->
+    <div class="ws-card">
+      <div class="ws-card-title">Quarterly Sessions</div>
+      <div class="ws-card-desc">Half- or full-day session each quarter to review the last 90 days and lock in the next 90. Leave any blank if you don&rsquo;t run that one.</div>
+      <div class="q-grid">
+        <div>
+          <label class="ws-label" for="q1-date">Q1 session</label>
+          <input type="date" id="q1-date" class="ws-input" data-key="q1_session_date" />
+        </div>
+        <div>
+          <label class="ws-label" for="q2-date">Q2 session</label>
+          <input type="date" id="q2-date" class="ws-input" data-key="q2_session_date" />
+        </div>
+        <div>
+          <label class="ws-label" for="q3-date">Q3 session</label>
+          <input type="date" id="q3-date" class="ws-input" data-key="q3_session_date" />
+        </div>
+        <div>
+          <label class="ws-label" for="q4-date">Q4 session</label>
+          <input type="date" id="q4-date" class="ws-input" data-key="q4_session_date" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly Team Meeting -->
+    <div class="ws-card">
+      <div class="ws-card-title">Weekly Team Meeting</div>
+      <div class="ws-card-desc">The day and time your leadership team meets every week. Keeps the rhythm visible to everyone.</div>
+      <div class="q-grid">
+        <div>
+          <label class="ws-label" for="weekly-day">Day of week</label>
+          <select id="weekly-day" class="ws-select" data-key="weekly_meeting_day">
+            <option value="">&mdash;</option>
+            <option value="monday">Monday</option>
+            <option value="tuesday">Tuesday</option>
+            <option value="wednesday">Wednesday</option>
+            <option value="thursday">Thursday</option>
+            <option value="friday">Friday</option>
+            <option value="saturday">Saturday</option>
+            <option value="sunday">Sunday</option>
+          </select>
+        </div>
+        <div>
+          <label class="ws-label" for="weekly-time">Time</label>
+          <input type="time" id="weekly-time" class="ws-input" data-key="weekly_meeting_time" />
+        </div>
+      </div>
+      <div class="summary-line muted" id="weekly-summary">No weekly meeting time set yet.</div>
+    </div>
+  </div>
+  <div class="ws-save-bar">
+    <span class="save-status" id="saveStatus">Changes will save automatically</span>
+    <button class="ws-btn" onclick="window.location.href='planning.html'">Done &#x2713;</button>
+  </div>
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="business.html"><span class="bottom-nav-icon">&#x1F3E0;</span><span>Home</span></a>
+    <a class="bottom-nav-item active" href="planning.html"><span class="bottom-nav-icon">&#x1F5FA;&#xFE0F;</span><span>Planning</span></a>
+    <a class="bottom-nav-item" href="strategy.html"><span class="bottom-nav-icon">&#x1F9ED;</span><span>Strategy</span></a>
+    <a class="bottom-nav-item" href="operations.html"><span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Operations</span></a>
+    <a class="bottom-nav-item" href="learning-vault.html"><span class="bottom-nav-icon">&#x1F4DA;</span><span>Learn</span></a>
+  </nav>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://eekefsuaefgpqmjdyniy.supabase.co',
+      'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
+    );
+
+    // v0.5.192 — Planning Cadence: per-org rhythm settings (business_cadence table).
+    const FIELDS = [
+      'annual_planning_date',
+      'q1_session_date', 'q2_session_date', 'q3_session_date', 'q4_session_date',
+      'weekly_meeting_day', 'weekly_meeting_time'
+    ];
+    const DEBOUNCE_MS = 350;
+    let orgId = null;
+    const data = {};
+    let saveTimer = null;
+
+    function setStatus(text, color) {
+      const el = document.getElementById('saveStatus');
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = color || '#888';
+    }
+    function flashSaved() {
+      setStatus('Saved ✓', '#0F766E');
+      clearTimeout(flashSaved._t);
+      flashSaved._t = setTimeout(() => setStatus('Changes save automatically', '#888'), 1500);
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    function fmtTime(t) {
+      if (!t) return '';
+      // accept HH:MM or HH:MM:SS
+      const parts = String(t).split(':');
+      const h = parseInt(parts[0], 10);
+      const m = parts[1] || '00';
+      const period = h >= 12 ? 'pm' : 'am';
+      const h12 = ((h + 11) % 12) + 1;
+      return h12 + ':' + m + period;
+    }
+    function capitaliseDay(d) {
+      if (!d) return '';
+      return d.charAt(0).toUpperCase() + d.slice(1);
+    }
+
+    function renderSummaries() {
+      // Annual summary — show "Plan year: <annual_date> – <annual_date + 1 year>"
+      const aSum = document.getElementById('annual-summary');
+      if (data.annual_planning_date) {
+        const start = new Date(data.annual_planning_date + 'T00:00:00');
+        const end = new Date(start); end.setFullYear(end.getFullYear() + 1); end.setDate(end.getDate() - 1);
+        const opts = { month: 'short', year: 'numeric' };
+        aSum.textContent = 'Plan year: ' + start.toLocaleDateString('en-AU', opts) +
+                           ' – ' + end.toLocaleDateString('en-AU', opts);
+        aSum.classList.remove('muted');
+      } else {
+        aSum.textContent = 'No annual planning date set yet.';
+        aSum.classList.add('muted');
+      }
+
+      // Weekly summary — "Weekly meeting: Mondays at 9:00am"
+      const wSum = document.getElementById('weekly-summary');
+      if (data.weekly_meeting_day || data.weekly_meeting_time) {
+        const bits = [];
+        if (data.weekly_meeting_day) bits.push(capitaliseDay(data.weekly_meeting_day) + 's');
+        if (data.weekly_meeting_time) bits.push('at ' + fmtTime(data.weekly_meeting_time));
+        wSum.textContent = 'Weekly meeting: ' + bits.join(' ');
+        wSum.classList.remove('muted');
+      } else {
+        wSum.textContent = 'No weekly meeting time set yet.';
+        wSum.classList.add('muted');
+      }
+    }
+
+    async function saveRow() {
+      const payload = { organisation_id: orgId, updated_at: new Date().toISOString() };
+      FIELDS.forEach(k => { payload[k] = data[k] || null; });
+      const { error } = await supabase
+        .from('business_cadence')
+        .upsert(payload, { onConflict: 'organisation_id' });
+      if (error) {
+        console.warn('Save cadence failed:', error.message);
+        if (/business_cadence/.test(error.message) && /does not exist/i.test(error.message)) {
+          setStatus('Schema not migrated yet — run supabase/v0.5.192-delta.sql', '#c33');
+        } else {
+          setStatus('Could not save: ' + error.message, '#c33');
+        }
+        return;
+      }
+      flashSaved();
+    }
+    function scheduleSave() {
+      setStatus('Saving…', '#c98a00');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveRow, DEBOUNCE_MS);
+    }
+
+    async function loadRow() {
+      const { data: row, error } = await supabase
+        .from('business_cadence')
+        .select('*')
+        .eq('organisation_id', orgId)
+        .maybeSingle();
+      if (error) {
+        console.warn('Load cadence failed:', error.message);
+        if (/business_cadence/.test(error.message) && /does not exist/i.test(error.message)) {
+          setStatus('Schema not migrated yet — run supabase/v0.5.192-delta.sql', '#c33');
+        }
+        return;
+      }
+      const r = row || {};
+      FIELDS.forEach(k => {
+        // dates/times come back as ISO strings; <input type="date|time"> accepts them as-is.
+        data[k] = r[k] || '';
+      });
+    }
+
+    function wireForm() {
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const k = el.dataset.key;
+        el.value = data[k] || '';
+        el.addEventListener('input', () => {
+          data[k] = el.value;
+          renderSummaries();
+          scheduleSave();
+        });
+        el.addEventListener('change', () => {
+          // <input type="date"> fires change but sometimes not input on some browsers
+          data[k] = el.value;
+          renderSummaries();
+          scheduleSave();
+        });
+      });
+      renderSummaries();
+    }
+
+    async function init() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!user || error) { window.location.href = 'login.html'; return; }
+      const { data: profile } = await supabase
+        .from('users').select('membership_status').eq('id', user.id).single();
+      if (!profile || profile.membership_status !== 'active') {
+        window.location.href = 'inactive.html'; return;
+      }
+      orgId = window.activeOrg && window.activeOrg.get();
+      if (!orgId) { window.location.href = 'index.html'; return; }
+
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        await supabase.auth.signOut(); window.location.href = 'login.html';
+      });
+
+      try { await loadRow(); } catch (e) { console.warn('Load error:', e); }
+      wireForm();
+      document.body.style.opacity = '1';
+    }
+    init();
+  </script>
+</body>
+</html>
