@@ -4,6 +4,16 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.167
+- **Restore `🏠 Home` to the bottom nav on every business-level page.** User: "I think the dashboard for each group needs a home tab. It was removed but I think it needs to go back."
+- **Context:** Home was dropped in v0.5.147 because it felt redundant with `🏛️ Account` (both lived in the bottom nav and both pointed "up" semantically). In v0.5.165, Account moved out of the bottom nav entirely → up to a top-right icon button. With Account no longer in the bottom nav, Home no longer creates the overlap, and the user's mental model is back to "tap Home → business overview".
+- **Patch on 22 business-level pages** via Python regex — insert `<a class="bottom-nav-item[ active]" href="business.html"><span class="bottom-nav-icon">🏠</span><span>Home</span></a>` as the first item inside `<nav class="bottom-nav">`. The `active` class is applied only on `business.html` (where you ARE on the home); on the other 21 pages Home is a regular tab and the existing active item per page (Strategy on strategy.html, Operations on goals.html / issues.html / etc.) is unchanged.
+- **Net bottom nav on business-level pages:** **Home / Planning / Strategy / Operations / Learn** (5 items). Account stays as the top-right icon (v0.5.165) — separate.
+- **Files patched (22, same set as v0.5.165):** `annual-sessions.html`, `business.html`, `core-focus.html`, `core-values.html`, `financials.html`, `goals.html`, `issues.html`, `leadership-team.html`, `learning-vault.html`, `marketing-strategy.html`, `meeting.html`, `operations.html`, `planning.html`, `quarterly-sessions.html`, `run-annual-session.html`, `run-meeting.html`, `run-quarterly-session.html`, `run-team-checkin.html`, `scorecard.html`, `strategy.html`, `targets.html`, `team-checkins.html`. Account-level pages (`index.html` / `account-users.html` / `account-setup.html`) unchanged — their bottom nav is the 3-tab Businesses / Users / Setup, which doesn't need a Home.
+- **No SQL.**
+
+---
+
 ## v0.5.166
 - **Bugfix: scope the BUSINESS dropdown on parent / child dashboards to the parent-child group only.** User: "The iashq parent page has the wrong business connection as it is including all of the businesses. Should only include the parent and child pages for ias."
 - **Cause:** when v0.5.163 added the `BUSINESS: [▾]` switcher in `business.html`, the option list was built straight from `memberships` — which is fetched without a `subscription_id` filter (intentional, so `active-org.js` can switch business + account from one place). On IASHQ this dumped every biz the user is admin of across every account (IAS HQ's 4 plus SARUBA's 3) into the dropdown.
