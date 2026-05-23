@@ -4,6 +4,43 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.191
+- **Full audit + cleanup of header back links.** User: "Those backlinks are not needed? Do full audit for back links."
+
+The v0.5.189 principle (back link is redundant when the bottom-nav already covers the destination) applied across the whole app.
+
+### Audit
+`grep -l 'class="header-back"' *.html` found 21 pages with a back link. Each was categorised by destination → bottom-nav coverage.
+
+### Removed (14 pages)
+Back link goes to a hub the bottom-nav already covers:
+- **Strategy hub** (Strategy tab in bottom-nav): `core-focus.html`, `core-values.html`, `financials.html`, `leadership-team.html`, `marketing-strategy.html`, `targets.html` — all linked back to `strategy.html`.
+- **Operations hub** (Operations tab): `goals.html`, `issues.html`, `scorecard.html`, `meeting.html`, `twelve-month-goal.html` — all linked back to `operations.html`.
+- **Planning hub** (Planning tab): `annual-sessions.html`, `quarterly-sessions.html`, `team-checkins.html` — all linked back to `planning.html`.
+
+Performed via `sed -i '/class="header-back"/d'` (the class is uniquely on the anchor, so the single-line strip is safe).
+
+### Kept (4 workspaces)
+Back link goes to an intermediate list page that the bottom-nav doesn't reach directly:
+- `run-meeting.html` → `meeting.html` (specific meeting workspace → meetings list).
+- `run-annual-session.html` → `annual-sessions.html`.
+- `run-quarterly-session.html` → `quarterly-sessions.html`.
+- `run-team-checkin.html` → `team-checkins.html`.
+
+### Kept (3 account-level pages)
+- `account-strategy.html`, `account-operations.html`, `account-planning.html` — their bottom-nav has only the `🏛️ Account` tab (one item, already-active). With no real navigation rail at the bottom, the header back link is the obvious way out.
+
+### Side effect — account-scope JS on the planning lists
+`annual-sessions.html`, `quarterly-sessions.html`, `team-checkins.html` each have `?scope=account` JS that previously swapped the back-link's text/href to `← Account Planning`. The `if (back) { ... }` guard makes the now-dead `querySelector('.header-back')` a no-op (no error), but the legacy back-to-account-planning affordance is gone. That's fine — `account-planning.html` was already noted as "legacy" in v0.5.146 and is reachable only via the Account button in the header.
+
+---
+
+- **Org chart "Add" copy.** User: "In org chart say add leadership team member."
+
+`leadership-team.html`'s primary CTA: `+ Add Team Member` → `+ Add Leadership Team Member`. The page is reached via the **Organisational Chart** card on Strategy (renamed in v0.5.183), so the button now matches that framing — you're adding a Leadership Team Member to the Organisational Chart. The worksheet page title still reads "Leadership Team" and the underlying table is still `leadership_team_members` for compatibility.
+
+---
+
 ## v0.5.190
 - **Two cleanups on the one-page docs.** User: "I think the font is different from one page links. Make consistency. Also the financials are on both of them. Only needed on strategy."
 
