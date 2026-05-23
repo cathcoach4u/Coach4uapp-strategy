@@ -4,6 +4,16 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.169
+- **Strip the redundant `← Home` back-link from hub-page headers.** User: "Can you see this home name looks different. I am ok with home going back to the green pills."
+- **Why:** The Home tab returned to the bottom nav in v0.5.167 (as a green/teal pill icon+label). On hub pages — `planning.html`, `strategy.html`, `operations.html`, `learning-vault.html` — there was *also* a small white-translucent `← Home` link in the top-left of the navy `.site-header`, pointing to the same `business.html`. Two affordances for the same path, styled completely differently → looks like a bug.
+- **Fix:** Python regex pass removes the `<a href="business.html" class="header-back">← Home</a>` element from those four files. The bottom-nav Home tab now stands alone as the "go to business overview" control.
+- **Kept:** the deeper back links on worksheet / operations-tool pages (`← Strategy` on `core-values.html` / `core-focus.html` / `targets.html` / `marketing-strategy.html` / `leadership-team.html` / `financials.html`, `← Operations` on `goals.html` / `issues.html` / `scorecard.html` / `meeting.html` / `run-meeting.html`). Those point to a parent hub, NOT Home, so they're not redundant with the new Home tab.
+- **Net effect:** the navy header on hub pages now reads exactly like `business.html`'s — just "Your Business Coach" on the left + the 🏛️ Account icon + Sign Out on the right. Consistent across the whole business-level surface.
+- **No SQL.**
+
+---
+
 ## v0.5.168
 - **Sort the BUSINESS dropdown so the parent appears at the top.** User: "In the click down it should be showing the hq at the top as this is the parent one and should be in order."
 - **Cause:** v0.5.166 filtered the dropdown to the parent-child group but didn't sort — so the raw `memberships` order leaked through. Alphabetical natural ordering puts "IAS General / IAS Life / IAS Outsourcing" before "IASHQ", which fights the visual hierarchy.
