@@ -16,6 +16,30 @@
     body { opacity: 0; transition: opacity 0.2s ease; background: #f4f6f9; }
     .container { padding-bottom: 88px; }
 
+    /* Hide the biz-switcher sub-toolbar that js/active-org.js injects.
+       This is an account-level page — a business pill is meaningless here. */
+    .biz-switcher-bar { display: none !important; }
+
+    /* Account switcher (mirrors index.html so the chrome is consistent) */
+    .acct-switcher {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 16px 0; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px; margin-bottom: 6px;
+    }
+    .switcher-label {
+      font-size: 0.7rem; color: #888; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .switcher-select {
+      padding: 7px 10px; border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: inherit; font-size: 0.88rem; font-weight: 700;
+      color: var(--primary); background: white;
+      min-width: 180px; cursor: pointer;
+      flex: 1; max-width: 100%;
+    }
+
     .page-header { padding: 20px 16px 8px; }
     .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
     .page-sub { font-size: 0.82rem; color: #666; margin: 0 0 12px; line-height: 1.5; }
@@ -162,6 +186,11 @@
   </header>
 
   <div class="container">
+    <div class="acct-switcher" id="acctSwitcher" style="display:none;">
+      <span class="switcher-label">Account:</span>
+      <select id="accountSwitcher" class="switcher-select"></select>
+    </div>
+
     <div class="page-header">
       <h1 class="page-title">&#x1F465; User Management</h1>
       <p class="page-sub">People with access to businesses in this account. Tap a user to change their per-business roles or remove them.</p>
@@ -176,7 +205,7 @@
       <button id="inviteUserBtn" class="add-btn">+ Invite User</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.153</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.158</p>
   </div>
 
   <!-- Edit team member modal -->
@@ -304,6 +333,7 @@
     /* ============== state ============== */
     let user            = null;
     let sub             = null;
+    let allSubs         = [];   // every subscription this user owns, for the switcher
     let myMemberships   = [];   // caller's active team_members in the active sub's orgs
     let teamRows        = [];   // every active+pending team_member row in orgs I admin/coach
     let teamGroups      = new Map();
@@ -323,8 +353,19 @@
         .eq('owner_user_id', user.id)
         .order('created_at', { ascending: true });
       if (!subs || !subs.length) { window.location.href = 'setup.html'; return; }
+      allSubs = subs || [];
       sub = subs.find(s => s.id === cachedId) || subs[0];
       if (window.activeOrg) window.activeOrg.setSubscription(sub.id, sub.name);
+
+      // Populate the account switcher
+      const wrap = document.getElementById('acctSwitcher');
+      const select = document.getElementById('accountSwitcher');
+      wrap.style.display = 'flex';
+      select.innerHTML = allSubs.map(s => {
+        const label = (s.name && s.name.trim()) ? s.name : '(Unnamed account)';
+        const selected = (s.id === sub.id) ? ' selected' : '';
+        return '<option value="' + escHtml(s.id) + '"' + selected + '>' + escHtml(label) + '</option>';
+      }).join('');
 
       // 2) My memberships in this account
       const memQuery = sb.from('team_members')
@@ -626,6 +667,17 @@
       });
       await loadAll();
       renderUsers();
+      // Account switcher: change → set active subscription + clear active org cache + reload
+      document.getElementById('accountSwitcher').addEventListener('change', (e) => {
+        const newSubId = e.target.value;
+        const picked = allSubs.find(s => s.id === newSubId);
+        if (!picked) return;
+        if (window.activeOrg) {
+          window.activeOrg.setSubscription(picked.id, picked.name);
+          window.activeOrg.set(null);
+        }
+        window.location.reload();
+      });
       document.body.style.opacity = '1';
     }
     boot();

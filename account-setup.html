@@ -16,6 +16,30 @@
     body { opacity: 0; transition: opacity 0.2s ease; background: #f4f6f9; }
     .container { padding-bottom: 88px; }
 
+    /* Hide the biz-switcher sub-toolbar that js/active-org.js injects.
+       This is an account-level page — a business pill is meaningless here. */
+    .biz-switcher-bar { display: none !important; }
+
+    /* Account switcher (mirrors index.html so the chrome is consistent) */
+    .acct-switcher {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 16px 0; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px; margin-bottom: 6px;
+    }
+    .switcher-label {
+      font-size: 0.7rem; color: #888; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .switcher-select {
+      padding: 7px 10px; border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: inherit; font-size: 0.88rem; font-weight: 700;
+      color: var(--primary); background: white;
+      min-width: 180px; cursor: pointer;
+      flex: 1; max-width: 100%;
+    }
+
     .page-header { padding: 20px 16px 8px; }
     .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
     .page-sub { font-size: 0.82rem; color: #666; margin: 0; line-height: 1.5; }
@@ -82,6 +106,11 @@
   </header>
 
   <div class="container">
+    <div class="acct-switcher" id="acctSwitcher" style="display:none;">
+      <span class="switcher-label">Account:</span>
+      <select id="accountSwitcher" class="switcher-select"></select>
+    </div>
+
     <div class="page-header">
       <h1 class="page-title">&#x2699;&#xFE0F; Account Setup</h1>
       <p class="page-sub">The account name and invoicing details used across this client account.</p>
@@ -115,7 +144,7 @@
 
     <div class="save-status" id="saveStatus">Changes save automatically.</div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.153</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.158</p>
   </div>
 
   <nav class="bottom-nav">
@@ -139,6 +168,7 @@
 
     const DEBOUNCE_MS = 400;
     let sub = null;
+    let allSubs = [];   // every subscription this user owns, for the switcher
     let saveTimer = null;
     const original = { name:'', billing_email:'', billing_address:'', billing_tax_id:'' };
 
@@ -161,10 +191,32 @@
         window.location.href = 'setup.html';
         return null;
       }
+      allSubs = subs;
       const active = subs.find(s => s.id === cachedId) || subs[0];
       if (window.activeOrg && active) {
         window.activeOrg.setSubscription(active.id, active.name);
       }
+
+      // Populate account switcher
+      const wrap = document.getElementById('acctSwitcher');
+      const sel  = document.getElementById('accountSwitcher');
+      wrap.style.display = 'flex';
+      sel.innerHTML = subs.map(s => {
+        const label = (s.name && s.name.trim()) ? s.name : '(Unnamed account)';
+        const selected = (s.id === active.id) ? ' selected' : '';
+        return '<option value="' + s.id + '"' + selected + '>' + label.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) + '</option>';
+      }).join('');
+      sel.addEventListener('change', (e) => {
+        const newSubId = e.target.value;
+        const picked = allSubs.find(s => s.id === newSubId);
+        if (!picked) return;
+        if (window.activeOrg) {
+          window.activeOrg.setSubscription(picked.id, picked.name);
+          window.activeOrg.set(null);
+        }
+        window.location.reload();
+      });
+
       return active;
     }
 

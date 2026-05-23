@@ -6,12 +6,14 @@
 - Always push changes directly to `main` branch
 - Commit with clear, descriptive messages
 - Push after every commit — do not batch pushes
-- **Bump version number with EVERY change** (patch: 0.5.x). **Five files MUST stay in sync:**
+- **Bump version number with EVERY change** (patch: 0.5.x). **Seven files MUST stay in sync:**
   1. `CLAUDE.md` → `## Current Version` line
   2. `VERSION` (just the number, e.g. `0.5.74`)
   3. `sw.js` → `CACHE_VERSION = 'coach4u-vX.Y.Z'`
   4. `business.html` → visible label at the bottom of the dashboard footer (`<p ...>vX.Y.Z</p>`)
-  5. `index.html` → visible label at the bottom of the account dashboard footer (`<p ...>vX.Y.Z</p>`) — added v0.5.143 after the index footer was found stuck on v0.5.89
+  5. `index.html` → visible label at the bottom of the account dashboard footer (added v0.5.143)
+  6. `account-users.html` → visible label at the bottom (added v0.5.158 after the footer was found stuck on v0.5.153)
+  7. `account-setup.html` → visible label at the bottom (added v0.5.158 — created in v0.5.153, never bumped till now)
 - Append a new entry to `CHANGELOG.md` for every bump. Keep the most recent 1–2 entries duplicated under `## Latest` in this file as a pointer.
 - For large file changes: split into small focused files (each under ~8KB) to avoid push timeouts
 
@@ -189,9 +191,10 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.157
+v0.5.158
 
 ## Latest
+- **v0.5.158** — Consistent chrome across the three account-level tabs. User: "The business setup needs to be consistent I think over the 3 pages." `account-users.html` and `account-setup.html` now have the same `Account: [dropdown ▾]` switcher at the top that `index.html` has — populated from every subscription the user owns, change-handler sets the active sub + clears the active-org cache + reloads (same behaviour as Businesses). All three tabs also `display: none !important` the `.biz-switcher-bar` sub-toolbar that `js/active-org.js` injects — a business pill is meaningless at the account level. Footers updated everywhere (account-users.html was stuck on v0.5.153, account-setup.html same). Version-bump checklist in this file expanded from 5 to 7 files so the two account-level pages get bumped too. **No SQL.**
 - **v0.5.157** — Block deleting a parent business while it still has children. User: "I think the parent needs to be set up not to deleted unless all children are removed." Two-layer guard: **(1) SQL** — `delete_business` RPC now counts rows in `organisations` where `parent_organisation_id = business_id` and raises `Cannot delete this business while it is the parent of N child business(es). Unlink or delete the children first.` if any exist. Defence in depth — even if the UI is bypassed (curl, dev console, future client), the RPC refuses. **(2) UI** — on `index.html`, the `⋮ → Delete` option on a row that has children is rendered with `disabled` + `title="Has children — unlink them first"` and the label changes to `Delete (has children)`. CSS adds a muted italic style for `.actions-menu button:disabled`. To delete a parent, the admin sets each child's Parent dropdown to `— None —` first (one tap per child via the inline picker from v0.5.149/150), then Delete becomes available. **Requires SQL** — see `supabase/v0.5.157-delta.sql`.
 - **v0.5.156** — Removed the duplicate account name on the Businesses tab. User: "The name of the business is showing twice on account page." `index.html` had both an `<select>` switcher (showing the active account name + letting you pick between accounts) AND a big `<h1>` below it showing the same account name (e.g., "🏢 Insurance Advisory Service NSW Pty Ltd"). Dropped the `<h1>` block + the `renderAccountHeader()` function + the call in `refresh()`. The switcher dropdown alone now serves as the account-name indicator. Side effect: the page feels less top-heavy, and the bold "💼 Your Businesses" section title becomes the primary heading. `account-users.html` and `account-setup.html` unchanged — they don't have the duplication.
 - **v0.5.155** — Parent business dashboard becomes a holding-co rollup view. User: "The parents dashboard needs to be more focused on a summary of entire businesses. I don't think the current parent is as helpful." When `business.html` loads and the active biz has at least one child (any other org in memberships with `parent_organisation_id === activeOrg.id`), the standard own-business dashboard (Stat tiles / 1-Year Goal / Core Values / Meeting button / This Week / This Quarter) is replaced with four new panels: **Group Strategy** (parent's 10-Year Vision / 3-Year Outlook / 12-Month Goal), **This Quarter's Priorities** (parent's rocks for the current quarter), **Group Financials** (1-Year Revenue Target summed across, plus last-12-months Revenue / Expenses / Profit summed across `financial_periods`), and **Child Businesses** (tappable card per child with open issues + goals-on-track + next meeting). Tapping a child card switches the active biz to that child and reloads, landing the user inside that business's standard dashboard. Period filter: 12 most-recent `YYYY-MM-01` strings, exclusive of current month. Standalone and child businesses are unchanged — they get the existing own-business dashboard.

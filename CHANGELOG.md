@@ -4,6 +4,23 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.158
+- **Consistent chrome across the three account-level tabs.** User: "The business setup needs to be consistent I think over the 3 pages."
+- Three things were inconsistent between Businesses (`index.html`), Users (`account-users.html`), and Setup (`account-setup.html`):
+  1. The `ACCOUNT: [dropdown]` switcher was only on Businesses. Users + Setup had no way to switch accounts without going back to Businesses first.
+  2. Users + Setup showed the `🏢 [Biz Name]` pill (e.g., "IAS General") in the sub-toolbar that `js/active-org.js` injects — but that's a business-level indicator and meaningless on an account-level page.
+  3. Users + Setup footers were stuck on `v0.5.153` (the version they were created at) — never got bumped because they weren't on the version-bump checklist.
+- **Switcher added to `account-users.html` + `account-setup.html`:**
+  - HTML: `<div class="acct-switcher"><span class="switcher-label">Account:</span><select id="accountSwitcher" class="switcher-select"></select></div>` placed at the top of the container, above the `.page-header`.
+  - CSS: same rules as `index.html` for `.acct-switcher`, `.switcher-label`, `.switcher-select`.
+  - JS: `loadSub` / `loadAll` now also fetches every subscription the user owns, stashes them in `allSubs`, and populates the `<select>`. Change handler sets the active sub via `window.activeOrg.setSubscription`, clears the org cache, and reloads the current page (so you stay on Users / Setup but viewing the new account).
+  - The `+ New client account` button stays only on Businesses — creating a new account is a one-off admin action that lives there. No need to duplicate the modal.
+- **Biz pill hidden on all three pages:** added `.biz-switcher-bar { display: none !important; }` to each. The pill is still useful on business-level pages; on account-level pages it just confused.
+- **Footers bumped + checklist updated:** the project's "files to keep in sync per version" rule in CLAUDE.md goes from 5 → 7. Added `account-users.html` and `account-setup.html`, with a note about the v0.5.153 → v0.5.158 drift they had.
+- **No SQL.**
+
+---
+
 ## v0.5.157
 - **Block deleting a parent business while it still has children.** User: "I think the parent needs to be set up not to deleted unless all children are removed. Appreciate feedback on this."
 - **Why:** the FK on `organisations.parent_organisation_id` was `ON DELETE SET NULL` (v0.5.145), which meant deleting a parent silently orphaned its children — they'd become standalones, inheritance would break without warning, and the user usually wouldn't realise. High-blast-radius operation deserves a safety gate.
