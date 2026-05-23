@@ -4,6 +4,22 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.148
+- **Move parent/child allocation to the account dashboard.** User feedback: "It needs to be easier and done in accounts area. I think allocation is accounts level."
+- **Why:** the v0.5.145 design put a "Parent business" picker inside each business's dashboard (`business.html`). Setting up an IAS-style tree (1 parent + 3 children) meant tapping into 4 separate businesses and being careful not to invert the direction (the picker is "this biz's parent", not "this biz's children"). Several users got it wrong on the first try.
+- **What's new on `index.html`:**
+  - A small `🏛️ Structure` button next to `+ New Business` in the businesses-section header. Hidden unless the user is admin of ≥2 businesses in the active account (no point picking a parent if there's only one biz).
+  - Clicking opens a new `#structureModal` listing every admin-controlled business in the account. Each row: `[Business name]  Parent: [— None — / IASHQ / IAS Life / … ▾]`. Pickers exclude rows that would create a cycle (a biz can't pick one of its own current children as its parent).
+  - One Save button at the bottom commits every changed parent in parallel via `Promise.all` on `organisations.update`. After save: bust the header switcher cache, reload the dashboard so the tree renders.
+  - Client-side guard enforces depth = 1 — if A picks B as parent AND B itself has a parent (per the modal's current state), Save shows an inline error and refuses.
+- **`business.html` cleanup:**
+  - Removed the entire "Business Structure" panel (the dropdown + children chips).
+  - Removed the `wireBusinessStructure(activeRow, memberships)` JS that powered it.
+  - Kept `renderBizContext` and the small `↑ Part of IASHQ` / `↓ N children` line under the greeting — read-only "where am I in the tree" indicator.
+- **No SQL change** — schema from v0.5.145 unchanged. This is purely a UX relocation.
+
+---
+
 ## v0.5.147
 - **Remove `🏠 Home` from the business-level bottom nav.** User feedback: "I think now home and account are the same?" — `🏠 Home` (→ `business.html`) and `🏛️ Account` (→ `index.html`) felt synonymous even though they pointed at different pages.
 - **Bottom nav on business-level pages is now 5 items:** Planning / Strategy / Operations / Learn / Account.

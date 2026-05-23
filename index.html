@@ -395,7 +395,10 @@
     <div class="section" id="businesses">
       <div class="section-head">
         <span class="section-title">&#x1F4BC; Your Businesses</span>
-        <button id="addBusinessHeaderBtn" class="section-action">+ New Business</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button id="configureStructureBtn" class="section-action" style="display:none;">&#x1F3DB;&#xFE0F; Structure</button>
+          <button id="addBusinessHeaderBtn" class="section-action">+ New Business</button>
+        </div>
       </div>
       <div id="bizList" class="biz-list"></div>
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
@@ -411,7 +414,7 @@
       <button id="inviteUserBtn" class="add-btn add-btn-secondary">+ Invite User</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.147</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.148</p>
 
   </div>
 
@@ -475,6 +478,25 @@
       <div class="modal-footer">
         <button class="btn-secondary" id="addCancel">Cancel</button>
         <button class="btn-primary" id="addSave">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configure business structure modal (v0.5.148) -->
+  <div class="modal-overlay hidden" id="structureModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">&#x1F3DB;&#xFE0F; Business Structure</span>
+        <button class="modal-close" id="structureClose">&times;</button>
+      </div>
+      <div class="modal-field">
+        <div class="modal-help" style="margin-bottom:14px;">Pick the parent (if any) for each business. Children inherit Core Values from their parent unless they override locally.</div>
+        <div id="structureList" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div class="modal-err" id="structureErr"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="structureCancel">Cancel</button>
+        <button class="btn-primary" id="structureSave">Save</button>
       </div>
     </div>
   </div>
@@ -1097,6 +1119,120 @@
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+    /* ============== configure business structure (v0.5.148) ============== */
+    // Only show the "Structure" button when the user is admin of ≥ 2 businesses
+    // in the active account (no point setting parents if there's only one).
+    function refreshStructureButton() {
+      const btn = document.getElementById('configureStructureBtn');
+      if (!btn) return;
+      const adminMems = myMemberships.filter(m => m.role === 'admin');
+      btn.style.display = adminMems.length >= 2 ? '' : 'none';
+    }
+
+    function openStructureModal() {
+      const list = document.getElementById('structureList');
+      const errEl = document.getElementById('structureErr');
+      errEl.textContent = '';
+      // Only admin orgs in the current account
+      const adminMems = myMemberships.filter(m => m.role === 'admin');
+      if (!adminMems.length) {
+        list.innerHTML = '<div style="font-size:0.82rem;color:#888;">You need to be admin of at least two businesses in this account to configure parent/child relationships.</div>';
+        openModal('structureModal');
+        return;
+      }
+      // Stable sort by current sort_order, then name
+      adminMems.sort((a, b) => {
+        const so = (a.organisations.sort_order || 0) - (b.organisations.sort_order || 0);
+        if (so !== 0) return so;
+        return String(a.organisations.name || '').localeCompare(String(b.organisations.name || ''));
+      });
+      // Build a row per business: name + parent picker
+      list.innerHTML = adminMems.map(m => {
+        const org = m.organisations;
+        // Candidates: every other admin biz EXCEPT this biz's own children
+        // (We compute children based on the CURRENT data — if user changes a
+        // child's parent in the modal, the candidate filter is recomputed on Save.)
+        const candidates = adminMems
+          .filter(c => c.organisation_id !== org.id)
+          .filter(c => c.organisations.parent_organisation_id !== org.id);
+        const optionsHtml = '<option value="">— None —</option>' +
+          candidates.map(c =>
+            `<option value="${escHtml(c.organisation_id)}"${
+              c.organisation_id === org.parent_organisation_id ? ' selected' : ''
+            }>${escHtml(c.organisations.name)}</option>`
+          ).join('');
+        return `
+          <div class="structure-row" data-org-id="${escHtml(org.id)}"
+            style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+            <span style="font-size:0.88rem;font-weight:700;color:var(--primary);">${escHtml(org.name)}</span>
+            <select class="structure-picker" data-org-id="${escHtml(org.id)}"
+              style="padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:0.84rem;font-family:inherit;background:white;color:var(--text);min-width:140px;">
+              ${optionsHtml}
+            </select>
+          </div>`;
+      }).join('');
+      openModal('structureModal');
+    }
+
+    async function saveStructure() {
+      const errEl = document.getElementById('structureErr');
+      const saveBtn = document.getElementById('structureSave');
+      errEl.textContent = '';
+      // Collect every (org, newParentId) from the modal
+      const rows = Array.from(document.querySelectorAll('.structure-picker')).map(sel => ({
+        orgId: sel.dataset.orgId,
+        newParentId: sel.value || null
+      }));
+
+      // Validate: enforce flat-tree (depth 1). If A's new parent is B, then B
+      // can't itself have a parent. We check pair-wise on the resulting map.
+      const newParentByOrg = new Map(rows.map(r => [r.orgId, r.newParentId]));
+      for (const [orgId, parentId] of newParentByOrg) {
+        if (!parentId) continue;
+        // Walk up — if the chosen parent has a parent itself, reject.
+        const grandparent = newParentByOrg.get(parentId);
+        if (grandparent) {
+          const orgName  = (myMemberships.find(m => m.organisation_id === orgId)        || {}).organisations || {};
+          const parName  = (myMemberships.find(m => m.organisation_id === parentId)     || {}).organisations || {};
+          errEl.textContent = `${orgName.name || 'A business'} can't have ${parName.name || 'that parent'} as its parent — ${parName.name || 'that business'} is already a child of something else. Tree is flat (depth 1).`;
+          return;
+        }
+      }
+
+      // Only update rows where the value actually changed
+      const changed = rows.filter(r => {
+        const cur = (myMemberships.find(m => m.organisation_id === r.orgId) || {}).organisations || {};
+        return (cur.parent_organisation_id || null) !== r.newParentId;
+      });
+      if (!changed.length) {
+        closeModal('structureModal');
+        return;
+      }
+
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      // Run updates in parallel — Supabase is fine with that and it's faster
+      const results = await Promise.all(changed.map(r =>
+        sb.from('organisations')
+          .update({ parent_organisation_id: r.newParentId })
+          .eq('id', r.orgId)
+      ));
+      const firstErr = results.find(x => x.error);
+      if (firstErr) {
+        saveBtn.disabled = false; saveBtn.textContent = 'Save';
+        errEl.textContent = 'Could not save: ' + firstErr.error.message;
+        return;
+      }
+      // Bust the header switcher cache so the tree shows everywhere
+      try { localStorage.removeItem('coach4u_biz_list_cache'); } catch (_) {}
+      // Reload to show the new tree
+      window.location.reload();
+    }
+
+    document.getElementById('configureStructureBtn').addEventListener('click', openStructureModal);
+    document.getElementById('structureClose').addEventListener('click', () => closeModal('structureModal'));
+    document.getElementById('structureCancel').addEventListener('click', () => closeModal('structureModal'));
+    document.getElementById('structureSave').addEventListener('click', saveStructure);
+
     /* ============== rename account ============== */
     const renameLinkEl = document.getElementById('renameAccountLink');
     const renameInput  = document.getElementById('renameInput');
@@ -1335,6 +1471,7 @@
       renderStats();
       renderBusinesses();
       renderUsers();
+      refreshStructureButton();
     }
 
     /* ============== switcher + new client account ============== */
