@@ -4,6 +4,22 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.146
+- **Strip the bottom nav at the account level to a single Account item.** User: "the IAS dashboard should have no reference to strategy and operations or Learn. They should all happen at the next level down."
+- The old 6-item nav at the account level was misleading — Home, Planning, Strategy, Operations, Learn all linked to **business-level** pages that require an active business. From the account dashboard (where you haven't picked a business yet) they were either confusing or took you somewhere arbitrary.
+- Updated files (4): `index.html`, `account-strategy.html`, `account-operations.html`, `account-planning.html`. Each now has:
+  ```html
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item active" href="index.html" title="Account dashboard">
+      <span class="bottom-nav-icon">🏛️</span><span>Account</span>
+    </a>
+  </nav>
+  ```
+- **Business-level pages unchanged** — they still have the full 6-item nav (Home / Planning / Strategy / Operations / Learn / Account) since all those sections live at the business level.
+- **Side effect:** `account-strategy.html` / `account-operations.html` / `account-planning.html` are now only reachable via legacy entry-points from `annual-sessions.html` / `quarterly-sessions.html` / `team-checkins.html`. To revisit in a follow-up — likely either delete them or surface from a "Cross-business views" body section on `index.html`.
+
+---
+
 ## v0.5.145
 - **Phase 1 of parent / child business relationships.** A business can now link to a parent (e.g., IASHQ → IAS General / IAS Life / IAS Outsourcing). Flat tree, single parent per child.
 - **Data model:** new nullable column `organisations.parent_organisation_id` (FK self-referencing organisations, ON DELETE SET NULL), with a `CHECK (id <> parent_organisation_id)` constraint and an index on the FK. Depth-1 is enforced in the UI (parent picker only lists businesses that don't themselves have a parent) — no DB trigger.
