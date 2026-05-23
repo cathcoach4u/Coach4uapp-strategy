@@ -4,6 +4,35 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.212
+- **Annual session AREAS — fixed stale links + labels for current schema.** User: "Have you looked at the annual and quarterly areas for double dates and all areas are linked."
+
+### Double-dates audit ✓ no change needed
+- Workspace duplicate dates were dropped in v0.5.210 (`session-detail-title` removed from both annual + quarterly; `ws-title` page header is the single source of truth).
+- List pages (`annual-sessions.html`, `quarterly-sessions.html`) render `session-item-date` once per row — already fine.
+
+### Area-links audit — `run-annual-session.html`
+Found 3 issues in the `AREAS` array, all from accumulated schema drift:
+| Area | Before | After |
+|---|---|---|
+| 1 | "Review Last Year" — no link | Link → `one-page-plan.html` (the doc you actually review) |
+| 3 | "Update 10-Year + 3-Year Outlook" | "Update 10-Year, 5-Year + 3-Year Targets" (5-Year added to Targets in v0.5.181) |
+| 4 | "Set 1-Year Plan + Q1 Goals" → links: `targets.html` + `goals.html` | "Set 12-Month Goal + Q1 Goals" → links: `twelve-month-goal.html` + `goals.html` (12-Month moved off Targets in v0.5.184) |
+
+### Account-link map
+`ACCOUNT_LINK_MAP` extended with the two new biz-scoped paths so account-scoped sessions resolve correctly:
+```js
+'twelve-month-goal.html': 'account-targets.html',
+'one-page-plan.html':     'account-plans.html',
+```
+
+### Quarterly session AREAS ✓ no change needed
+"Review Last Quarter / Lessons + Adjustments / Set Next Quarter's Goals" — only references `goals.html` which is correct.
+
+### No SQL.
+
+---
+
 ## v0.5.211
 - **Quarterly session parity with annual + floating meeting pill z-index bump.** User: "Yes" — addressing both items queued in v0.5.210.
 

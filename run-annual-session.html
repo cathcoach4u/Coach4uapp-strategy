@@ -276,23 +276,32 @@
   }
 
   // Areas to cover during the annual session
+  // v0.5.212 — Area 3 + 4 labels and links updated to match the current schema:
+  // Targets covers 10/5/3-Year (v0.5.181); the 12-Month Goal lives on its own
+  // page (twelve-month-goal.html, moved off Targets in v0.5.184).
   const AREAS=[
-    {id:1, name:'Review Last Year',                  links:[]},
-    {id:2, name:'Refresh Core Values + Core Focus',  links:[{href:'core-values.html',text:'Open Core Values →'},{href:'core-focus.html',text:'Open Core Focus →'}]},
-    {id:3, name:'Update 10-Year + 3-Year Outlook',   links:[{href:'targets.html',text:'Open Targets →'}]},
-    {id:4, name:'Set 1-Year Plan + Q1 Goals',        links:[{href:'targets.html',text:'Open Targets →'},{href:'goals.html',text:'Open Quarterly Goals →'}]}
+    {id:1, name:'Review Last Year',                          links:[{href:'one-page-plan.html',text:'Open One-Page Plan →'}]},
+    {id:2, name:'Refresh Core Values + Core Focus',          links:[{href:'core-values.html',text:'Open Core Values →'},{href:'core-focus.html',text:'Open Core Focus →'}]},
+    {id:3, name:'Update 10-Year, 5-Year + 3-Year Targets',   links:[{href:'targets.html',text:'Open Targets →'}]},
+    {id:4, name:'Set 12-Month Goal + Q1 Goals',              links:[{href:'twelve-month-goal.html',text:'Open 12 Month Goal →'},{href:'goals.html',text:'Open Quarterly Goals →'}]}
   ];
 
   // When the loaded session is account-scoped, swap the area links to the
   // account-level carousel pages so the user lands on a cross-business view
   // instead of a single business's worksheet (their last-active biz).
+  // v0.5.212 — added twelve-month-goal.html + one-page-plan.html mappings
+  // so the new annual-session AREAS links resolve to the right cross-business
+  // page when the session is account-scoped (no biz-specific page exists for
+  // those; route to the closest account-level carousel instead).
   const ACCOUNT_LINK_MAP = {
     'core-values.html':       'account-values.html',
     'core-focus.html':        'account-focus.html',
     'targets.html':           'account-targets.html',
+    'twelve-month-goal.html': 'account-targets.html',
     'marketing-strategy.html':'account-marketing.html',
     'leadership-team.html':   'account-leadership.html',
-    'goals.html':             'account-goals.html'
+    'goals.html':             'account-goals.html',
+    'one-page-plan.html':     'account-plans.html'
   };
   function scopeAreaLinks(areas, isAccount) {
     if (!isAccount) return areas;
