@@ -4,6 +4,27 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.149
+- **Account dashboard becomes a compact admin table.** User: "I don't understand why it can't just be more of an admin dashboard where I can reallocate in a table … I don't need the revenue and open issues etc in the account area."
+- **Removed from `index.html`:**
+  - Stat tiles row (4 cards: Businesses count, Users count, Open Issues, Goals On Track)
+  - `renderStats()` function and its `refresh()` call
+  - Snapshot grid inside each biz card (Revenue, Quarter Goals, Open Issues, Next Meeting)
+  - `snapshotByOrg` state map
+  - Four parallel data-fetch queries (`targets`, `rocks`, `issues`, `meetings`) that only existed to power the above — dashboard load is faster as a result
+  - v0.5.148 "Structure" modal + button + all of `refreshStructureButton` / `openStructureModal` / `saveStructure` JS (replaced by inline pickers)
+- **New compact biz row markup:** each `.biz-card` is now just the head row (Name + Parent pill + Role pill + reorder + Open + ⋮) plus, for admins, an inline `Parent: [— None — ▾]` dropdown directly under it. Padding tightened (14×16) and the `is-child` indent marker repositioned (top: 18px).
+- **Inline parent picker behaviour:**
+  - Changing a row's parent fires an `UPDATE organisations SET parent_organisation_id = …` immediately.
+  - On success, local `myMemberships` state is mutated and `renderBusinesses()` is re-called — so the tree visually reshuffles AND every other row's candidate list refreshes (since the candidate pool is "top-level admin businesses ≠ self").
+  - On error, the picker re-snaps to its previous value and shows an alert.
+  - Header switcher cache (`coach4u_biz_list_cache`) busted on every save so the pill dropdown picks up the new parent assignments.
+- **Depth-1 still enforced** — only top-level rows are offered as candidates. A row that itself has children shows *"Has children — can't have a parent"* in muted italics instead of a picker (since making it a child would create a depth-2 chain via its existing children).
+- **Tree indent kept** for visual hierarchy — parents at top, children indented 28px under them with a teal left border + `↳` marker. Setting/clearing the parent inline causes the row to slide in/out of the indented group on re-render.
+- **No SQL change.**
+
+---
+
 ## v0.5.148
 - **Move parent/child allocation to the account dashboard.** User feedback: "It needs to be easier and done in accounts area. I think allocation is accounts level."
 - **Why:** the v0.5.145 design put a "Parent business" picker inside each business's dashboard (`business.html`). Setting up an IAS-style tree (1 parent + 3 children) meant tapping into 4 separate businesses and being careful not to invert the direction (the picker is "this biz's parent", not "this biz's children"). Several users got it wrong on the first try.

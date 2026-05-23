@@ -168,13 +168,15 @@
 
     /* ── Parent / child grouping (v0.5.145) ── */
     .biz-group { display: flex; flex-direction: column; gap: 12px; }
+    .biz-card { padding: 14px 16px; }  /* compact admin row (v0.5.149) */
+    .biz-card-head { margin-bottom: 0; }  /* no snapshot grid under it anymore */
     .biz-card.is-child {
       margin-left: 28px;
       border-left: 3px solid var(--accent);
       background: #fafdfc;
     }
     .biz-card.is-child::before {
-      content: "↳"; position: absolute; left: -22px; top: 22px;
+      content: "↳"; position: absolute; left: -22px; top: 18px;
       color: var(--accent); font-weight: 800; font-size: 1.15rem;
     }
     .parent-pill {
@@ -182,6 +184,26 @@
       text-transform: uppercase; letter-spacing: 0.6px;
       padding: 3px 9px; border-radius: 20px;
       background: rgba(0,51,102,0.1); color: var(--primary);
+    }
+
+    /* ── Inline parent picker (v0.5.149) ── */
+    .biz-parent-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0;
+      font-size: 0.78rem;
+    }
+    .biz-parent-label {
+      font-size: 0.66rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #888; flex-shrink: 0;
+    }
+    .biz-parent-select {
+      flex: 1; min-width: 0; padding: 6px 8px;
+      border: 1.5px solid var(--border); border-radius: 6px;
+      font-size: 0.84rem; font-family: inherit;
+      background: white; color: var(--text);
+    }
+    .biz-parent-disabled {
+      font-size: 0.78rem; color: #aaa; font-style: italic;
     }
 
     /* ── Snapshot grid ── */
@@ -372,33 +394,11 @@
       </div>
     </div>
 
-    <!-- Section B: Stats row (4 tiles) -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num" id="statBizCount">&mdash;</div>
-        <div class="stat-label">Businesses</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="statUserCount">&mdash;</div>
-        <div class="stat-label">Users</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="statOpenIssues">&mdash;</div>
-        <div class="stat-label">Open Issues</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="statGoalsOnTrack">&mdash;</div>
-        <div class="stat-label">Goals On Track</div>
-      </div>
-    </div>
 
     <div class="section" id="businesses">
       <div class="section-head">
         <span class="section-title">&#x1F4BC; Your Businesses</span>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <button id="configureStructureBtn" class="section-action" style="display:none;">&#x1F3DB;&#xFE0F; Structure</button>
-          <button id="addBusinessHeaderBtn" class="section-action">+ New Business</button>
-        </div>
+        <button id="addBusinessHeaderBtn" class="section-action">+ New Business</button>
       </div>
       <div id="bizList" class="biz-list"></div>
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
@@ -414,7 +414,7 @@
       <button id="inviteUserBtn" class="add-btn add-btn-secondary">+ Invite User</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.148</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.149</p>
 
   </div>
 
@@ -478,25 +478,6 @@
       <div class="modal-footer">
         <button class="btn-secondary" id="addCancel">Cancel</button>
         <button class="btn-primary" id="addSave">Create</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Configure business structure modal (v0.5.148) -->
-  <div class="modal-overlay hidden" id="structureModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">&#x1F3DB;&#xFE0F; Business Structure</span>
-        <button class="modal-close" id="structureClose">&times;</button>
-      </div>
-      <div class="modal-field">
-        <div class="modal-help" style="margin-bottom:14px;">Pick the parent (if any) for each business. Children inherit Core Values from their parent unless they override locally.</div>
-        <div id="structureList" style="display:flex;flex-direction:column;gap:10px;"></div>
-        <div class="modal-err" id="structureErr"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="structureCancel">Cancel</button>
-        <button class="btn-primary" id="structureSave">Save</button>
       </div>
     </div>
   </div>
@@ -652,7 +633,7 @@
     let allSubs = [];         // every subscription the user owns (for the switcher)
     let openMenuEl = null;    // currently open ⋮ menu
     // Per-org rollup data:
-    let snapshotByOrg = new Map();   // orgId → { revenue, rocksOnTrack, rocksTotal, openIssues, nextMeeting }
+    // snapshotByOrg map removed in v0.5.149 (no per-biz snapshots on the account dashboard).
 
     /* ============== loaders ============== */
     async function loadAll() {
@@ -709,73 +690,11 @@
             .neq('status', 'removed')
         : Promise.resolve({ data: [], error: null });
 
-      // 4) Snapshot data — fire 4 parallel queries across all the caller's orgs
-      const orgIds = myMemberships.map(m => m.organisation_id);
-      const currentQuarter = currentQuarterString();
-      const todayIso = new Date().toISOString().slice(0, 10);
-
-      const [teamResult, targetsResult, rocksResult, issuesResult, meetingsResult] = await Promise.all([
-        teamPromise,
-        sb.from('targets')
-          .select('organisation_id, one_year_revenue')
-          .in('organisation_id', orgIds),
-        sb.from('rocks')
-          .select('organisation_id, status')
-          .in('organisation_id', orgIds)
-          .eq('quarter', currentQuarter),
-        sb.from('issues')
-          .select('organisation_id, status')
-          .in('organisation_id', orgIds)
-          .eq('status', 'open'),
-        sb.from('meetings')
-          .select('organisation_id, meeting_date, status')
-          .in('organisation_id', orgIds)
-          .neq('status', 'completed')
-          .gte('meeting_date', todayIso)
-          .order('meeting_date', { ascending: true })
-      ]);
-
+      // Team data only — snapshot fetches (targets / rocks / issues / meetings)
+      // dropped in v0.5.149: those used to power the stat tiles + per-biz snapshot
+      // grid, both removed when the account dashboard became a compact admin table.
+      const teamResult = await teamPromise;
       teamRows = (teamResult && !teamResult.error) ? (teamResult.data || []) : [];
-
-      // Build snapshot map keyed by orgId
-      snapshotByOrg = new Map();
-      orgIds.forEach(id => snapshotByOrg.set(id, {
-        revenue: null,
-        rocksOnTrack: 0,
-        rocksTotal: 0,
-        openIssues: 0,
-        nextMeeting: null
-      }));
-
-      if (targetsResult && !targetsResult.error && targetsResult.data) {
-        targetsResult.data.forEach(t => {
-          const snap = snapshotByOrg.get(t.organisation_id);
-          if (snap) snap.revenue = t.one_year_revenue || null;
-        });
-      }
-      if (rocksResult && !rocksResult.error && rocksResult.data) {
-        rocksResult.data.forEach(r => {
-          const snap = snapshotByOrg.get(r.organisation_id);
-          if (!snap) return;
-          snap.rocksTotal += 1;
-          if (r.status === 'on_track' || r.status === 'done' || r.status === 'complete') {
-            snap.rocksOnTrack += 1;
-          }
-        });
-      }
-      if (issuesResult && !issuesResult.error && issuesResult.data) {
-        issuesResult.data.forEach(i => {
-          const snap = snapshotByOrg.get(i.organisation_id);
-          if (snap) snap.openIssues += 1;
-        });
-      }
-      if (meetingsResult && !meetingsResult.error && meetingsResult.data) {
-        // Already ordered ascending — first row per org wins
-        meetingsResult.data.forEach(mtg => {
-          const snap = snapshotByOrg.get(mtg.organisation_id);
-          if (snap && !snap.nextMeeting) snap.nextMeeting = mtg.meeting_date;
-        });
-      }
     }
 
     /* ============== render: account header ============== */
@@ -802,38 +721,6 @@
         const selected = (sub && s.id === sub.id) ? ' selected' : '';
         return `<option value="${escHtml(s.id)}"${selected}>${escHtml(label)}</option>`;
       }).join('');
-    }
-
-    /* ============== render: stats ============== */
-    function renderStats() {
-      // Businesses
-      document.getElementById('statBizCount').textContent = myMemberships.length;
-
-      // Distinct users + pending emails across the team rows
-      const uniqUsers = new Set();
-      teamRows.forEach(r => {
-        if (r.user_id) uniqUsers.add('u:' + r.user_id);
-        else if (r.invited_email) uniqUsers.add('e:' + r.invited_email.toLowerCase());
-      });
-      if (!uniqUsers.size) uniqUsers.add('u:' + user.id);
-      document.getElementById('statUserCount').textContent = uniqUsers.size;
-
-      // Account-level rollup: open issues + goals on-track / total across all businesses
-      let totalOpenIssues = 0;
-      let totalGoalsOnTrack = 0;
-      let totalGoalsTotal = 0;
-      snapshotByOrg.forEach(snap => {
-        totalOpenIssues += snap.openIssues;
-        totalGoalsOnTrack += snap.rocksOnTrack;
-        totalGoalsTotal += snap.rocksTotal;
-      });
-      document.getElementById('statOpenIssues').textContent = totalOpenIssues;
-      const goalsEl = document.getElementById('statGoalsOnTrack');
-      if (totalGoalsTotal === 0) {
-        goalsEl.innerHTML = '&mdash;';
-      } else {
-        goalsEl.innerHTML = totalGoalsOnTrack + '<span class="stat-total">/' + totalGoalsTotal + '</span>';
-      }
     }
 
     /* ============== render: businesses ============== */
@@ -882,38 +769,56 @@
         kids.forEach(k => renderOrder.push({ mem: k, isChild: true, hasChildren: false }));
       });
 
-      wrap.innerHTML = renderOrder.map((entry, idx) => {
+      // Eligible parents (for the inline picker on each row) = top-level admin
+      // businesses in this account, excluding "self". Depth-1 is enforced because
+      // we ONLY offer top-level rows as candidates. A row that itself has children
+      // cannot be made a child (its parent picker is shown as disabled with a hint).
+      const topLevelAdminCandidates = myMemberships.filter(m =>
+        m.role === 'admin' && !m.organisations.parent_organisation_id);
+
+      wrap.innerHTML = renderOrder.map((entry) => {
         const m = entry.mem;
         const orgId = m.organisations.id;
         const name  = m.organisations.name;
         const role  = m.role;
         const isAdmin = role === 'admin';
-        // Reorder arrows only meaningful at top level + only against other top-level rows.
-        // For child rows, reordering would require swapping inside a parent group — skip for now.
+        const hasChildren = entry.hasChildren;
+        const currentParentId = m.organisations.parent_organisation_id || '';
         const topIdx  = entry.isChild ? -1 : topLevel.findIndex(t => t.organisations.id === orgId);
         const isFirst = topIdx === 0;
         const isLast  = topIdx === topLevel.length - 1;
-        const snap = snapshotByOrg.get(orgId) || { revenue: null, rocksOnTrack: 0, rocksTotal: 0, openIssues: 0, nextMeeting: null };
 
-        const revenueHtml = (snap.revenue && String(snap.revenue).trim())
-          ? '<div class="snapshot-value">' + escHtml(snap.revenue) + '</div>'
-          : '<div class="snapshot-value snapshot-empty">Not set</div>';
-
-        const goalsHtml = (snap.rocksTotal === 0)
-          ? '<div class="snapshot-value snapshot-empty">0 of 0</div>'
-          : '<div class="snapshot-value">' + snap.rocksOnTrack + ' of ' + snap.rocksTotal + '</div>';
-
-        const issuesHtml = '<div class="snapshot-value' + (snap.openIssues === 0 ? ' snapshot-empty' : '') + '">' + snap.openIssues + '</div>';
-
-        const nextMeetingHtml = snap.nextMeeting
-          ? '<span class="nm-label">&#x1F4C5; Next meeting:</span> <span class="nm-value">' + escHtml(formatMeetingDate(snap.nextMeeting)) + '</span>'
-          : '<span class="nm-label">&#x1F4C5; Next meeting:</span> <span class="nm-empty">None scheduled</span>';
+        // Build the inline parent picker (admin only).
+        let parentControl = '';
+        if (isAdmin) {
+          if (hasChildren) {
+            // Has children → can't itself be a child (depth-1 rule). Show disabled.
+            parentControl = `
+              <div class="biz-parent-row">
+                <span class="biz-parent-label">Parent</span>
+                <span class="biz-parent-disabled">Has children — can't have a parent</span>
+              </div>`;
+          } else {
+            const candidates = topLevelAdminCandidates.filter(c => c.organisation_id !== orgId);
+            const opts = '<option value="">— None —</option>' +
+              candidates.map(c =>
+                `<option value="${escHtml(c.organisation_id)}"${
+                  c.organisation_id === currentParentId ? ' selected' : ''
+                }>${escHtml(c.organisations.name)}</option>`
+              ).join('');
+            parentControl = `
+              <div class="biz-parent-row">
+                <span class="biz-parent-label">Parent</span>
+                <select class="biz-parent-select" data-org-id="${escHtml(orgId)}">${opts}</select>
+              </div>`;
+          }
+        }
 
         return `
           <div class="biz-card ${entry.isChild ? 'is-child' : ''}" data-org-id="${orgId}" data-org-name="${escHtml(name)}">
             <div class="biz-card-head">
               <div class="biz-name">${escHtml(name)}</div>
-              ${entry.hasChildren ? `<span class="parent-pill">Parent</span>` : ''}
+              ${hasChildren ? `<span class="parent-pill">Parent</span>` : ''}
               <span class="role-pill role-${role}">${role}</span>
               ${isAdmin && !entry.isChild && topLevel.length > 1 ? `
                 <div class="reorder-wrap" title="Reorder">
@@ -932,23 +837,7 @@
                 </div>
               ` : ''}
             </div>
-
-            <div class="snapshot-grid">
-              <div class="snapshot-cell">
-                <div class="snapshot-label">&#x1F4CA; Revenue (1yr)</div>
-                ${revenueHtml}
-              </div>
-              <div class="snapshot-cell">
-                <div class="snapshot-label">&#x1F3AF; Quarter Goals</div>
-                ${goalsHtml}
-              </div>
-              <div class="snapshot-cell">
-                <div class="snapshot-label">&#x26A0;&#xFE0F; Open Issues</div>
-                ${issuesHtml}
-              </div>
-            </div>
-
-            <div class="biz-next-meeting">${nextMeetingHtml}</div>
+            ${parentControl}
           </div>`;
       }).join('');
 
@@ -992,6 +881,29 @@
             await moveBiz(orgId, btn.dataset.action === 'move-up' ? -1 : 1);
           });
         });
+        // ── Inline parent picker — auto-save on change (v0.5.149) ──
+        const parentSel = card.querySelector('.biz-parent-select');
+        if (parentSel) {
+          parentSel.addEventListener('change', async (e) => {
+            const newParentId = parentSel.value || null;
+            const mem = myMemberships.find(x => x.organisation_id === orgId);
+            const prevValue = mem ? (mem.organisations.parent_organisation_id || '') : '';
+            parentSel.disabled = true;
+            const { error } = await sb
+              .from('organisations')
+              .update({ parent_organisation_id: newParentId })
+              .eq('id', orgId);
+            parentSel.disabled = false;
+            if (error) {
+              alert('Could not save: ' + error.message);
+              parentSel.value = prevValue;
+              return;
+            }
+            if (mem) mem.organisations.parent_organisation_id = newParentId;
+            try { localStorage.removeItem('coach4u_biz_list_cache'); } catch (_) {}
+            renderBusinesses(); // re-render so the tree + other pickers' candidate lists refresh
+          });
+        }
       });
     }
 
@@ -1119,119 +1031,8 @@
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-    /* ============== configure business structure (v0.5.148) ============== */
-    // Only show the "Structure" button when the user is admin of ≥ 2 businesses
-    // in the active account (no point setting parents if there's only one).
-    function refreshStructureButton() {
-      const btn = document.getElementById('configureStructureBtn');
-      if (!btn) return;
-      const adminMems = myMemberships.filter(m => m.role === 'admin');
-      btn.style.display = adminMems.length >= 2 ? '' : 'none';
-    }
+    // (Structure modal removed in v0.5.149 — inline parent picker on each biz card replaces it.)
 
-    function openStructureModal() {
-      const list = document.getElementById('structureList');
-      const errEl = document.getElementById('structureErr');
-      errEl.textContent = '';
-      // Only admin orgs in the current account
-      const adminMems = myMemberships.filter(m => m.role === 'admin');
-      if (!adminMems.length) {
-        list.innerHTML = '<div style="font-size:0.82rem;color:#888;">You need to be admin of at least two businesses in this account to configure parent/child relationships.</div>';
-        openModal('structureModal');
-        return;
-      }
-      // Stable sort by current sort_order, then name
-      adminMems.sort((a, b) => {
-        const so = (a.organisations.sort_order || 0) - (b.organisations.sort_order || 0);
-        if (so !== 0) return so;
-        return String(a.organisations.name || '').localeCompare(String(b.organisations.name || ''));
-      });
-      // Build a row per business: name + parent picker
-      list.innerHTML = adminMems.map(m => {
-        const org = m.organisations;
-        // Candidates: every other admin biz EXCEPT this biz's own children
-        // (We compute children based on the CURRENT data — if user changes a
-        // child's parent in the modal, the candidate filter is recomputed on Save.)
-        const candidates = adminMems
-          .filter(c => c.organisation_id !== org.id)
-          .filter(c => c.organisations.parent_organisation_id !== org.id);
-        const optionsHtml = '<option value="">— None —</option>' +
-          candidates.map(c =>
-            `<option value="${escHtml(c.organisation_id)}"${
-              c.organisation_id === org.parent_organisation_id ? ' selected' : ''
-            }>${escHtml(c.organisations.name)}</option>`
-          ).join('');
-        return `
-          <div class="structure-row" data-org-id="${escHtml(org.id)}"
-            style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
-            <span style="font-size:0.88rem;font-weight:700;color:var(--primary);">${escHtml(org.name)}</span>
-            <select class="structure-picker" data-org-id="${escHtml(org.id)}"
-              style="padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:0.84rem;font-family:inherit;background:white;color:var(--text);min-width:140px;">
-              ${optionsHtml}
-            </select>
-          </div>`;
-      }).join('');
-      openModal('structureModal');
-    }
-
-    async function saveStructure() {
-      const errEl = document.getElementById('structureErr');
-      const saveBtn = document.getElementById('structureSave');
-      errEl.textContent = '';
-      // Collect every (org, newParentId) from the modal
-      const rows = Array.from(document.querySelectorAll('.structure-picker')).map(sel => ({
-        orgId: sel.dataset.orgId,
-        newParentId: sel.value || null
-      }));
-
-      // Validate: enforce flat-tree (depth 1). If A's new parent is B, then B
-      // can't itself have a parent. We check pair-wise on the resulting map.
-      const newParentByOrg = new Map(rows.map(r => [r.orgId, r.newParentId]));
-      for (const [orgId, parentId] of newParentByOrg) {
-        if (!parentId) continue;
-        // Walk up — if the chosen parent has a parent itself, reject.
-        const grandparent = newParentByOrg.get(parentId);
-        if (grandparent) {
-          const orgName  = (myMemberships.find(m => m.organisation_id === orgId)        || {}).organisations || {};
-          const parName  = (myMemberships.find(m => m.organisation_id === parentId)     || {}).organisations || {};
-          errEl.textContent = `${orgName.name || 'A business'} can't have ${parName.name || 'that parent'} as its parent — ${parName.name || 'that business'} is already a child of something else. Tree is flat (depth 1).`;
-          return;
-        }
-      }
-
-      // Only update rows where the value actually changed
-      const changed = rows.filter(r => {
-        const cur = (myMemberships.find(m => m.organisation_id === r.orgId) || {}).organisations || {};
-        return (cur.parent_organisation_id || null) !== r.newParentId;
-      });
-      if (!changed.length) {
-        closeModal('structureModal');
-        return;
-      }
-
-      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
-      // Run updates in parallel — Supabase is fine with that and it's faster
-      const results = await Promise.all(changed.map(r =>
-        sb.from('organisations')
-          .update({ parent_organisation_id: r.newParentId })
-          .eq('id', r.orgId)
-      ));
-      const firstErr = results.find(x => x.error);
-      if (firstErr) {
-        saveBtn.disabled = false; saveBtn.textContent = 'Save';
-        errEl.textContent = 'Could not save: ' + firstErr.error.message;
-        return;
-      }
-      // Bust the header switcher cache so the tree shows everywhere
-      try { localStorage.removeItem('coach4u_biz_list_cache'); } catch (_) {}
-      // Reload to show the new tree
-      window.location.reload();
-    }
-
-    document.getElementById('configureStructureBtn').addEventListener('click', openStructureModal);
-    document.getElementById('structureClose').addEventListener('click', () => closeModal('structureModal'));
-    document.getElementById('structureCancel').addEventListener('click', () => closeModal('structureModal'));
-    document.getElementById('structureSave').addEventListener('click', saveStructure);
 
     /* ============== rename account ============== */
     const renameLinkEl = document.getElementById('renameAccountLink');
@@ -1468,10 +1269,8 @@
       await loadAll();
       renderSwitcher();
       renderAccountHeader();
-      renderStats();
       renderBusinesses();
       renderUsers();
-      refreshStructureButton();
     }
 
     /* ============== switcher + new client account ============== */
