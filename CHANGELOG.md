@@ -4,6 +4,43 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.211
+- **Quarterly session parity with annual + floating meeting pill z-index bump.** User: "Yes" — addressing both items queued in v0.5.210.
+
+### (1) Quarterly session workspace — feature parity with annual
+
+#### Schema — `supabase/v0.5.211-delta.sql`
+3 nullable columns added to `quarterly_sessions`:
+```sql
+ALTER TABLE public.quarterly_sessions
+  ADD COLUMN IF NOT EXISTS notes          text,
+  ADD COLUMN IF NOT EXISTS external_links jsonb NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS commitments    jsonb NOT NULL DEFAULT '[]'::jsonb;
+```
+Same shape as the columns on `annual_sessions` (added v0.5.131). Existing rows keep working — nullable + default fallbacks. No RLS change — existing `quarterly_sessions` policies cover the new columns.
+
+#### UI — `run-quarterly-session.html`
+3 new blocks added between Areas to Cover and Team Check-in:
+- **🔗 Session Resources** — list of `{label, url}` rows; "Add link" button at the bottom; auto-saves to `external_links`.
+- **📝 Session Notes** — free-form textarea writing to `notes`, 500ms debounce autosave.
+- **🎯 Personal Commitments** — list of `{name, commitment}` rows; one-thing-each-leader-is-taking-on for the quarter; auto-saves to `commitments`.
+
+All borrow the same CSS classes (`.row-list`, `.row-input`, `.row-add`, `.link-row`, `.commit-row`, `.notes-input`) and JS pattern (renderLinks / persistLinks / scheduleLinksSave + same for commits) from the annual session — just copy-pasted with the empty-state copy tweaked for quarterly cadence ("one thing each leader is taking on for the *quarter*" instead of "year").
+
+### (2) Floating meeting pill z-index bump
+
+`js/active-meeting.js`:
+- `.active-meeting-pill { z-index: 210 }` → `z-index: 2100`
+
+The pill was being rendered correctly on every edit destination page (scorecard, goals, issues, todos) but on pages that open a modal — issues add/edit (`.modal-overlay { z-index: 1000 }`), goals edit modal, scorecard cell-popover, toast notifications (`z-index: 2000`) — the pill (z-index 210) was sitting below the overlay and looked "missing".
+
+Bumping to 2100 keeps the pill above all of those. Likely fix for the user's "pill doesn't come up when I click figures" report.
+
+### Run SQL
+- `supabase/v0.5.211-delta.sql`
+
+---
+
 ## v0.5.210
 - **Session workspace cleanups + Learn vault audit pass.** User: "Annual sessions has backlinks. I'm assuming quarterly does as well. It's showing 2 dates. Check quarterly. And also it's not showing the headings and work under each section." Plus a small audit sweep on the Learn vault and Operations hub for terminology drift.
 

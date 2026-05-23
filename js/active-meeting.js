@@ -52,7 +52,10 @@
         bottom: calc(120px + env(safe-area-inset-bottom));
         left: 50%;
         transform: translateX(-50%);
-        z-index: 210;
+        /* v0.5.211 — bumped above modal overlays (z-index 1000) and toasts
+           (z-index 2000) so the pill stays visible on edit pages that open
+           a modal (issues, goals, scorecard cell-popovers, etc.). */
+        z-index: 2100;
         background: #16a34a;
         color: white !important;
         padding: 10px 18px;

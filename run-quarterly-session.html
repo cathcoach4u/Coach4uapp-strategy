@@ -37,8 +37,34 @@
     .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0 6px;text-decoration:none;color:#aaa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;gap:3px;transition:color .15s}
     .bottom-nav-item.active,.bottom-nav-item:hover{color:#0D9488;text-decoration:none}
     .bottom-nav-icon{font-size:20px;line-height:1}
-    /* Attendance + Areas + Check-in blocks */
-    .attendance-block, .areas-block, .checkin-block { background:white; border:1px solid var(--border); border-radius:12px; padding:18px; margin:0 16px 14px; }
+    /* v0.5.211 — Attendance + Areas + Check-in + Resources + Notes + Commitments
+       blocks. Brought to parity with annual session. */
+    .attendance-block, .areas-block, .checkin-block, .resources-block, .notes-block, .commitments-block { background:white; border:1px solid var(--border); border-radius:12px; padding:18px; margin:0 16px 14px; }
+    .block-desc { font-size:.78rem; color:#888; margin:0 0 12px; line-height:1.45; }
+    /* Notes */
+    .notes-input { width:100%; min-height:140px; border:1.5px solid var(--border); border-radius:8px; padding:10px 12px; font-family:inherit; font-size:.88rem; color:var(--text); line-height:1.5; resize:vertical; box-sizing:border-box; }
+    .notes-input:focus { outline:none; border-color:var(--accent); }
+    /* External links + commitments — shared row patterns */
+    .row-list { display:flex; flex-direction:column; gap:8px; }
+    .link-row { display:grid; grid-template-columns:140px 1fr 30px; gap:8px; align-items:center; }
+    .commit-row { display:grid; grid-template-columns:130px 1fr 30px; gap:8px; align-items:start; }
+    .row-input { border:1.5px solid var(--border); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:.85rem; color:var(--text); box-sizing:border-box; width:100%; }
+    .row-input:focus { outline:none; border-color:var(--accent); }
+    .row-input.url { font-family:'SFMono-Regular',Menlo,Consolas,monospace; font-size:.78rem; color:#0D9488; }
+    .row-textarea { min-height:54px; line-height:1.45; resize:vertical; }
+    .row-del { background:transparent; border:none; color:#aaa; font-size:1.1rem; cursor:pointer; padding:4px; line-height:1; }
+    .row-del:hover { color:#c53030; }
+    .row-add { background:#f0fdfa; color:var(--accent); border:1px dashed var(--accent); border-radius:8px; padding:8px 14px; font-family:inherit; font-size:.82rem; font-weight:700; cursor:pointer; margin-top:10px; }
+    .row-add:hover { background:#ccfbf1; }
+    .row-empty { font-size:.8rem; color:#aaa; font-style:italic; padding:6px 0; }
+    @media (max-width:540px) {
+      .link-row { grid-template-columns:1fr 30px; }
+      .link-row .row-input.url { grid-column:1 / 3; }
+      .link-row .row-del { grid-row:1; }
+      .commit-row { grid-template-columns:1fr 30px; }
+      .commit-row .row-textarea { grid-column:1 / 3; }
+      .commit-row .row-del { grid-row:1; }
+    }
     .block-title { font-family:inherit; font-weight:700; color:var(--primary); font-size:1rem; margin:0 0 10px; }
     .attendance-input { width:100%; min-height:60px; border:1.5px solid var(--border); border-radius:8px; padding:10px 12px; font-family:inherit; font-size:.88rem; color:var(--text); resize:vertical; box-sizing:border-box; }
     .attendance-input:focus { outline:none; border-color:var(--accent); }
@@ -374,6 +400,27 @@
         }).join('')}
       </div>
 
+      <!-- v0.5.211 — Resources / Notes / Commitments blocks (parity with annual). -->
+      <div class="resources-block">
+        <h3 class="block-title">&#x1F517; Session Resources</h3>
+        <p class="block-desc">Link to your recording, slides, shared folder, or photos. Nothing is uploaded &mdash; just URLs to your own storage (Google Drive, Zoom, Notion, etc.).</p>
+        <div class="row-list" id="links-list"></div>
+        <button class="row-add" id="add-link-btn">+ Add link</button>
+      </div>
+
+      <div class="notes-block">
+        <h3 class="block-title">&#x1F4DD; Session Notes</h3>
+        <p class="block-desc">What got decided? What surprised you? What worked, what didn&rsquo;t? Capture it now so next quarter&rsquo;s session starts with the lessons baked in.</p>
+        <textarea class="notes-input" id="notes-input" placeholder="Decisions made&hellip; Energy of the room&hellip; What we&rsquo;d do differently next quarter&hellip;">${escHtml(s.notes||'')}</textarea>
+      </div>
+
+      <div class="commitments-block">
+        <h3 class="block-title">&#x1F3AF; Personal Commitments</h3>
+        <p class="block-desc">What&rsquo;s the one thing each leader will work on this quarter? Check back next session to see if it landed.</p>
+        <div class="row-list" id="commits-list"></div>
+        <button class="row-add" id="add-commit-btn">+ Add commitment</button>
+      </div>
+
       <div class="checkin-block">
         <h3 class="block-title">&#x1F31F; Team Check-in</h3>
         <div class="checkin-actions">
@@ -420,6 +467,125 @@
         }
       });
     });
+
+    // v0.5.211 — Session Notes (free-form, autosave with 500ms debounce)
+    let _notesTimer=null;
+    const notesInput=c.querySelector('#notes-input');
+    if(notesInput){
+      notesInput.addEventListener('input',()=>{
+        clearTimeout(_notesTimer);
+        _notesTimer=setTimeout(async()=>{
+          const val=notesInput.value;
+          _currentSession.notes=val;
+          try{ await updateSession(s.id,{notes:val}); }
+          catch(err){ showToast('Notes save failed','error'); }
+        },500);
+      });
+    }
+
+    // v0.5.211 — External Links list (label + URL pairs in external_links jsonb)
+    const linksList=c.querySelector('#links-list');
+    function renderLinks(){
+      const items=Array.isArray(_currentSession.external_links)?_currentSession.external_links:[];
+      if(!items.length){
+        linksList.innerHTML='<div class="row-empty">No links yet. Use the button below to add a recording, slides, or shared folder URL.</div>';
+        return;
+      }
+      linksList.innerHTML=items.map((it,i)=>`
+        <div class="link-row" data-idx="${i}">
+          <input type="text" class="row-input" data-field="label" data-idx="${i}" placeholder="Label (e.g. Zoom recording)" value="${escHtml(it.label||'')}">
+          <input type="url"  class="row-input url" data-field="url" data-idx="${i}" placeholder="https://…" value="${escHtml(it.url||'')}">
+          <button class="row-del" data-action="del-link" data-idx="${i}" title="Remove">&times;</button>
+        </div>
+      `).join('');
+    }
+    async function persistLinks(){
+      try{ await updateSession(s.id,{external_links:_currentSession.external_links}); }
+      catch(err){ showToast('Links save failed','error'); }
+    }
+    let _linksTimer=null;
+    function scheduleLinksSave(){ clearTimeout(_linksTimer); _linksTimer=setTimeout(persistLinks,500); }
+    linksList.addEventListener('input', e=>{
+      const t=e.target;
+      if(!t.dataset.field || t.dataset.idx==null) return;
+      const idx=parseInt(t.dataset.idx,10);
+      const list=Array.isArray(_currentSession.external_links)?_currentSession.external_links:[];
+      if(!list[idx]) list[idx]={label:'',url:''};
+      list[idx][t.dataset.field]=t.value;
+      _currentSession.external_links=list;
+      scheduleLinksSave();
+    });
+    linksList.addEventListener('click', e=>{
+      const btn=e.target.closest('[data-action="del-link"]');
+      if(!btn) return;
+      const idx=parseInt(btn.dataset.idx,10);
+      const list=Array.isArray(_currentSession.external_links)?_currentSession.external_links:[];
+      list.splice(idx,1);
+      _currentSession.external_links=list;
+      renderLinks();
+      persistLinks();
+    });
+    c.querySelector('#add-link-btn').addEventListener('click', ()=>{
+      const list=Array.isArray(_currentSession.external_links)?_currentSession.external_links:[];
+      list.push({label:'',url:''});
+      _currentSession.external_links=list;
+      renderLinks();
+      const inputs=linksList.querySelectorAll('input[data-field="label"]');
+      const last=inputs[inputs.length-1]; if(last) last.focus();
+    });
+    renderLinks();
+
+    // v0.5.211 — Personal Commitments list (name + commitment pairs in commitments jsonb)
+    const commitsList=c.querySelector('#commits-list');
+    function renderCommits(){
+      const items=Array.isArray(_currentSession.commitments)?_currentSession.commitments:[];
+      if(!items.length){
+        commitsList.innerHTML='<div class="row-empty">No commitments yet. Add the one thing each leader is taking on for the quarter.</div>';
+        return;
+      }
+      commitsList.innerHTML=items.map((it,i)=>`
+        <div class="commit-row" data-idx="${i}">
+          <input type="text" class="row-input" data-field="name" data-idx="${i}" placeholder="Name" value="${escHtml(it.name||'')}">
+          <textarea class="row-input row-textarea" data-field="commitment" data-idx="${i}" placeholder="One thing they&rsquo;ll work on this quarter…">${escHtml(it.commitment||'')}</textarea>
+          <button class="row-del" data-action="del-commit" data-idx="${i}" title="Remove">&times;</button>
+        </div>
+      `).join('');
+    }
+    async function persistCommits(){
+      try{ await updateSession(s.id,{commitments:_currentSession.commitments}); }
+      catch(err){ showToast('Commitments save failed','error'); }
+    }
+    let _commitsTimer=null;
+    function scheduleCommitsSave(){ clearTimeout(_commitsTimer); _commitsTimer=setTimeout(persistCommits,500); }
+    commitsList.addEventListener('input', e=>{
+      const t=e.target;
+      if(!t.dataset.field || t.dataset.idx==null) return;
+      const idx=parseInt(t.dataset.idx,10);
+      const list=Array.isArray(_currentSession.commitments)?_currentSession.commitments:[];
+      if(!list[idx]) list[idx]={name:'',commitment:''};
+      list[idx][t.dataset.field]=t.value;
+      _currentSession.commitments=list;
+      scheduleCommitsSave();
+    });
+    commitsList.addEventListener('click', e=>{
+      const btn=e.target.closest('[data-action="del-commit"]');
+      if(!btn) return;
+      const idx=parseInt(btn.dataset.idx,10);
+      const list=Array.isArray(_currentSession.commitments)?_currentSession.commitments:[];
+      list.splice(idx,1);
+      _currentSession.commitments=list;
+      renderCommits();
+      persistCommits();
+    });
+    c.querySelector('#add-commit-btn').addEventListener('click', ()=>{
+      const list=Array.isArray(_currentSession.commitments)?_currentSession.commitments:[];
+      list.push({name:'',commitment:''});
+      _currentSession.commitments=list;
+      renderCommits();
+      const inputs=commitsList.querySelectorAll('input[data-field="name"]');
+      const last=inputs[inputs.length-1]; if(last) last.focus();
+    });
+    renderCommits();
 
     // Copy check-in link
     const copyBtn=c.querySelector('#copy-checkin-link');
