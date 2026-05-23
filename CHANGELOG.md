@@ -4,6 +4,34 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.208
+- **Annual + quarterly session audit (matches the v0.5.207 weekly-meeting fix).** User: "Now go to annual and quarterly sessions and do the same audit and check if it is structured to see the persistence pill and each section can be seen."
+
+### Persistence pill — auto-sync on session load
+Both `run-annual-session.html` and `run-quarterly-session.html` already wire `window.activeSession.set/clear` correctly on the status dropdown change and the timer start/end. But neither was syncing the pill on initial page load — so if the user opened (or refreshed) an in-progress session, the floating pill stayed in its prior localStorage state (could be stale or missing entirely if localStorage was cleared).
+
+**Fix**: in each file's `loadDetail(id)`, right after the page header is set, sync the pill from the session's current status:
+- `s.status === 'in_progress'` → `window.activeSession.set('annual'|'quarterly', s.id, label)`
+- `s.status === 'completed'`   → `window.activeSession.clear()`
+- `s.status === 'scheduled'`   → no-op (session not actively running)
+
+Matches the v0.5.207 pattern used in `run-meeting.html`. The pill now follows the source-of-truth (the row in `annual_sessions` / `quarterly_sessions`) rather than relying on prior writes.
+
+### Section visibility — already fine, no change needed
+Both session workspaces are vertical-stacked block layouts, not the accordion the weekly meeting uses. Every block already shows its content inline:
+- **Annual**: Attendance · Areas to Cover · Session Resources · Session Notes · Personal Commitments · Team Check-in.
+- **Quarterly**: Attendance · Areas to Cover · Session Resources · Personal Commitments · Team Check-in.
+
+No "click to expand → see items" → "click Edit" pattern needed since there's nothing hidden behind a toggle. Sections are visible from the moment the page loads.
+
+### Out of scope
+- `run-team-checkin.html` doesn't use the planning-session pill (it's a survey batch run page, not a workshop session) — left alone.
+- Delete-clears-pill cleanup (added to `meeting.html` in v0.5.207) wasn't added for sessions because `annual-sessions.html` / `quarterly-sessions.html` don't have delete buttons — the only path that removes a session is the workspace itself, which already clears the pill on `'completed'`.
+
+### No SQL.
+
+---
+
 ## v0.5.207
 Four user asks bundled (all about the weekly meeting UX):
 1. *"Can it be that there is green light flashing that can be click on when a meeting is running."*

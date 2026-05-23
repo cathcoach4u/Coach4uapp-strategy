@@ -304,6 +304,18 @@
     const qn=(/^Q(\d)/.exec(s.target_quarter||'')||[])[1]||'';
     document.getElementById('ws-title').innerHTML='&#x1F3AF; '+(qn?'Q'+qn:'Quarterly')+' Planning Session '+(s.subscription_id?'(Account)':'')+' — '+fmtDate(s.session_date);
     document.getElementById('ws-sub').textContent='Sets goals for '+(s.target_quarter||'next quarter')+' — track attendance, tick off each area as you cover it, and share the team check-in link.';
+
+    // v0.5.208 — sync the floating "Resume Planning Session" pill with the
+    // session's current status, so reopening or refreshing the page restores
+    // the pill if the session is still in progress (and clears it if not).
+    if (window.activeSession) {
+      if (s.status === 'in_progress') {
+        window.activeSession.set('quarterly', s.id, (s.target_quarter || 'Quarterly') + ' Session');
+      } else if (s.status === 'completed') {
+        window.activeSession.clear();
+      }
+    }
+
     await renderDetail(s);
   }
 
