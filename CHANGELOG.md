@@ -4,6 +4,24 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.196
+- **Year Flow panel now appears on the parent dashboard too.** User: "This is not appearing on this version."
+
+### Diagnosis
+The v0.5.195 implementation put the `📅 Year Flow` panel + render call inside `#standardMode` only. The user is on IASHQ, which is a parent biz — when a business has children, `business.html` switches to `#parentMode` and hides `#standardMode` via `display: none`. The Year Flow panel was inside the hidden subtree → never visible.
+
+### Fix
+- Added the same `<div class="dash-panel">` block to `#parentMode` (right after the quick-actions row, before Group Strategy) with a distinct id `yearFlowParent`.
+- Refactored `renderYearFlow(cadence, targetId)` to accept a target element id (defaults to `yearFlow` for backwards compat).
+- Extracted the cadence fetch into a shared `loadAndRenderYearFlow(orgId, targetId)` helper so both code paths can use it without duplication.
+- `renderDashboard()` (own-business mode) calls `loadAndRenderYearFlow(orgId, 'yearFlow')`.
+- `renderParentMode()` (parent mode) calls `loadAndRenderYearFlow(parentOrgId, 'yearFlowParent')` — using the parent biz's own cadence row, because the holding company has its own annual + quarterly + weekly rhythm distinct from its children.
+
+### Cache note
+The service worker also bumps to `coach4u-v0.5.196`, so the new business.html is cached fresh on next load. If the panel still doesn't appear, hard-refresh on iOS Safari (pull down at the top of the page) so the new sw.js is fetched.
+
+---
+
 ## v0.5.195
 - **Year Flow panel on the home dashboard.** User: "Add the dates on dashboard so it looks like a flow for the year."
 

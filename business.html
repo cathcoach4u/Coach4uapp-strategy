@@ -405,6 +405,16 @@
         <a class="view-plan-btn" href="one-page-plan.html">&#x1F4CB;&nbsp; View One-Page Plan</a>
         <a class="view-plan-btn" href="one-page-operations.html">&#x1F4CB;&nbsp; View One-Page Operations</a>
       </div>
+      <!-- v0.5.196 — Year Flow panel in parentMode too (the parent biz has its own cadence) -->
+      <div class="dash-panel">
+        <div class="panel-head">
+          <span class="panel-title">&#x1F4C5; Year Flow</span>
+          <a class="panel-link" href="cadence.html">Edit &#x203A;</a>
+        </div>
+        <div class="panel-body" id="yearFlowParent">
+          <div class="flow-empty">Loading&hellip;</div>
+        </div>
+      </div>
       <!-- v0.5.179 — Group Strategy keeps only the 12-month goal -->
       <div class="dash-panel">
         <div class="panel-head">
@@ -463,7 +473,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.195</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.196</p>
 
   </div>
 
@@ -686,9 +696,12 @@
         pillsEl.innerHTML = '<span style="font-size:0.78rem;color:#aaa;">No core values set yet.</span>';
       }
 
-      // ── Year Flow panel (v0.5.195) — planning cadence timeline ──
-      // Fetched separately because business_cadence may not exist yet on accounts
-      // that haven't run the v0.5.192 migration; renderYearFlow handles that gracefully.
+      // ── Year Flow panel (v0.5.195 / v0.5.196) — planning cadence timeline ──
+      await loadAndRenderYearFlow(orgId, 'yearFlow');
+    }
+
+    // Shared loader so both standardMode and parentMode can render the Year Flow.
+    async function loadAndRenderYearFlow(orgId, targetId) {
       try {
         const { data: cad, error: cadErr } = await supabase
           .from('business_cadence')
@@ -697,17 +710,18 @@
           .maybeSingle();
         if (cadErr) {
           console.warn('Year flow load:', cadErr.message);
-          renderYearFlow(null);
+          renderYearFlow(null, targetId);
         } else {
-          renderYearFlow(cad);
+          renderYearFlow(cad, targetId);
         }
       } catch (e) {
         console.warn('Year flow load error:', e);
-        renderYearFlow(null);
+        renderYearFlow(null, targetId);
       }
     }
 
     // v0.5.195 — Year Flow vertical timeline on the home dashboard.
+    // v0.5.196 — accepts a target id so parentMode + standardMode can both render.
     function fmtFlowTime(t) {
       if (!t) return '';
       const parts = String(t).split(':');
@@ -717,8 +731,8 @@
       const h12 = ((h + 11) % 12) + 1;
       return h12 + ':' + m + period;
     }
-    function renderYearFlow(cadence) {
-      const wrap = document.getElementById('yearFlow');
+    function renderYearFlow(cadence, targetId) {
+      const wrap = document.getElementById(targetId || 'yearFlow');
       if (!wrap) return;
       if (!cadence) {
         wrap.innerHTML = '<div class="flow-empty">Set your planning cadence to see your year flow.<br><a href="cadence.html">Set it up &rarr;</a></div>';
@@ -772,6 +786,10 @@
       const allIds = [parentOrgId, ...childIds];
       const quarter = currentQuarter();
       const todayIso = new Date().toISOString().slice(0, 10);
+
+      // v0.5.196 — Year Flow uses the parent's own cadence (the parent biz has
+      // its own annual / quarterly / weekly rhythm).
+      loadAndRenderYearFlow(parentOrgId, 'yearFlowParent');
 
       // Last 12 months as YYYY-MM-01 date strings (first day of each month).
       // financial_periods.period is a `date` typed column, stored as the 1st of the month.
