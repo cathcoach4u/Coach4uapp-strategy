@@ -4,6 +4,23 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.155
+- **Parent business dashboard becomes a holding-co rollup view.** User: "The parents dashboard needs to be more focused on a summary of entire businesses."
+- **Detection:** in `business.html` `init()`, after the active row is resolved, scan `memberships` for any row whose `organisations.parent_organisation_id === activeOrg.id`. If at least one, render parent-mode; otherwise render the existing standard dashboard.
+- **Standard own-business panels wrapped in `<div id="standardMode">`** (Stat tiles / 1-Year Goal / Core Values / Meeting button / This Week / This Quarter). Hidden when parent-mode is on.
+- **New `<div id="parentMode">` with four panels:**
+  1. **Group Strategy** — the parent's own targets row, three labels: 10-Year Vision, 3-Year Outlook, 12-Month Goal. 3-Year and 12-Month combine the worksheet's date/revenue/profit/desc/goals fields into a single block.
+  2. **This Quarter's Priorities** — the parent's `rocks` for the current quarter, with status pills (same `STATUS_LABEL` / `STATUS_PILL` palette as the standard dashboard).
+  3. **Group Financials** — 2×2 grid: `1-Year Revenue Target` (sum of parsed numbers from each org's `targets.one_year_revenue` — strips `$`/`,`/etc. with `parseFloat`), `Last 12mo Revenue`, `Last 12mo Expenses`, `Last 12mo Profit` (revenue − expenses). Sourced from `financial_periods` for parent + all children, filtered to the 12 most-recent `YYYY-MM-01` period dates (exclusive of current month).
+  4. **Child Businesses** — tappable card per child showing **Open Issues**, **Goals on track (X of N)**, **Next meeting**. Tapping a card sets the active org to that child and reloads → user lands on the child's standard dashboard.
+- **New JS function `renderParentMode(parentOrgId, children)`** fires 7 parallel Supabase queries (`targets` ×2, `rocks` ×2, `financial_periods`, `issues`, `meetings`) and renders the panels.
+- **CSS additions:** `.group-target-row` / `.group-target-label` / `.group-target-value`, `.financial-grid` / `.financial-cell` / `.financial-label` / `.financial-value` / `.financial-sub`, `.child-card` / `.child-card-head` / `.child-card-arrow` / `.child-card-name` / `.child-card-open` / `.child-card-mini`.
+- **Standalone businesses + child businesses (those with `parent_organisation_id` set but no children of their own) are unchanged** — they still get the standard own-business dashboard.
+- **No SQL change.**
+- **Known limitation:** the rollup only includes child businesses the current user is a member of (RLS). For an admin of a parent who isn't a member of any child, the rollup would silently miss those children. In practice (e.g., IAS admin Cath is admin of all 4) this isn't an issue; could be addressed later with a "parent admins can read child strategy" RLS policy.
+
+---
+
 ## v0.5.154
 - **Move the "Business Management" subtitle on `index.html` to sit under the section heading instead of the account header.** User: "The wording for business management should be under the heading of businesses."
 - With long account names ("Insurance Advisory Service NSW Pty Ltd" wraps to two lines on phones), having a subtitle paragraph between the bold account name and the "💼 Your Businesses" section header was crowded and read like duplicated headings.

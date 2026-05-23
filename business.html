@@ -128,6 +128,66 @@
     .pill-red   { background: #FEE2E2; color: #DC2626; }
     .pill-grey  { background: #F3F4F6; color: #6B7280; }
 
+    /* ── Parent mode (v0.5.155) ── */
+    .group-target-row {
+      display: flex; flex-direction: column; gap: 4px;
+      margin-bottom: 12px; padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .group-target-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .group-target-label {
+      font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.55px; color: #888;
+    }
+    .group-target-value {
+      font-size: 0.86rem; color: var(--primary); font-weight: 600;
+      line-height: 1.45; white-space: pre-wrap;
+    }
+    .group-target-value.empty { color: #aaa; font-weight: 600; }
+
+    .financial-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .financial-cell {
+      background: #f8fafc; border-radius: 8px; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 3px; min-width: 0;
+    }
+    .financial-label {
+      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #888; line-height: 1.3;
+    }
+    .financial-value {
+      font-size: 1rem; font-weight: 800; color: var(--primary);
+      line-height: 1.2; word-break: break-word;
+    }
+    .financial-value.empty { color: #aaa; }
+    .financial-sub { font-size: 0.6rem; color: #aaa; }
+
+    .child-card {
+      background: white; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 8px;
+      cursor: pointer; transition: border-color .12s, box-shadow .12s;
+    }
+    .child-card:last-child { margin-bottom: 0; }
+    .child-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(13,148,136,0.1); }
+    .child-card-head {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .child-card-arrow { color: var(--accent); font-size: 1.1rem; font-weight: 800; line-height: 1; }
+    .child-card-name {
+      flex: 1; min-width: 0;
+      font-size: 0.95rem; font-weight: 800; color: var(--primary);
+    }
+    .child-card-open { font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+    .child-card-mini {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      font-size: 0.74rem; color: #666;
+    }
+    .child-card-mini > div { display: flex; gap: 4px; }
+    .child-card-mini .label { color: #888; font-weight: 600; }
+    .child-card-mini .val   { color: var(--primary); font-weight: 800; }
+    .child-card-mini .val.empty { color: #aaa; font-weight: 700; }
+
     /* ── Bottom nav ── */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -176,6 +236,8 @@
       </div>
     </div>
 
+    <!-- ── Standard dashboard (own org's data) — hidden when this biz is a parent ── -->
+    <div id="standardMode">
     <!-- Stat tiles -->
     <div class="stat-row">
       <a class="stat-tile" href="issues.html">
@@ -250,8 +312,85 @@
         <div class="rock-list" id="quarterRocks"></div>
       </div>
     </div>
+    </div><!-- /standardMode -->
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.154</p>
+    <!-- ── Parent mode — group rollup view, shown when this biz has children (v0.5.155) ── -->
+    <div id="parentMode" style="display:none;">
+      <div class="dash-panel">
+        <div class="panel-head">
+          <span class="panel-title">&#x1F3AF; Group Strategy</span>
+          <a class="panel-link" href="targets.html">Edit &#x203A;</a>
+        </div>
+        <div class="panel-body">
+          <div class="group-target-row">
+            <span class="group-target-label">10-Year Vision</span>
+            <div class="group-target-value empty" id="parentTenYear">Not set</div>
+          </div>
+          <div class="group-target-row">
+            <span class="group-target-label">3-Year Outlook</span>
+            <div class="group-target-value empty" id="parentThreeYear">Not set</div>
+          </div>
+          <div class="group-target-row">
+            <span class="group-target-label">12-Month Goal</span>
+            <div class="group-target-value empty" id="parentOneYear">Not set</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-panel">
+        <div class="panel-head">
+          <span class="panel-title">&#x1F3AF; This Quarter&rsquo;s Priorities</span>
+          <a class="panel-link" href="goals.html">Edit &#x203A;</a>
+        </div>
+        <div class="panel-body">
+          <div id="parentQuarterRocks">
+            <div style="font-size:0.78rem;color:#aaa;">No quarterly priorities set yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-panel">
+        <div class="panel-head">
+          <span class="panel-title">&#x1F4B0; Group Financials</span>
+          <a class="panel-link" href="financials.html">Edit &#x203A;</a>
+        </div>
+        <div class="panel-body">
+          <div class="financial-grid">
+            <div class="financial-cell">
+              <div class="financial-label">1-Year Revenue Target</div>
+              <div class="financial-value empty" id="groupRevenueTarget">&mdash;</div>
+              <div class="financial-sub">summed across group</div>
+            </div>
+            <div class="financial-cell">
+              <div class="financial-label">Last 12mo Revenue</div>
+              <div class="financial-value empty" id="groupRevenueActual">&mdash;</div>
+              <div class="financial-sub">combined actuals</div>
+            </div>
+            <div class="financial-cell">
+              <div class="financial-label">Last 12mo Expenses</div>
+              <div class="financial-value empty" id="groupExpenses">&mdash;</div>
+              <div class="financial-sub">combined actuals</div>
+            </div>
+            <div class="financial-cell">
+              <div class="financial-label">Last 12mo Profit</div>
+              <div class="financial-value empty" id="groupProfit">&mdash;</div>
+              <div class="financial-sub">revenue &minus; expenses</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-panel">
+        <div class="panel-head">
+          <span class="panel-title">&#x1F3E2; Child Businesses</span>
+        </div>
+        <div class="panel-body">
+          <div id="childCards"></div>
+        </div>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.155</p>
 
   </div>
 
@@ -475,6 +614,162 @@
       }
     }
 
+    // ── Parent dashboard (v0.5.155) — rollup view across parent + children ──
+    async function renderParentMode(parentOrgId, children) {
+      const childIds = children.map(c => c.id);
+      const allIds = [parentOrgId, ...childIds];
+      const quarter = currentQuarter();
+      const todayIso = new Date().toISOString().slice(0, 10);
+
+      // Last 12 months as YYYY-MM-01 date strings (first day of each month).
+      // financial_periods.period is a `date` typed column, stored as the 1st of the month.
+      const periodStarts = [];
+      const probe = new Date();
+      probe.setDate(1);
+      probe.setMonth(probe.getMonth() - 1); // start from previous full month
+      for (let i = 0; i < 12; i++) {
+        periodStarts.push(probe.toISOString().slice(0, 10));
+        probe.setMonth(probe.getMonth() - 1);
+      }
+
+      const [
+        parentTargets, parentRocks, allFinancials, allTargets,
+        allChildIssues, allChildRocks, allChildMeetings
+      ] = await Promise.all([
+        supabase.from('targets').select('ten_year, three_year_revenue, three_year_profit, three_year_date, three_year_desc, one_year_goals, one_year_revenue, one_year_date')
+          .eq('organisation_id', parentOrgId).maybeSingle(),
+        supabase.from('rocks').select('description, status, sort_order')
+          .eq('organisation_id', parentOrgId).eq('quarter', quarter).order('sort_order'),
+        supabase.from('financial_periods').select('organisation_id, period, revenue, expenses')
+          .in('organisation_id', allIds).in('period', periodStarts),
+        supabase.from('targets').select('organisation_id, one_year_revenue')
+          .in('organisation_id', allIds),
+        supabase.from('issues').select('organisation_id, status')
+          .in('organisation_id', childIds).eq('status', 'open'),
+        supabase.from('rocks').select('organisation_id, status')
+          .in('organisation_id', childIds).eq('quarter', quarter),
+        supabase.from('meetings').select('organisation_id, meeting_date, status, id')
+          .in('organisation_id', childIds).neq('status', 'completed').gte('meeting_date', todayIso)
+          .order('meeting_date', { ascending: true })
+      ]);
+
+      // ── Group Strategy: parent's own targets ──
+      const pt = (parentTargets.data || {});
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        const v = (val || '').toString().trim();
+        if (v) { el.classList.remove('empty'); el.textContent = v; }
+        else   { el.classList.add('empty');    el.textContent = 'Not set'; }
+      };
+      setText('parentTenYear', pt.ten_year);
+      // 3-Year: combine three_year_desc with numbers if present
+      const threeYearBits = [];
+      if (pt.three_year_date)    threeYearBits.push('Target: ' + pt.three_year_date);
+      if (pt.three_year_revenue) threeYearBits.push('Revenue ' + pt.three_year_revenue);
+      if (pt.three_year_profit)  threeYearBits.push('Profit ' + pt.three_year_profit);
+      const threeYearText = [pt.three_year_desc, threeYearBits.length ? threeYearBits.join(' · ') : null]
+        .filter(Boolean).join('\n');
+      setText('parentThreeYear', threeYearText);
+      // 12-Month
+      const oneYearBits = [];
+      if (pt.one_year_date)    oneYearBits.push('Target: ' + pt.one_year_date);
+      if (pt.one_year_revenue) oneYearBits.push('Revenue ' + pt.one_year_revenue);
+      const oneYearText = [pt.one_year_goals, oneYearBits.length ? oneYearBits.join(' · ') : null]
+        .filter(Boolean).join('\n');
+      setText('parentOneYear', oneYearText);
+
+      // ── This Quarter's Priorities (parent's rocks) ──
+      const STATUS_LABEL = { on_track:'On Track', at_risk:'At Risk', off_track:'Off Track', done:'Done', not_started:'Not Started' };
+      const STATUS_PILL  = { on_track:'pill-green', at_risk:'pill-amber', off_track:'pill-red', done:'pill-green', not_started:'pill-grey' };
+      const qrEl = document.getElementById('parentQuarterRocks');
+      const rocksList = (parentRocks.data || []);
+      if (rocksList.length) {
+        qrEl.innerHTML = rocksList.map(r => `
+          <div class="rock-row">
+            <div class="rock-desc">${escapeHtml(r.description || '')}</div>
+            <span class="status-pill ${STATUS_PILL[r.status] || 'pill-grey'}">${STATUS_LABEL[r.status] || (r.status || '—')}</span>
+          </div>`).join('');
+      } else {
+        qrEl.innerHTML = '<div style="font-size:0.78rem;color:#aaa;">No quarterly priorities set yet.</div>';
+      }
+
+      // ── Group Financials ──
+      const fmtMoney = n => '$' + Math.round(n).toLocaleString('en-AU');
+      const finRows = (allFinancials.data || []);
+      let totalRev = 0, totalExp = 0;
+      finRows.forEach(f => {
+        totalRev += Number(f.revenue || 0);
+        totalExp += Number(f.expenses || 0);
+      });
+      // 1-Year Revenue Target: try to sum parsed numbers from each org's one_year_revenue
+      let totalTarget = 0, parsedAnyTarget = false;
+      (allTargets.data || []).forEach(t => {
+        if (t.one_year_revenue) {
+          const num = parseFloat(String(t.one_year_revenue).replace(/[^\d.-]/g, ''));
+          if (!isNaN(num)) { totalTarget += num; parsedAnyTarget = true; }
+        }
+      });
+      const setFin = (id, val, isEmpty) => {
+        const el = document.getElementById(id);
+        if (isEmpty) { el.classList.add('empty'); el.textContent = '—'; }
+        else { el.classList.remove('empty'); el.textContent = val; }
+      };
+      setFin('groupRevenueTarget', parsedAnyTarget ? fmtMoney(totalTarget) : '—', !parsedAnyTarget);
+      setFin('groupRevenueActual', finRows.length ? fmtMoney(totalRev) : '—', !finRows.length);
+      setFin('groupExpenses',      finRows.length ? fmtMoney(totalExp) : '—', !finRows.length);
+      setFin('groupProfit',        finRows.length ? fmtMoney(totalRev - totalExp) : '—', !finRows.length);
+
+      // ── Child cards: per-child snapshot (issues / goals / next meeting) ──
+      const issuesPerChild = new Map();
+      const rocksPerChild  = new Map();
+      const meetingsPerChild = new Map();
+      (allChildIssues.data || []).forEach(r => {
+        issuesPerChild.set(r.organisation_id, (issuesPerChild.get(r.organisation_id) || 0) + 1);
+      });
+      (allChildRocks.data || []).forEach(r => {
+        if (!rocksPerChild.has(r.organisation_id)) rocksPerChild.set(r.organisation_id, { total: 0, onTrack: 0 });
+        const c = rocksPerChild.get(r.organisation_id);
+        c.total++;
+        if (r.status === 'on_track' || r.status === 'done' || r.status === 'complete') c.onTrack++;
+      });
+      (allChildMeetings.data || []).forEach(m => {
+        if (!meetingsPerChild.has(m.organisation_id)) meetingsPerChild.set(m.organisation_id, m);
+      });
+
+      const cardsEl = document.getElementById('childCards');
+      cardsEl.innerHTML = children.map(c => {
+        const issues = issuesPerChild.get(c.id) || 0;
+        const rocks  = rocksPerChild.get(c.id) || { total: 0, onTrack: 0 };
+        const mtg    = meetingsPerChild.get(c.id);
+        const mtgLabel = mtg ? fmtShortDate(mtg.meeting_date) : '—';
+        const issuesValClass = issues === 0 ? 'val empty' : 'val';
+        const goalsValClass = (rocks.total === 0) ? 'val empty' : 'val';
+        const mtgValClass = mtg ? 'val' : 'val empty';
+        return `
+          <div class="child-card" data-org-id="${escapeHtml(c.id)}" data-org-name="${escapeHtml(c.name)}">
+            <div class="child-card-head">
+              <span class="child-card-arrow">↳</span>
+              <span class="child-card-name">${escapeHtml(c.name)}</span>
+              <span class="child-card-open">Open ›</span>
+            </div>
+            <div class="child-card-mini">
+              <div><span class="label">Open Issues:</span><span class="${issuesValClass}">${issues}</span></div>
+              <div><span class="label">Goals on track:</span><span class="${goalsValClass}">${rocks.onTrack} of ${rocks.total}</span></div>
+              <div><span class="label">Next meeting:</span><span class="${mtgValClass}">${escapeHtml(mtgLabel)}</span></div>
+            </div>
+          </div>`;
+      }).join('');
+
+      cardsEl.querySelectorAll('.child-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const oid = card.dataset.orgId;
+          const oname = card.dataset.orgName;
+          if (window.activeOrg) window.activeOrg.set(oid, oname);
+          window.location.reload();
+        });
+      });
+    }
+
     // ── Parent / child context for the greeting row (v0.5.145) ──
     function renderBizContext(activeRow, memberships) {
       const ctx = document.getElementById('bizContext');
@@ -561,7 +856,19 @@
       ensureSeeds();
       try {
         renderBizContext(activeRow, memberships);
-        await renderDashboard(activeId);
+        // Detect whether this biz is a PARENT — i.e., has at least one child whose
+        // parent_organisation_id matches. If so, switch to the rollup-style parent
+        // dashboard; otherwise render the standard own-business view.
+        const childrenInThisAccount = memberships
+          .filter(m => m.organisations && m.organisations.parent_organisation_id === activeId)
+          .map(m => ({ id: m.organisation_id, name: m.organisations.name }));
+        if (childrenInThisAccount.length) {
+          document.getElementById('standardMode').style.display = 'none';
+          document.getElementById('parentMode').style.display = '';
+          await renderParentMode(activeId, childrenInThisAccount);
+        } else {
+          await renderDashboard(activeId);
+        }
       } catch (e) {
         console.warn('Dashboard render error:', e);
       }
