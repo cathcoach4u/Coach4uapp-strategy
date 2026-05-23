@@ -4,6 +4,24 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.159
+- **Audit + cleanup of the three account-level tabs.** User: "Audit the account three tabs for consistency and ensure that all of the links work."
+- **Method:** systematic grep across `index.html` / `account-users.html` / `account-setup.html` for: head meta + scripts, site-header structure, account switcher block, bottom nav (active state), footer version label, auth check, membership gate, sign-out wireup, `<a href>` links, `getElementById` references vs declared IDs (scripted via Python).
+- **Bug fixed:** `index.html` was missing the `membership_status = 'active'` gate. Users with an inactive subscription could load Businesses but get redirected from Users / Setup → caller sees inconsistent gating. Added the same gate (queries `users.membership_status`, redirects to `inactive.html` if not active).
+- **Page-header parity:** `index.html` now has the same `.page-header` block as the other two — title "💼 Business Management" + sub describing the page. Page-header CSS (`.page-header` / `.page-title` / `.page-sub`) added to its `<style>`. Section title under it changes from "💼 Your Businesses" → "Your Businesses" (briefcase moves up to the page-header so the emoji doesn't appear twice). The `.section-blurb` rule remains in CSS but is no longer used on this page (page-sub serves the purpose).
+- **Header markup cleanup:** removed `<span id="activeBizName" class="biz-pill"></span>` from the site-header on `account-users.html` and `account-setup.html`. The span was hidden via `.biz-switcher-bar { display: none !important; }` but shouldn't be in the markup at all on account-level pages — a business pill is meaningless there.
+- **Resume Planning Session pill parity:** `js/active-session.js` was loaded on `index.html` only. Added to both other account-level pages so the floating "Resume Planning Session" pill appears uniformly.
+- **Audit results that were already correct (no change needed):**
+  - Bottom nav: all three tabs link to the right URLs (`index.html` / `account-users.html` / `account-setup.html`) and apply `.active` to the right item per page.
+  - Switcher behaviour: change handler reloads correctly on all three; `allSubs` populated; selected option matches the current sub.
+  - Sign-out: present and wired on all three.
+  - Element-ID integrity: 0 broken `getElementById` references on any of the three pages (Python-scripted check across all `getElementById('…')` strings vs `id="…"` declarations).
+  - Footers: all four files (business.html + the 3 account-level pages) now show v0.5.159.
+- **Deliberate non-fix:** the `+ New client account` button stays Businesses-only. Each tab has its own primary create action (Businesses = + New Business, Users = + Invite User, Setup = no create — it's an edit page). Replicating the New-Account button across all three would duplicate the modal and JS without UX benefit.
+- **No SQL.**
+
+---
+
 ## v0.5.158
 - **Consistent chrome across the three account-level tabs.** User: "The business setup needs to be consistent I think over the 3 pages."
 - Three things were inconsistent between Businesses (`index.html`), Users (`account-users.html`), and Setup (`account-setup.html`):

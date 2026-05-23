@@ -42,6 +42,11 @@
     /* Hide the biz-switcher sub-toolbar from active-org.js — account-level page (v0.5.158). */
     .biz-switcher-bar { display: none !important; }
 
+    /* Page header — matches the pattern on account-users.html and account-setup.html (v0.5.159) */
+    .page-header { padding: 20px 16px 8px; }
+    .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
+    .page-sub { font-size: 0.82rem; color: #666; margin: 0 0 12px; line-height: 1.5; }
+
     .acct-switcher {
       display: flex; align-items: center; gap: 10px;
       padding: 16px 16px 0; flex-wrap: wrap;
@@ -412,20 +417,21 @@
       <button id="newClientAccountBtn" class="switcher-btn">+ New client account</button>
     </div>
 
-    <!-- Section A: Account header removed in v0.5.156 — the switcher dropdown above
-         already shows the account name. -->
+    <div class="page-header">
+      <h1 class="page-title">&#x1F4BC; Business Management</h1>
+      <p class="page-sub">Add, rename, delete businesses and wire up the parent/child structure of your account.</p>
+    </div>
 
     <div class="section" id="businesses">
       <div class="section-head">
-        <span class="section-title">&#x1F4BC; Your Businesses</span>
+        <span class="section-title">Your Businesses</span>
         <button id="addBusinessHeaderBtn" class="section-action">+ New Business</button>
       </div>
-      <p class="section-blurb">Add, rename, delete businesses and wire up the parent/child structure of your account.</p>
       <div id="bizList" class="biz-list"></div>
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.158</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.159</p>
 
   </div>
 
@@ -528,6 +534,14 @@
 
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { window.location.href = 'login.html'; }
+
+    // Membership gate — same as account-users.html / account-setup.html / business-level pages.
+    // Added v0.5.159 (was missing on index.html; users with inactive subscription could see this
+    // tab but get bounced from the others).
+    const { data: profile } = await sb.from('users').select('membership_status').eq('id', user.id).single();
+    if (!profile || profile.membership_status !== 'active') {
+      window.location.href = 'inactive.html';
+    }
 
     document.getElementById('signOutBtn').addEventListener('click', async () => {
       await sb.auth.signOut();
