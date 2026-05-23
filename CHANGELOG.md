@@ -4,6 +4,40 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.190
+- **Two cleanups on the one-page docs.** User: "I think the font is different from one page links. Make consistency. Also the financials are on both of them. Only needed on strategy."
+
+### Font consistency
+The 4 doc files (`one-page-plan.html`, `one-page-operations.html`, `account-plans.html`, `account-ops-plans.html`) all had `.plan-page { font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif; }` — missing the `-apple-system` + `BlinkMacSystemFont` fallbacks that the site-wide `--font-body` CSS variable in `css/style.css` includes. On iOS this resolved through a slightly different fallback path than the rest of the app, producing the subtle inconsistency the user spotted.
+
+Changed each `.plan-page` override to `font-family: var(--font-body)` so the docs now use the exact same stack as every other page:
+```css
+--font-body: 'Aptos', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+```
+
+### Financials moved off Operations one-pagers
+The "Financial Outlook" strip (Last Year + This Year annual totals) used to render on both the Strategy one-pager and the Operations one-pager. Now it lives only on Strategy — that's the right place for financial outlook (the Operations doc is about quarterly goals + weekly numbers + open issues, not financial summary).
+
+**`one-page-operations.html`**:
+- Removed the `.doc-financials` HTML block (3 cards row → footer).
+- Removed `fmtCurrency`, `profitClass`, `aggregateYear`, `renderAnnualFinancials` helpers.
+- Removed the `financial_periods` query from `Promise.all` (4 parallel queries → 3).
+- Removed the `thisYear`, `lastYear`, `finStart`, `finEnd` windowing constants.
+- Removed `renderAnnualFinancials([])` from the catch-block fallback.
+
+**`account-ops-plans.html`**:
+- Removed the `.doc-financials` HTML block from the carousel card template.
+- Removed `buildAnnualTotalsBlock` + `fmtCurrency` + `thisYear`/`lastYear` constants.
+- Removed the `financial_periods` query (4 parallel queries → 3) and the per-org `finByYear` accumulator.
+
+### What's preserved
+- The `.doc-financials` + `.fin-strip-*` + `.fin-line*` CSS rules stay in both files (small, harmless, and identical to the strategy docs that still use them). Not worth churning the diff for a few rules of dead styling.
+- Strategy one-pager (`one-page-plan.html`) + Strategy carousel (`account-plans.html`) keep the financial outlook strip — that's the only place it now renders.
+
+No SQL.
+
+---
+
 ## v0.5.189
 - **Removed the redundant back link from the one-page plan + ops toolbars.** User: "The back link isn't needed is it?"
 

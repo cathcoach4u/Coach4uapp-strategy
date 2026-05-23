@@ -125,7 +125,7 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.14);
       border-radius: 4px;
       overflow: hidden;
-      font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif;
+      font-family: var(--font-body);  /* v0.5.190 — match site-wide stack */
     }
 
     .doc-header {
@@ -444,28 +444,8 @@
 
       </div>
 
-      <div class="doc-financials">
-        <div class="fin-strip-head">
-          <span class="fin-strip-title">Financial Outlook</span>
-          <span class="fin-strip-meta">Annual totals</span>
-        </div>
-        <div class="fin-strip-body">
-          <div class="fin-strip-col">
-            <div class="fin-strip-col-head">
-              <span>Last Year</span>
-              <span class="fin-strip-col-meta" id="opp-fin-last-year"></span>
-            </div>
-            <div class="fin-totals" id="opp-fin-last"></div>
-          </div>
-          <div class="fin-strip-col">
-            <div class="fin-strip-col-head">
-              <span>This Year</span>
-              <span class="fin-strip-col-meta" id="opp-fin-this-year"></span>
-            </div>
-            <div class="fin-totals" id="opp-fin-this"></div>
-          </div>
-        </div>
-      </div>
+      <!-- v0.5.190 — Financial Outlook strip removed from operations one-pager.
+           Financials are now strategy-only and live on the strategy one-pager. -->
 
       <div class="doc-footer">
         <span class="doc-footer-text">Confidential &mdash; For internal use only</span>
@@ -601,49 +581,7 @@
     }
 
     // ── Issues ──────────────────────────────────────────────────────
-    // ── Annual financials (Last Year + This Year totals) ─────────────
-    function fmtCurrency(n) {
-      if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '—';
-      const v = Number(n); const abs = Math.abs(v); const sign = v < 0 ? '-' : '';
-      if (abs >= 1_000_000) return sign + '$' + (abs / 1_000_000).toFixed(1) + 'M';
-      if (abs >= 1_000)     return sign + '$' + Math.round(abs / 1_000) + 'K';
-      return sign + '$' + Math.round(abs);
-    }
-    function profitClass(p) {
-      if (p === null || p === undefined) return 'fin-empty';
-      if (p > 0) return 'fin-pos';
-      if (p < 0) return 'fin-neg';
-      return '';
-    }
-    function aggregateYear(rows, year) {
-      let totRev = 0, totExp = 0, anyRev = false, anyExp = false;
-      for (const r of rows) {
-        const yr = parseInt(String(r.period).slice(0, 4), 10);
-        if (yr !== year) continue;
-        if (r.revenue  !== null && r.revenue  !== undefined) { totRev += Number(r.revenue);  anyRev = true; }
-        if (r.expenses !== null && r.expenses !== undefined) { totExp += Number(r.expenses); anyExp = true; }
-      }
-      return { totRev, totExp, anyRev, anyExp };
-    }
-    function renderAnnualFinancials(rows, lastYear, thisYear) {
-      document.getElementById('opp-fin-last-year').textContent = String(lastYear);
-      document.getElementById('opp-fin-this-year').textContent = String(thisYear) + ' YTD';
-      function block(targetId, year) {
-        const { totRev, totExp, anyRev, anyExp } = aggregateYear(rows, year);
-        const any = anyRev || anyExp;
-        const profit = any ? totRev - totExp : null;
-        document.getElementById(targetId).innerHTML = `
-          <div class="fin-line"><span class="fin-line-label">Revenue</span>
-            <span class="fin-line-value">${anyRev ? fmtCurrency(totRev) : '—'}</span></div>
-          <div class="fin-line"><span class="fin-line-label">Expenses</span>
-            <span class="fin-line-value">${anyExp ? fmtCurrency(totExp) : '—'}</span></div>
-          <div class="fin-line fin-line-profit ${profitClass(profit)}">
-            <span class="fin-line-label">Profit</span>
-            <span class="fin-line-value">${profit === null ? '—' : fmtCurrency(profit)}</span></div>`;
-      }
-      block('opp-fin-last', lastYear);
-      block('opp-fin-this', thisYear);
-    }
+    // (v0.5.190 — financials helpers removed; ops one-pager no longer shows them.)
 
     function renderIssues(issues) {
       const wrap = document.getElementById('opp-issues');
@@ -696,14 +634,10 @@
       const thisMonday = mondayISO(new Date());
       const weeks = [-5,-4,-3,-2,-1,0].map(o => isoAddWeeks(thisMonday, o));
 
-      // Annual financial window: last calendar year (Jan 1 → Dec 31) + this year YTD.
-      const thisYear = new Date().getFullYear();
-      const lastYear = thisYear - 1;
-      const finStart = lastYear + '-01-01';
-      const finEnd   = thisYear + '-12-01';
-
       try {
-        const [rocksRes, metricsRes, issuesRes, finRes, orgRes] = await Promise.all([
+        // v0.5.190 — financial_periods fetch removed; ops doc no longer shows
+        // annual totals (strategy one-pager owns that view).
+        const [rocksRes, metricsRes, issuesRes, orgRes] = await Promise.all([
           supabase.from('rocks')
             .select('id, description, owner, status, quarter, company_rock, sort_order')
             .eq('organisation_id', orgId)
@@ -719,11 +653,6 @@
             .eq('category', 'current')
             .eq('status', 'open')
             .order('created_at', { ascending: true }),
-          supabase.from('financial_periods')
-            .select('period, revenue, expenses')
-            .eq('organisation_id', orgId)
-            .gte('period', finStart)
-            .lte('period', finEnd),
           cachedName ? Promise.resolve(null) : supabase.from('organisations').select('name').eq('id', orgId).maybeSingle()
         ]);
 
@@ -755,14 +684,11 @@
         renderGoals(rocks);
         renderScorecard(metrics, entriesByMetric, weeks);
         renderIssues(issues);
-        const finRows = (finRes && !finRes.error && Array.isArray(finRes.data)) ? finRes.data : [];
-        renderAnnualFinancials(finRows, lastYear, thisYear);
       } catch (e) {
         console.warn('Operations one-page load error:', e);
         renderGoals([]);
         renderScorecard([], {}, weeks);
         renderIssues([]);
-        renderAnnualFinancials([], lastYear, thisYear);
       }
 
       document.body.style.opacity = '1';

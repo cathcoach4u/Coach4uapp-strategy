@@ -123,7 +123,7 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.14);
       border-radius: 4px;
       overflow: hidden;
-      font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif;
+      font-family: var(--font-body);  /* v0.5.190 — match site-wide stack */
     }
 
     .doc-header {
@@ -427,30 +427,8 @@
       }).join('');
     }
 
-    function buildAnnualTotalsBlock(finByYear, year) {
-      const row = (finByYear && finByYear[year]) || { totRev: 0, totExp: 0, anyRev: false, anyExp: false };
-      const any = row.anyRev || row.anyExp;
-      const profit = any ? row.totRev - row.totExp : null;
-      const profCls = profit === null ? 'fin-empty' : (profit > 0 ? 'fin-pos' : (profit < 0 ? 'fin-neg' : ''));
-      return `
-        <div class="fin-line"><span class="fin-line-label">Revenue</span>
-          <span class="fin-line-value">${row.anyRev ? fmtCurrency(row.totRev) : '—'}</span></div>
-        <div class="fin-line"><span class="fin-line-label">Expenses</span>
-          <span class="fin-line-value">${row.anyExp ? fmtCurrency(row.totExp) : '—'}</span></div>
-        <div class="fin-line fin-line-profit ${profCls}">
-          <span class="fin-line-label">Profit</span>
-          <span class="fin-line-value">${profit === null ? '—' : fmtCurrency(profit)}</span></div>`;
-    }
-    function fmtCurrency(n) {
-      if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '—';
-      const v = Number(n); const abs = Math.abs(v); const sign = v < 0 ? '-' : '';
-      if (abs >= 1_000_000) return sign + '$' + (abs / 1_000_000).toFixed(1) + 'M';
-      if (abs >= 1_000)     return sign + '$' + Math.round(abs / 1_000) + 'K';
-      return sign + '$' + Math.round(abs);
-    }
-
-    const thisYear = new Date().getFullYear();
-    const lastYear = thisYear - 1;
+    // v0.5.190 — buildAnnualTotalsBlock + fmtCurrency removed with the
+    // Financial Outlook strip. Financials are strategy-only now.
 
     function renderPlanCard(org, data, quarter, weeks) {
       const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -497,22 +475,8 @@
 
             </div>
 
-            <div class="doc-financials">
-              <div class="fin-strip-head">
-                <span class="fin-strip-title">Financial Outlook</span>
-                <span class="fin-strip-meta">Annual totals</span>
-              </div>
-              <div class="fin-strip-body">
-                <div class="fin-strip-col">
-                  <div class="fin-strip-col-head"><span>Last Year</span><span class="fin-strip-col-meta">${lastYear}</span></div>
-                  <div class="fin-totals">${buildAnnualTotalsBlock(data.finByYear, lastYear)}</div>
-                </div>
-                <div class="fin-strip-col">
-                  <div class="fin-strip-col-head"><span>This Year</span><span class="fin-strip-col-meta">${thisYear} YTD</span></div>
-                  <div class="fin-totals">${buildAnnualTotalsBlock(data.finByYear, thisYear)}</div>
-                </div>
-              </div>
-            </div>
+            <!-- v0.5.190 — Financial Outlook strip removed; financials are
+                 strategy-only and live on the strategy carousel. -->
 
             <div class="doc-footer">
               <span class="doc-footer-text">Confidential &mdash; ${escHtml(org.name)}</span>
@@ -567,8 +531,9 @@
       const thisMonday = mondayISO(new Date());
       const weeks = [-5,-4,-3,-2,-1,0].map(o => isoAddWeeks(thisMonday, o));
 
-      // 4 parallel queries across all orgs (rocks / metrics / issues / financials)
-      const [rocksRes, metricsRes, issuesRes, finRes] = await Promise.all([
+      // v0.5.190 — 3 parallel queries (was 4: financial_periods dropped along
+      // with the Financial Outlook strip).
+      const [rocksRes, metricsRes, issuesRes] = await Promise.all([
         sb.from('rocks')
           .select('id, organisation_id, description, owner, status, quarter, company_rock, sort_order')
           .in('organisation_id', orgIds)
@@ -583,30 +548,17 @@
           .in('organisation_id', orgIds)
           .eq('category', 'current')
           .eq('status', 'open')
-          .order('created_at', { ascending: true }),
-        sb.from('financial_periods')
-          .select('organisation_id, period, revenue, expenses')
-          .in('organisation_id', orgIds)
-          .gte('period', lastYear + '-01-01')
-          .lte('period', thisYear + '-12-01')
+          .order('created_at', { ascending: true })
       ]);
 
       const byOrg = new Map();
       orgs.forEach(o => byOrg.set(o.id, {
-        rocks: [], metrics: [], entriesByMetric: {}, issues: [], finByYear: {}
+        rocks: [], metrics: [], entriesByMetric: {}, issues: []
       }));
 
       (rocksRes.data   || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.rocks.push(r); });
       (metricsRes.data || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.metrics.push(r); });
       (issuesRes.data  || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.issues.push(r); });
-      (finRes && finRes.data || []).forEach(r => {
-        const e = byOrg.get(r.organisation_id); if (!e) return;
-        const yr = parseInt(String(r.period).slice(0, 4), 10);
-        if (!e.finByYear[yr]) e.finByYear[yr] = { totRev: 0, totExp: 0, anyRev: false, anyExp: false };
-        const row = e.finByYear[yr];
-        if (r.revenue  !== null && r.revenue  !== undefined) { row.totRev += Number(r.revenue);  row.anyRev = true; }
-        if (r.expenses !== null && r.expenses !== undefined) { row.totExp += Number(r.expenses); row.anyExp = true; }
-      });
 
       // Fetch scorecard entries for ALL metrics across all orgs in one round-trip
       const allMetricIds = (metricsRes.data || []).map(m => m.id);
