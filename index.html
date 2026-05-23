@@ -287,6 +287,10 @@
     .actions-menu button:hover { background: #f8fafc; }
     .actions-menu button.danger { color: #b91c1c; }
     .actions-menu button.danger:hover { background: #fef2f2; }
+    .actions-menu button:disabled {
+      color: #b8b8b8; cursor: not-allowed; font-style: italic;
+    }
+    .actions-menu button:disabled:hover { background: transparent; }
 
     /* ── Users / team cards ── */
     .user-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
@@ -418,7 +422,7 @@
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.156</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.157</p>
 
   </div>
 
@@ -768,7 +772,7 @@
                   <button class="actions-btn" data-action="menu" aria-label="More actions">&#x22EE;</button>
                   <div class="actions-menu hidden">
                     <button data-action="rename-biz">Rename</button>
-                    <button class="danger" data-action="delete-biz">Delete</button>
+                    <button class="danger" data-action="delete-biz"${hasChildren ? ' disabled title="Has children — unlink them first"' : ''}>Delete${hasChildren ? ' (has children)' : ''}</button>
                   </div>
                 </div>
               ` : ''}

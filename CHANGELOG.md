@@ -4,6 +4,22 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.157
+- **Block deleting a parent business while it still has children.** User: "I think the parent needs to be set up not to deleted unless all children are removed. Appreciate feedback on this."
+- **Why:** the FK on `organisations.parent_organisation_id` was `ON DELETE SET NULL` (v0.5.145), which meant deleting a parent silently orphaned its children — they'd become standalones, inheritance would break without warning, and the user usually wouldn't realise. High-blast-radius operation deserves a safety gate.
+- **(1) SQL — replaces `delete_business` RPC** with a new version that COUNT(*)s rows in `organisations` where `parent_organisation_id = business_id`. If > 0, raises:
+  ```
+  Cannot delete this business while it is the parent of N child business(es).
+  Unlink or delete the children first.
+  ```
+  All other checks (admin role + subscription ownership) unchanged.
+- **(2) UI — `index.html`** renders the `⋮ → Delete` button with `disabled` + a `title="Has children — unlink them first"` tooltip when `hasChildren` is true for that row. Label changes to "Delete (has children)". Defence in depth — the user gets feedback before they hit the disabled button.
+- **CSS:** added `.actions-menu button:disabled { color:#b8b8b8; cursor:not-allowed; font-style:italic; }` so the disabled state reads clearly in the dropdown.
+- **Unlink flow (already in place since v0.5.149/150):** set the child's Parent dropdown to "— None —" — one tap per child via the inline picker. Once the last child is unlinked, the Delete option re-enables and the RPC will allow it.
+- **Migration file:** `supabase/v0.5.157-delta.sql` (full `CREATE OR REPLACE FUNCTION delete_business` + `GRANT EXECUTE` + `NOTIFY pgrst`).
+
+---
+
 ## v0.5.156
 - **Remove duplicate account name on the Businesses tab.** User: "The name of the business is showing twice on account page."
 - `index.html` was rendering the account name in two places:
