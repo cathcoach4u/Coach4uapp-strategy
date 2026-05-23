@@ -399,37 +399,13 @@
     </div><!-- /standardMode -->
 
     <!-- ── Parent mode — group rollup view, shown when this biz has children (v0.5.155) ── -->
+    <!-- v0.5.200 — Rollup panels appended to standardMode when this biz has
+         children. Standard layout above always runs; these only render for
+         parent businesses. No quick-actions / Year Flow / Group Strategy /
+         This Quarter's Priorities here — those duplicate what standardMode
+         already shows for the active biz (which IS the parent's own data). -->
     <div id="parentMode" style="display:none;">
-      <div class="quick-actions">
-        <a class="meeting-btn" id="runWeeklyMeetingBtnParent" href="meeting.html">&#x1F5D3;&#xFE0F;&nbsp; Run Weekly Meeting</a>
-        <a class="view-plan-btn" href="one-page-plan.html">&#x1F4CB;&nbsp; View One-Page Plan</a>
-        <a class="view-plan-btn" href="one-page-operations.html">&#x1F4CB;&nbsp; View One-Page Operations</a>
-      </div>
-      <!-- v0.5.196 — Year Flow panel in parentMode too (the parent biz has its own cadence) -->
-      <div class="dash-panel">
-        <div class="panel-head">
-          <span class="panel-title">&#x1F4C5; Year Flow</span>
-          <a class="panel-link" href="cadence.html">Edit &#x203A;</a>
-        </div>
-        <div class="panel-body" id="yearFlowParent">
-          <div class="flow-empty">Loading&hellip;</div>
-        </div>
-      </div>
-      <!-- v0.5.179 — Group Strategy keeps only the 12-month goal -->
-      <div class="dash-panel">
-        <div class="panel-head">
-          <span class="panel-title">&#x1F3AF; Group Strategy</span>
-          <a class="panel-link" href="targets.html">Edit &#x203A;</a>
-        </div>
-        <div class="panel-body">
-          <div class="group-target-row">
-            <span class="group-target-label">12-Month Goal</span>
-            <div class="group-target-value empty" id="parentOneYear">Not set</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- v0.5.179 — Group Financials keeps only Revenue Target + Last 12mo Profit -->
+      <!-- Group Financials — kept (rollup across parent + children) -->
       <div class="dash-panel">
         <div class="panel-head">
           <span class="panel-title">&#x1F4B0; Group Financials</span>
@@ -451,18 +427,7 @@
         </div>
       </div>
 
-      <div class="dash-panel">
-        <div class="panel-head">
-          <span class="panel-title">&#x1F3AF; This Quarter&rsquo;s Priorities</span>
-          <a class="panel-link" href="goals.html">Edit &#x203A;</a>
-        </div>
-        <div class="panel-body">
-          <div id="parentQuarterRocks">
-            <div style="font-size:0.78rem;color:#aaa;">No quarterly priorities set yet.</div>
-          </div>
-        </div>
-      </div>
-
+      <!-- Child Businesses — kept (tap to switch active biz) -->
       <div class="dash-panel">
         <div class="panel-head">
           <span class="panel-title">&#x1F3E2; Child Businesses</span>
@@ -473,7 +438,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.199</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.200</p>
 
   </div>
 
@@ -803,81 +768,30 @@
       wrap.innerHTML = html + weeklyLine;
     }
 
-    // ── Parent dashboard (v0.5.155) — rollup view across parent + children ──
+    // ── Parent rollup (v0.5.200) — appended below standardMode for businesses
+    // that have children. Renders only Group Financials + Child Businesses cards;
+    // standardMode already shows the parent's own operational data above.
     async function renderParentMode(parentOrgId, children) {
       const childIds = children.map(c => c.id);
       const allIds = [parentOrgId, ...childIds];
-      const quarter = currentQuarter();
-      const todayIso = new Date().toISOString().slice(0, 10);
 
-      // v0.5.196 — Year Flow uses the parent's own cadence (the parent biz has
-      // its own annual / quarterly / weekly rhythm).
-      loadAndRenderYearFlow(parentOrgId, 'yearFlowParent');
-
-      // Last 12 months as YYYY-MM-01 date strings (first day of each month).
-      // financial_periods.period is a `date` typed column, stored as the 1st of the month.
+      // Last 12 months as YYYY-MM-01 date strings (1st of each month).
       const periodStarts = [];
       const probe = new Date();
       probe.setDate(1);
-      probe.setMonth(probe.getMonth() - 1); // start from previous full month
+      probe.setMonth(probe.getMonth() - 1);  // start from previous full month
       for (let i = 0; i < 12; i++) {
         periodStarts.push(probe.toISOString().slice(0, 10));
         probe.setMonth(probe.getMonth() - 1);
       }
 
-      const [
-        parentTargets, parentRocks, allFinancials, allTargets,
-        allChildIssues, allChildRocks, allChildMeetings
-      ] = await Promise.all([
-        supabase.from('targets').select('ten_year, three_year_revenue, three_year_profit, three_year_date, three_year_desc, one_year_goals, one_year_revenue, one_year_date')
-          .eq('organisation_id', parentOrgId).maybeSingle(),
-        supabase.from('rocks').select('description, status, sort_order')
-          .eq('organisation_id', parentOrgId).eq('quarter', quarter).order('sort_order'),
+      // Just 2 queries now (was 7 before v0.5.200).
+      const [allFinancials, allTargets] = await Promise.all([
         supabase.from('financial_periods').select('organisation_id, period, revenue, expenses')
           .in('organisation_id', allIds).in('period', periodStarts),
         supabase.from('targets').select('organisation_id, one_year_revenue')
-          .in('organisation_id', allIds),
-        supabase.from('issues').select('organisation_id, status')
-          .in('organisation_id', childIds).eq('category', 'current').eq('status', 'open'),
-        supabase.from('rocks').select('organisation_id, status')
-          .in('organisation_id', childIds).eq('quarter', quarter),
-        supabase.from('meetings').select('organisation_id, meeting_date, status, id')
-          .in('organisation_id', childIds).neq('status', 'completed').gte('meeting_date', todayIso)
-          .order('meeting_date', { ascending: true })
+          .in('organisation_id', allIds)
       ]);
-
-      // ── Group Strategy: parent's own targets ──
-      const pt = (parentTargets.data || {});
-      const setText = (id, val) => {
-        const el = document.getElementById(id);
-        if (!el) return; // Group Strategy panel no longer renders 10-year / 3-year rows (v0.5.179)
-        const v = (val || '').toString().trim();
-        if (v) { el.classList.remove('empty'); el.textContent = v; }
-        else   { el.classList.add('empty');    el.textContent = 'Not set'; }
-      };
-      // 10-year + 3-year rows removed from the panel in v0.5.179 — only 12-Month Goal remains.
-      // 12-Month
-      const oneYearBits = [];
-      if (pt.one_year_date)    oneYearBits.push('Target: ' + pt.one_year_date);
-      if (pt.one_year_revenue) oneYearBits.push('Revenue ' + pt.one_year_revenue);
-      const oneYearText = [pt.one_year_goals, oneYearBits.length ? oneYearBits.join(' · ') : null]
-        .filter(Boolean).join('\n');
-      setText('parentOneYear', oneYearText);
-
-      // ── This Quarter's Priorities (parent's rocks) ──
-      const STATUS_LABEL = { on_track:'On Track', at_risk:'At Risk', off_track:'Off Track', done:'Done', not_started:'Not Started' };
-      const STATUS_PILL  = { on_track:'pill-green', at_risk:'pill-amber', off_track:'pill-red', done:'pill-green', not_started:'pill-grey' };
-      const qrEl = document.getElementById('parentQuarterRocks');
-      const rocksList = (parentRocks.data || []);
-      if (rocksList.length) {
-        qrEl.innerHTML = rocksList.map(r => `
-          <div class="rock-row">
-            <div class="rock-desc">${escapeHtml(r.description || '')}</div>
-            <span class="status-pill ${STATUS_PILL[r.status] || 'pill-grey'}">${STATUS_LABEL[r.status] || (r.status || '—')}</span>
-          </div>`).join('');
-      } else {
-        qrEl.innerHTML = '<div style="font-size:0.78rem;color:#aaa;">No quarterly priorities set yet.</div>';
-      }
 
       // ── Group Financials ──
       const fmtMoney = n => '$' + Math.round(n).toLocaleString('en-AU');
@@ -887,7 +801,6 @@
         totalRev += Number(f.revenue || 0);
         totalExp += Number(f.expenses || 0);
       });
-      // 1-Year Revenue Target: try to sum parsed numbers from each org's one_year_revenue
       let totalTarget = 0, parsedAnyTarget = false;
       (allTargets.data || []).forEach(t => {
         if (t.one_year_revenue) {
@@ -897,31 +810,14 @@
       });
       const setFin = (id, val, isEmpty) => {
         const el = document.getElementById(id);
-        if (!el) return; // groupRevenueActual + groupExpenses cells removed in v0.5.179
+        if (!el) return;
         if (isEmpty) { el.classList.add('empty'); el.textContent = '—'; }
         else { el.classList.remove('empty'); el.textContent = val; }
       };
       setFin('groupRevenueTarget', parsedAnyTarget ? fmtMoney(totalTarget) : '—', !parsedAnyTarget);
       setFin('groupProfit',        finRows.length ? fmtMoney(totalRev - totalExp) : '—', !finRows.length);
 
-      // ── Child cards: per-child snapshot (issues / goals / next meeting) ──
-      const issuesPerChild = new Map();
-      const rocksPerChild  = new Map();
-      const meetingsPerChild = new Map();
-      (allChildIssues.data || []).forEach(r => {
-        issuesPerChild.set(r.organisation_id, (issuesPerChild.get(r.organisation_id) || 0) + 1);
-      });
-      (allChildRocks.data || []).forEach(r => {
-        if (!rocksPerChild.has(r.organisation_id)) rocksPerChild.set(r.organisation_id, { total: 0, onTrack: 0 });
-        const c = rocksPerChild.get(r.organisation_id);
-        c.total++;
-        if (r.status === 'on_track' || r.status === 'done' || r.status === 'complete') c.onTrack++;
-      });
-      (allChildMeetings.data || []).forEach(m => {
-        if (!meetingsPerChild.has(m.organisation_id)) meetingsPerChild.set(m.organisation_id, m);
-      });
-
-      // v0.5.180 — Child cards now show just name + Open. All mini stats removed.
+      // ── Child Businesses cards (tap → switch active biz) ──
       const cardsEl = document.getElementById('childCards');
       cardsEl.innerHTML = children.map(c => `
           <div class="child-card" data-org-id="${escapeHtml(c.id)}" data-org-name="${escapeHtml(c.name)}">
@@ -1055,7 +951,8 @@
       ensureSeeds();
       // Wire the Run Weekly Meeting button(s) — both standardMode and parentMode have one (v0.5.174).
       wireRunMeetingButton('runWeeklyMeetingBtn', activeId);
-      wireRunMeetingButton('runWeeklyMeetingBtnParent', activeId);
+      // v0.5.200 — parentMode's quick-actions row removed; only the standardMode
+      // Run Weekly Meeting button remains (and it's now shown on every biz).
 
       try {
         renderBizContext(activeRow, memberships);
@@ -1065,12 +962,13 @@
         const childrenInThisAccount = memberships
           .filter(m => m.organisations && m.organisations.parent_organisation_id === activeId)
           .map(m => ({ id: m.organisation_id, name: m.organisations.name }));
+        // v0.5.200 — standardMode renders for every business. If this biz also
+        // has children, the rollup panels (Group Financials + Child Businesses)
+        // are appended below.
+        await renderDashboard(activeId);
         if (childrenInThisAccount.length) {
-          document.getElementById('standardMode').style.display = 'none';
           document.getElementById('parentMode').style.display = '';
           await renderParentMode(activeId, childrenInThisAccount);
-        } else {
-          await renderDashboard(activeId);
         }
       } catch (e) {
         console.warn('Dashboard render error:', e);

@@ -4,6 +4,46 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.200
+- **Unified home dashboard for parent + child businesses.** User: "The home pages should be the same for parent and child. ... Right now the child ones are different" → "Yes do that".
+
+### Before
+A business with children rendered an entirely separate `parentMode` div (Quick Actions, Year Flow, Group Strategy, Group Financials, This Quarter's Priorities, Child Businesses) and `standardMode` was hidden with `display: none`. Net effect: the parent biz's own operational panels (1-Year Goal, This Week, This Quarter, Core Values) were invisible on its own dashboard — even though the parent biz does have weekly meetings, quarterly goals, etc.
+
+### After
+- `standardMode` **always renders** for every business — same Stat tiles, Year Flow, 1-Year Goal, Core Values, This Week, This Quarter panels regardless of whether the biz has children.
+- If the active biz has children, `parentMode` is **appended below** standardMode with only the rollup-only sections.
+
+### `parentMode` — what stayed, what went
+- **Kept (only because they're rollup across parent + children, no equivalent in standardMode):**
+  - Group Financials (1-Year Revenue Target summed + Last 12mo Profit across parent + children)
+  - Child Businesses (tappable cards to switch active biz)
+- **Removed (because standardMode already shows the same data for the active biz):**
+  - Quick Actions row (Run Weekly Meeting + View One-Page Plan + View One-Page Operations) — already in standardMode at the top.
+  - Year Flow panel — already in standardMode.
+  - Group Strategy panel — redundant with 1-Year Goal panel.
+  - This Quarter's Priorities panel — redundant with This Quarter panel.
+
+### JS
+- `init()` — always calls `renderDashboard(activeId)`. Conditionally calls `renderParentMode(activeId, children)` *afterward* when children exist (no longer in an else branch).
+- `renderParentMode` — shrunk from **7 parallel queries to 2** (`financial_periods` + `targets` for rollup totals). The strategy/quarter/cadence/issues/meetings queries are gone because those panels are gone.
+- `wireRunMeetingButton('runWeeklyMeetingBtnParent', ...)` call removed (the button it wired is gone).
+- The `renderYearFlow` call inside `renderParentMode` is also gone — standardMode's `renderDashboard` already renders Year Flow for the active org (with parent-cadence inheritance from v0.5.197 if the child has no own row).
+
+### Net effect on IASHQ
+Same operational dashboard you'd see on IAS General / IAS Life / IAS Outsourcing — Stat tiles → Year Flow → 1-Year Goal → Core Values → This Week → This Quarter — plus two extra panels appended at the bottom: **Group Financials** and **Child Businesses**.
+
+### No data loss
+Every removed panel's underlying data is untouched in the DB:
+- Group Strategy was reading `targets` — still queried by `standardMode`'s 1-Year Goal panel.
+- This Quarter's Priorities was reading `rocks` — still queried by `standardMode`'s This Quarter panel.
+- Year Flow was reading `business_cadence` — still queried (and still in the standardMode Year Flow panel).
+- No DOM ids referenced by removed JS are accessed elsewhere; the `if (!el) return` guards in the few remaining helpers protect against stale lookups.
+
+### No SQL.
+
+---
+
 ## v0.5.199
 - **Dropped the 12 Month Issues card from the Operations hub.** User: "I noticed there is a 12 month issues and an issues list. This doesn't look right." Picked the "Drop 12 Month Issues" option — long-horizon items belong in the annual planning session, not on the day-to-day Operations hub.
 
