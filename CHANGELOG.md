@@ -4,6 +4,17 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.154
+- **Move the "Business Management" subtitle on `index.html` to sit under the section heading instead of the account header.** User: "The wording for business management should be under the heading of businesses."
+- With long account names ("Insurance Advisory Service NSW Pty Ltd" wraps to two lines on phones), having a subtitle paragraph between the bold account name and the "💼 Your Businesses" section header was crowded and read like duplicated headings.
+- Changes:
+  - Removed the `<p class="acct-sub">` paragraph from `.acct-header`. Header is now just the account name (`<h1 class="acct-title" id="accountName">🏢 [Name]</h1>`).
+  - Added a `.section-blurb` line right under the "Your Businesses" section title (still in the section-head visual block via negative top-margin). Copy reads "Add, rename, delete businesses and wire up the parent/child structure of your account."
+  - New CSS: `.section-blurb { font-size: 0.78rem; color: #888; line-height: 1.5; margin: -4px 0 12px; }`.
+- `account-users.html` and `account-setup.html` are unchanged — their page-headers double as the section heading (no competing title below), so they don't have the duplication issue.
+
+---
+
 ## v0.5.153
 - **Account dashboard split into three tabbed pages.** User: "The accounts area needs to have 3 different areas. Business management, user management and setup of of accounts name (invoicing information)" + "Tabs at the bottom like the other pages are structured."
 - **New bottom nav at the account level** (`index.html` / `account-users.html` / `account-setup.html`):
