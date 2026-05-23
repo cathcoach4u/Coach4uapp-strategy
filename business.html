@@ -418,7 +418,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.165</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.166</p>
 
   </div>
 
@@ -873,11 +873,31 @@
 
       // Populate the BUSINESS: [▾] switcher row (v0.5.163). Mirrors the ACCOUNT
       // switcher on the account tabs — same CSS, same change-handler pattern.
+      // Scope (v0.5.166): only show businesses in the SAME parent-child group as the
+      // active biz. If active is a parent → parent + its children. If active is a
+      // child → its parent + all siblings (children of that parent). If active is
+      // a standalone → just itself. This keeps the dropdown focused on the group
+      // you're working with (e.g., IAS HQ + IAS General/Life/Outsourcing) rather
+      // than listing every business across every account you own.
+      const activeOrg = activeRow.organisations;
+      let groupMems;
+      if (activeOrg.parent_organisation_id) {
+        const parentId = activeOrg.parent_organisation_id;
+        groupMems = memberships.filter(m =>
+          m.organisation_id === parentId ||
+          (m.organisations && m.organisations.parent_organisation_id === parentId)
+        );
+      } else {
+        groupMems = memberships.filter(m =>
+          m.organisation_id === activeOrg.id ||
+          (m.organisations && m.organisations.parent_organisation_id === activeOrg.id)
+        );
+      }
       const bizSwitcherRow = document.getElementById('bizSwitcherRow');
       const bizSel = document.getElementById('businessSwitcher');
       if (bizSwitcherRow && bizSel) {
         bizSwitcherRow.style.display = 'flex';
-        bizSel.innerHTML = memberships.map(m => {
+        bizSel.innerHTML = groupMems.map(m => {
           const id   = m.organisation_id;
           const name = (m.organisations && m.organisations.name) || '(Unnamed business)';
           const sel  = id === activeId ? ' selected' : '';
@@ -885,7 +905,7 @@
         }).join('');
         bizSel.addEventListener('change', () => {
           const newId = bizSel.value;
-          const m = memberships.find(x => x.organisation_id === newId);
+          const m = groupMems.find(x => x.organisation_id === newId);
           if (!m) return;
           if (window.activeOrg) window.activeOrg.set(newId, m.organisations.name);
           window.location.reload();

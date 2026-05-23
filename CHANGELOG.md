@@ -4,6 +4,18 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.166
+- **Bugfix: scope the BUSINESS dropdown on parent / child dashboards to the parent-child group only.** User: "The iashq parent page has the wrong business connection as it is including all of the businesses. Should only include the parent and child pages for ias."
+- **Cause:** when v0.5.163 added the `BUSINESS: [▾]` switcher in `business.html`, the option list was built straight from `memberships` — which is fetched without a `subscription_id` filter (intentional, so `active-org.js` can switch business + account from one place). On IASHQ this dumped every biz the user is admin of across every account (IAS HQ's 4 plus SARUBA's 3) into the dropdown.
+- **Fix:** compute `groupMems` based on the active biz's relationship:
+  - If `activeOrg.parent_organisation_id` is set → I'm a child. Include the parent + all siblings (every membership whose `organisation_id === parent_organisation_id` OR whose `organisations.parent_organisation_id === parent_organisation_id`).
+  - Else → I'm a parent or standalone. Include self + my direct children (every membership whose `organisation_id === activeOrg.id` OR whose `organisations.parent_organisation_id === activeOrg.id`).
+- The option rendering AND the change-handler both use `groupMems`. On IASHQ → dropdown shows IASHQ + IAS General + IAS Life + IAS Outsourcing. On IAS General → same 4 (parent + siblings). On a standalone biz → only itself.
+- **Already correct:** the Child Businesses panel + financial rollup were filtered via `childrenInThisAccount` in v0.5.155 and never leaked. This bug was switcher-only.
+- **No SQL.**
+
+---
+
 ## v0.5.165
 - **Move the Account control off the bottom nav on every business-level page.** User: "I just think the flow of working on the account is not as good when it is clicked on. Need an intentional reason to go to the account area."
 - **New CSS class `.header-account-btn`** in `css/style.css`: white-translucent rounded button, 32×28, hosts the `🏛️` glyph, `margin-left: auto` so it sits flush right inside `.header-inner` and pulls the existing `.sign-out-btn` along with it.
