@@ -4,6 +4,30 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.213
+- **Two scorecard.html bugs reported from the meeting → figures flow.** User: "I click on the weekly meeting and then click on numbers. It doesn't show the persistent green button still. And also when I'm in this page from meeting and I click on home it doesn't work."
+
+### (1) Floating pill still missing on scorecard.html
+The v0.5.211 z-index bump to 2100 didn't fix the user's report, which means the pill wasn't being hidden — it was never being rendered. Root cause: the pill is set in `run-meeting.html`'s `loadDetail()` async flow, which depends on:
+1. The page's main module script firing
+2. The async session fetch completing
+3. localStorage write completing
+
+If any of those is delayed (slow network, async timing, sticky service-worker cache), localStorage won't have the meeting data yet when scorecard.html's `active-meeting.js` reads it.
+
+Two layers of defence:
+- **`business.html` `openOrCreateWeeklyMeeting`** — pre-sets the pill via `window.activeMeeting.set(meetingId, '', activeId)` BEFORE navigating to `run-meeting.html?id=…`. So the pill is in localStorage the moment the user taps Run Weekly Meeting; subsequent navigation to any Edit destination (scorecard, goals, issues, todos) sees the pill data ready.
+- **`js/active-meeting.js` `autoSetFromMeetingPage()`** — when active-meeting.js runs and detects we're on `run-meeting.html?id=…` with no matching localStorage entry, it seeds one from URL params + `coach4u_active_org_id`. So any path into the meeting workspace (link from meeting.html list, deep link, refresh) sets the pill automatically.
+
+### (2) Home button doesn't work on scorecard.html
+Root cause: `.cell-popover` was at z-index **500**, the bottom-nav at z-index **100**. When a popover was open or just rendered, taps on the bottom-nav hit the popover overlay first — the document click handler closes the popover but the tap is consumed, so navigation doesn't happen. The user has to tap again.
+
+**Fix**: dropped `.cell-popover` z-index from `500` → `90` (below the bottom-nav's `100`). Bottom-nav taps now always reach the anchor first.
+
+### No SQL.
+
+---
+
 ## v0.5.212
 - **Annual session AREAS — fixed stale links + labels for current schema.** User: "Have you looked at the annual and quarterly areas for double dates and all areas are linked."
 

@@ -54,7 +54,11 @@
     .cell-red{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
     .metric-edit-btn{background:none;border:none;cursor:pointer;color:var(--accent);font-size:.8rem;padding:2px 6px;border-radius:4px;font-family:inherit;font-weight:600}
     .metric-edit-btn:hover{background:#f0fdfa}
-    .cell-popover{position:fixed;z-index:500;background:white;border:1.5px solid var(--accent);border-radius:10px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px}
+    /* v0.5.213 — z-index 500 → 90 so the popover sits BELOW the bottom-nav
+       (z-index 100). Without this, tapping the bottom-nav while the popover
+       is open hits the popover overlay and intercepts the click, so the nav
+       tap "does nothing" until you tap again. */
+    .cell-popover{position:fixed;z-index:90;background:white;border:1.5px solid var(--accent);border-radius:10px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px}
     .cell-popover.hidden{display:none}
     .cell-popover input{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:.9rem;box-sizing:border-box;margin-bottom:8px}
     .cell-popover input:focus{outline:none;border-color:var(--accent)}

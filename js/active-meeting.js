@@ -102,10 +102,29 @@
     document.head.appendChild(style);
   }
 
+  // v0.5.213 — Defensive auto-set: if we're on run-meeting.html?id=X and
+  // localStorage doesn't have an entry for this meeting (e.g. run-meeting.html's
+  // JS hasn't fired yet, or the user just opened the URL directly), seed it
+  // from the URL params so the pill is set the moment they navigate elsewhere.
+  function autoSetFromMeetingPage() {
+    const path = window.location.pathname;
+    if (!path.endsWith('run-meeting.html')) return;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) return;
+    const existing = read();
+    if (existing && existing.id === id) return;  // already set
+    let orgId = null;
+    try { orgId = localStorage.getItem('coach4u_active_org_id'); } catch (_) {}
+    write({ id, label: '', org_id: orgId || null, started_at: new Date().toISOString() });
+  }
+
   function render() {
     // Always remove the existing pill before re-rendering
     const existing = document.getElementById(PILL_ID);
     if (existing) existing.remove();
+
+    autoSetFromMeetingPage();
 
     const data = read();
     if (!isStillActive(data)) {
