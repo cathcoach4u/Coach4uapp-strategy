@@ -4,6 +4,33 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.210
+- **Session workspace cleanups + Learn vault audit pass.** User: "Annual sessions has backlinks. I'm assuming quarterly does as well. It's showing 2 dates. Check quarterly. And also it's not showing the headings and work under each section." Plus a small audit sweep on the Learn vault and Operations hub for terminology drift.
+
+### Annual + quarterly session workspaces
+Same fixes I applied to `run-meeting.html` in v0.5.207 / v0.5.209:
+- **Back link removed** from both `run-annual-session.html` (`← Annual Sessions`) and `run-quarterly-session.html` (`← Quarterly Sessions`). Planning tab in the bottom-nav covers the destination.
+- **Duplicate date dropped** from both — the inner `session-detail-title` next to the status dropdown is gone; the page header `ws-title` is now the single source of truth, and the status dropdown sits alone right-aligned above the timer bar.
+
+Net effect: more sections fit above the fold on iPhone. Attendance + Areas to Cover are visible without scrolling; (annual) Resources / Notes / Commitments / Team Check-in follow below.
+
+### Operations hub — terminology consistency
+- "Quarter Goals" card renamed to **"Quarterly Goals"** to match the home dashboard panel, the one-page-operations column heading, and the Learn vault card. Continues the v0.5.184 standardisation pattern (used "12 Month" everywhere, now using "Quarterly" everywhere).
+
+### Learn vault
+- Strategy section count: `"6 activities"` → `"7 activities"`.
+- New **🎯 12 Month Goal** card added to the Strategy section after Leadership Team. Reuses the Targets guide; "Open worksheet" goes to `twelve-month-goal.html` (the dedicated editor). Closes the gap from v0.5.204 when 12 Month Goal moved to Strategy but wasn't surfaced in the vault.
+- `learn/weekly-team-meeting.html` — step 7 description: *"Each person rates the meeting 1–10 with one sentence why"* → *"Quick round: what worked today, what should we do differently next week"* (rating input was removed from the app in v0.5.207).
+- Coach's tip at the bottom: dropped the "rates below 8" framing; rewrote to refer to running long / no decisions / repeated issues as the leading indicators that the meeting is fraying.
+
+### Out of scope — queued for next version
+- **Quarterly session workspace expansion.** `run-quarterly-session.html` only has 3 blocks (Attendance, Areas to Cover, Team Check-in) compared to annual's 6 (+ Resources, Notes, Commitments). Bringing them to parity requires a SQL migration adding `notes text` + `external_links jsonb` + `commitments jsonb` columns to `quarterly_sessions`. Will confirm with user before doing.
+- **Floating "Meeting in progress" pill bug.** User reported it doesn't appear when clicking figures from inside a meeting. The Explore audit confirmed `active-meeting.js` loads on scorecard / goals / issues / todos and the z-index/positioning is correct. Most likely cause is a modal overlay on the destination page (z-index 1000+) covering the pill (z-index 210). Not changed pending the user confirming the exact scenario.
+
+### No SQL.
+
+---
+
 ## v0.5.209
 - **Dropped "Scheduled" status + removed back link from meeting workspace.** Two user asks:
   1. *"I think the meeting should be in progress or completed. No scheduled"*

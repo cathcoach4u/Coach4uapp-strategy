@@ -81,7 +81,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-left">
-        <a href="quarterly-sessions.html" class="header-back">&#x2190; Quarterly Sessions</a>
+        <!-- v0.5.210 — back link removed; bottom-nav covers Planning. -->
         <span class="header-title">Your Business Coach</span>
         <span id="activeBizName" class="biz-pill"></span>
       </div>
@@ -333,8 +333,9 @@
     const checkinLink=buildCheckinLink(s.id);
     c.innerHTML=`
       <div class="session-detail">
-        <div class="session-detail-heading">
-          <div><div class="session-detail-title">&#x1F3AF; ${fmtDate(s.session_date)} &middot; Sets ${escHtml(s.target_quarter||'')}</div></div>
+        <!-- v0.5.210 — duplicate date dropped; ws-title at top already shows it.
+             Status dropdown right-aligned alone, above the timer bar. -->
+        <div class="session-detail-heading" style="justify-content:flex-end;">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <select class="field-select" id="session-status">
               <option value="scheduled" ${s.status==='scheduled'?'selected':''}>Scheduled</option>
