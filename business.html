@@ -418,7 +418,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.167</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.168</p>
 
   </div>
 
@@ -882,18 +882,23 @@
       // than listing every business across every account you own.
       const activeOrg = activeRow.organisations;
       let groupMems;
-      if (activeOrg.parent_organisation_id) {
-        const parentId = activeOrg.parent_organisation_id;
-        groupMems = memberships.filter(m =>
-          m.organisation_id === parentId ||
-          (m.organisations && m.organisations.parent_organisation_id === parentId)
-        );
-      } else {
-        groupMems = memberships.filter(m =>
-          m.organisation_id === activeOrg.id ||
-          (m.organisations && m.organisations.parent_organisation_id === activeOrg.id)
-        );
-      }
+      // "Parent of the group" — same value whether the active biz IS the parent
+      // (so groupParentId = activeOrg.id) or is one of its children (groupParentId
+      // = activeOrg.parent_organisation_id). Used to keep the parent at the top
+      // of the dropdown (v0.5.168).
+      const groupParentId = activeOrg.parent_organisation_id || activeOrg.id;
+      groupMems = memberships.filter(m =>
+        m.organisation_id === groupParentId ||
+        (m.organisations && m.organisations.parent_organisation_id === groupParentId)
+      );
+      // Sort: parent first, then children alphabetically (v0.5.168). Without this
+      // the dropdown reflects the raw membership order — e.g., IASHQ showed at the
+      // bottom because the natural sort put "IAS General/Life/Outsourcing" before it.
+      groupMems.sort((a, b) => {
+        if (a.organisation_id === groupParentId) return -1;
+        if (b.organisation_id === groupParentId) return 1;
+        return String(a.organisations.name || '').localeCompare(String(b.organisations.name || ''));
+      });
       const bizSwitcherRow = document.getElementById('bizSwitcherRow');
       const bizSel = document.getElementById('businessSwitcher');
       if (bizSwitcherRow && bizSel) {

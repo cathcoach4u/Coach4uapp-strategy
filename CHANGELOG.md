@@ -4,6 +4,16 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.168
+- **Sort the BUSINESS dropdown so the parent appears at the top.** User: "In the click down it should be showing the hq at the top as this is the parent one and should be in order."
+- **Cause:** v0.5.166 filtered the dropdown to the parent-child group but didn't sort — so the raw `memberships` order leaked through. Alphabetical natural ordering puts "IAS General / IAS Life / IAS Outsourcing" before "IASHQ", which fights the visual hierarchy.
+- **Fix in `business.html`:** compute a `groupParentId` once — it's `activeOrg.parent_organisation_id` when the active biz is itself a child, or `activeOrg.id` when the active biz IS the parent. Both `groupMems` filter and the new sort use the same value, so the parent appears at index 0 regardless of which biz you're looking from.
+- The same code path also collapses the previous if/else split into a single filter (less duplication, easier to reason about).
+- **Sort:** `groupParentId` first, then everything else by `localeCompare(name)`. Net order on IAS: **IASHQ → IAS General → IAS Life → IAS Outsourcing**.
+- **No SQL.**
+
+---
+
 ## v0.5.167
 - **Restore `🏠 Home` to the bottom nav on every business-level page.** User: "I think the dashboard for each group needs a home tab. It was removed but I think it needs to go back."
 - **Context:** Home was dropped in v0.5.147 because it felt redundant with `🏛️ Account` (both lived in the bottom nav and both pointed "up" semantically). In v0.5.165, Account moved out of the bottom nav entirely → up to a top-right icon button. With Account no longer in the bottom nav, Home no longer creates the overlap, and the user's mental model is back to "tap Home → business overview".
