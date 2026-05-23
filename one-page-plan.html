@@ -184,6 +184,17 @@
       color: #888;
       font-style: italic;
     }
+    /* v0.5.187 — external org chart link (Lucidchart / Miro / …). */
+    .chart-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #0D9488;
+      text-decoration: none;
+      letter-spacing: 0.2px;
+    }
+    .chart-link:hover { text-decoration: underline; }
     .field-value.empty, .fin-cell .field-value.empty {
       color: #b0b0b0; font-style: italic; font-weight: 500;
     }
@@ -297,6 +308,7 @@
       .num-list li .n { font-size: 0.85rem; min-width: 18px; }
 
       .team-line { font-size: 0.9rem; line-height: 1.5; }
+      .chart-link { font-size: 0.85rem; margin-top: 8px; }
 
       .doc-financials { padding: 16px 18px 18px; }
       .fin-strip-head { margin-bottom: 12px; }
@@ -396,6 +408,8 @@
           <div class="field">
             <span class="field-label">Leadership Team</span>
             <div id="opp-team-compact" class="team-compact"></div>
+            <!-- v0.5.187 — external org chart link, when the org has one set. -->
+            <a id="opp-chart-link" class="chart-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">&#x1F517; View org chart &#x2192;</a>
           </div>
         </div>
 
@@ -582,6 +596,16 @@
       setText('opp-guarantee',     ms.guarantee,      '— not recorded —');
     }
 
+    // v0.5.187 — external org chart link in the Leadership Team section.
+    function renderChartLink(rawUrl) {
+      const el = document.getElementById('opp-chart-link');
+      if (!el) return;
+      const s = String(rawUrl || '').trim();
+      if (!s) { el.style.display = 'none'; el.removeAttribute('href'); return; }
+      el.href = /^https?:\/\//i.test(s) ? s : 'https://' + s;
+      el.style.display = 'inline-block';
+    }
+
     function renderTeamTable(team) {
       const wrap = document.getElementById('opp-team-compact');
       if (!wrap) return;
@@ -655,7 +679,7 @@
             .eq('organisation_id', orgId)
             .gte('period', isoMonth(PAST[0]))
             .lte('period', isoMonth(FUTURE[FUTURE.length - 1])),
-          cachedName ? Promise.resolve(null) : supabase.from('organisations').select('name').eq('id', orgId).maybeSingle()
+          supabase.from('organisations').select('name, org_chart_url').eq('id', orgId).maybeSingle()
         ]);
 
         const cvRow = (cv && !cv.error && cv.data) ? cv.data : null;
@@ -672,10 +696,13 @@
         applyWorksheetData(cvRow, cfRow, tgRow, msRow);
         renderTeamTable(ltRows);
         renderFinancials(finRows, PAST, FUTURE);
+        // v0.5.187 — external org chart link, if the org has one set.
+        renderChartLink(org && org.data && org.data.org_chart_url);
       } catch (e) {
         console.warn('Plan load error:', e);
         renderTeamTable([]);
         renderFinancials([], PAST, FUTURE);
+        renderChartLink(null);
       }
 
       document.body.style.opacity = '1';

@@ -4,6 +4,39 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.187
+- **External Org Chart URL on the Leadership Team page + One-Page Plan.** User: "Add to organisation chart a way they can add a link to their org chart. This can be created external from app if they want it. Including this link on the one page plan."
+
+### Why
+Many users prefer to build their org chart in a visual tool (Lucidchart, Miro, Google Drawings, Figma, draw.io, Whimsical, FigJam…) rather than describe it as a list of leadership-team rows. This lets them paste that share-link once and have it surface for the whole team.
+
+### Leadership Team page (`leadership-team.html`)
+- New **🔗 Org Chart Link** card at the top of the worksheet, above the "+ Add Team Member" button.
+- Single URL input + a teal **👁️ View →** button that appears next to it when a URL is set (opens in a new tab with `rel="noopener noreferrer"`).
+- Auto-saves on input with a 400ms debounce; status line shows "Saving…" → "Saved ✓".
+- URLs pasted without a scheme (e.g. `lucid.app/lucidchart/xxx`) get `https://` prepended on render so the link still works.
+- Defensive: if the migration hasn't run yet (column doesn't exist), the status line shows "Schema not migrated yet — run supabase/v0.5.187-delta.sql" rather than failing silently.
+
+### One-Page Plan (`one-page-plan.html`)
+- New small `🔗 View org chart →` link in the **Leadership Team** field of the "Who We Are" column, below the team-member list. Teal, hidden when no URL is set.
+- The `organisations` query that was conditional (`cachedName ? null : fetch name`) now always runs and selects `name, org_chart_url` — tiny cost, much simpler.
+
+### Account-level carousel (`account-plans.html`)
+- The cross-business one-page plan carousel surfaces the same link per business — fetches `org_chart_url` via the existing `organisations!inner(...)` join on the `team_members` query, then renders via a `chartLink()` helper inside the Leadership Team field.
+
+### Schema — `supabase/v0.5.187-delta.sql`
+```sql
+ALTER TABLE public.organisations
+  ADD COLUMN IF NOT EXISTS org_chart_url text;
+```
+No RLS change — the existing `organisations` policies cover it (members read, admins + subscription owner write). The column is nullable; businesses without a chart link just don't render the link.
+
+### Out of scope
+- The parent/child inheritance pattern from v0.5.145 doesn't apply here — `organisations.org_chart_url` is not in the children-read-parent policies (those cover `core_values`, `core_focus`, `targets`). A child business sees only its own `org_chart_url`, not the parent's. If we want a parent's link to inherit to children automatically, follow the same RLS-additive pattern; not done here because the typical case is each business has its own chart.
+- `account-leadership.html` (the leadership-team carousel) was not updated in this version; it shows just the team list. Easy follow-up if needed.
+
+---
+
 ## v0.5.186
 - **Tidier toolbar on phones for the one-page plan + operations.** User screenshot of `one-page-plan.html` on iPhone showed the white screen-toolbar cramming 4 elements (`← Strategy` + page title + biz pill + Print button) into ~390px width — the page title was truncated to "One-P..." and the biz pill clipped to "I...".
 

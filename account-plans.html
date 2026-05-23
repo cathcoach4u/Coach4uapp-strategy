@@ -309,6 +309,9 @@
     .team-line .tr { font-weight: 700; color: #0D9488; }
     .team-line .tsep { color: #bbb; margin: 0 4px; }
     .team-empty { font-size: 0.7rem; color: #b0b0b0; font-style: italic; }
+    /* v0.5.187 — external org chart link in the Leadership Team section. */
+    .chart-link { display: inline-block; margin-top: 6px; font-size: 0.7rem; font-weight: 700; color: #0D9488; text-decoration: none; letter-spacing: 0.2px; }
+    .chart-link:hover { text-decoration: underline; }
 
     /* ── Financial Outlook strip (mirrors one-page-plan.html) ── */
     .doc-financials {
@@ -507,6 +510,14 @@
       }).join('') + '</div>';
     }
 
+    // v0.5.187 — external org chart URL link (Lucidchart / Miro / …).
+    function chartLink(rawUrl) {
+      const s = String(rawUrl || '').trim();
+      if (!s) return '';
+      const href = /^https?:\/\//i.test(s) ? s : 'https://' + s;
+      return `<a class="chart-link" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer">&#x1F517; View org chart &#x2192;</a>`;
+    }
+
     /* ============== render one business card ============== */
     function fmtCurrency(n) {
       if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '—';
@@ -620,6 +631,7 @@
                 <div class="field">
                   <span class="field-label">Leadership Team</span>
                   ${teamList(team)}
+                  ${chartLink(org.org_chart_url)}
                 </div>
               </div>
 
@@ -706,7 +718,7 @@
         ? window.activeOrg.getSubscription() : null;
       const memQuery = sb
         .from('team_members')
-        .select('organisation_id, organisations!inner(id, name, subscription_id)')
+        .select('organisation_id, organisations!inner(id, name, subscription_id, org_chart_url)')
         .eq('user_id', user.id)
         .eq('status', 'active');
       if (subId) memQuery.eq('organisations.subscription_id', subId);
@@ -724,7 +736,11 @@
       }
 
       const orgs = mems
-        .map(m => ({ id: m.organisations.id, name: m.organisations.name }))
+        .map(m => ({
+          id: m.organisations.id,
+          name: m.organisations.name,
+          org_chart_url: m.organisations.org_chart_url || ''  // v0.5.187
+        }))
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       const orgIds = orgs.map(o => o.id);

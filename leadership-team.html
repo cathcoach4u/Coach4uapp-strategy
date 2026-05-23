@@ -25,6 +25,43 @@
       border-left: 3px solid var(--accent);
     }
 
+    /* v0.5.187 — Org Chart URL card. Sits at the top so the org chart
+       link is the headline; team-member detail follows below. */
+    .chart-card {
+      background: white; border-radius: 10px; border: 1px solid var(--border);
+      padding: 16px; margin: 0 16px 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .chart-card-title {
+      font-size: 0.95rem; font-weight: 800; color: var(--primary);
+      margin: 0 0 4px;
+    }
+    .chart-card-sub {
+      font-size: 0.78rem; color: #888; line-height: 1.45;
+      margin: 0 0 12px;
+    }
+    .chart-url-row {
+      display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap;
+    }
+    .chart-url-input {
+      flex: 1; min-width: 0;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 9px 11px; font-size: 0.88rem; color: var(--text);
+      font-family: inherit; background: white;
+      transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .chart-url-input:focus { outline: none; border-color: var(--accent); }
+    .chart-view-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 9px 14px; background: var(--accent); color: white;
+      border-radius: 8px; font-size: 0.83rem; font-weight: 700;
+      text-decoration: none; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .chart-view-btn:hover { background: var(--accent-dark); color: white; text-decoration: none; }
+    .chart-view-btn.hidden { display: none; }
+    .chart-status { font-size: 0.74rem; color: #888; margin-top: 6px; min-height: 1em; }
+
     .add-row { padding: 0 16px 12px; }
     .add-btn {
       width: 100%; padding: 11px; background: var(--accent); color: white;
@@ -141,6 +178,20 @@
 
     <div class="ws-hint">
       <a href="learn/leadership-team.html">Read the Leadership Team guide &#x2192;</a>
+    </div>
+
+    <!-- v0.5.187 — External org chart link. Users can build their org chart
+         in any tool they like (Lucidchart, Miro, Google Drawings, Figma,
+         draw.io, etc.) and paste the share link here so the whole team can
+         open it in one tap. The link also appears on the One-Page Plan. -->
+    <div class="chart-card">
+      <div class="chart-card-title">&#x1F517; Org Chart Link</div>
+      <p class="chart-card-sub">Build your org chart in any tool (Lucidchart, Miro, Google Drawings, Figma, draw.io&hellip;) and paste the share link here. It will appear on the One-Page Plan too.</p>
+      <div class="chart-url-row">
+        <input type="url" class="chart-url-input" id="chartUrlInput" placeholder="https://&hellip;" autocomplete="url" inputmode="url" />
+        <a class="chart-view-btn hidden" id="chartViewBtn" href="#" target="_blank" rel="noopener noreferrer">&#x1F441;&#xFE0F; View &#x2192;</a>
+      </div>
+      <div class="chart-status" id="chartStatus"></div>
     </div>
 
     <div class="add-row">
@@ -408,7 +459,73 @@
         team = [];
       }
       renderTeam();
+      try { await initChartUrl(); } catch (e) { console.warn('Chart URL init:', e); }
       document.body.style.opacity = '1';
+    }
+
+    // ── v0.5.187 — external org chart URL on organisations.org_chart_url ──
+    function normalizeChartUrl(raw) {
+      const s = String(raw || '').trim();
+      if (!s) return '';
+      return /^https?:\/\//i.test(s) ? s : 'https://' + s;
+    }
+    function setChartViewBtn(url) {
+      const btn = document.getElementById('chartViewBtn');
+      if (!btn) return;
+      if (url) {
+        btn.href = url;
+        btn.classList.remove('hidden');
+      } else {
+        btn.href = '#';
+        btn.classList.add('hidden');
+      }
+    }
+    async function initChartUrl() {
+      const input = document.getElementById('chartUrlInput');
+      const status = document.getElementById('chartStatus');
+      if (!input) return;
+      const { data, error } = await supabase
+        .from('organisations')
+        .select('org_chart_url')
+        .eq('id', orgId)
+        .maybeSingle();
+      if (error) {
+        // Likely "column does not exist" — surface that explicitly so we know
+        // the SQL hasn't been applied yet.
+        console.warn('Load org_chart_url failed:', error.message);
+        status.textContent = /org_chart_url/.test(error.message)
+          ? 'Schema not migrated yet — run supabase/v0.5.187-delta.sql.'
+          : '';
+        status.style.color = '#c33';
+        return;
+      }
+      const current = (data && data.org_chart_url) || '';
+      input.value = current;
+      setChartViewBtn(current ? normalizeChartUrl(current) : '');
+
+      let saveTimer = null;
+      input.addEventListener('input', () => {
+        status.textContent = 'Saving…';
+        status.style.color = '#c98a00';
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+          const value = input.value.trim();
+          const payload = value ? value : null;
+          const { error: upErr } = await supabase
+            .from('organisations')
+            .update({ org_chart_url: payload })
+            .eq('id', orgId);
+          if (upErr) {
+            status.textContent = 'Could not save: ' + upErr.message;
+            status.style.color = '#c33';
+            return;
+          }
+          status.textContent = 'Saved ✓';
+          status.style.color = '#0F766E';
+          setChartViewBtn(value ? normalizeChartUrl(value) : '');
+          setTimeout(() => { if (status.textContent === 'Saved ✓') status.textContent = ''; }, 1500);
+        }, 400);
+      });
     }
     init();
   </script>
