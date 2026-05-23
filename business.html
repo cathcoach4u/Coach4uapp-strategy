@@ -438,7 +438,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.200</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.201</p>
 
   </div>
 
@@ -548,16 +548,29 @@
       // Stat tile: Next Meeting
       document.getElementById('statNextMeeting').textContent = nextMeeting ? fmtShortDate(nextMeeting.meeting_date) : 'None';
 
-      // Next Meeting tile + This Week "View Meeting" link open the actual meeting if one exists.
-      // (The Run Weekly Meeting button is wired separately via wireRunMeetingButton — it
-      // creates this week's meeting if one doesn't exist yet.)
+      // v0.5.201 — Next Meeting tile + This Week "View Meeting" link now wire
+      // through the same openOrCreateWeeklyMeeting handler used by the Run
+      // Weekly Meeting button. If a meeting exists they open it; if not they
+      // create this week's meeting and open it. Consistent across all three
+      // entry points.
+      const tw = document.getElementById('thisWeekViewLink');
+      const sn = document.getElementById('statNextMeetingTile');
       if (nextMeeting) {
         const meetingUrl = 'run-meeting.html?id=' + encodeURIComponent(nextMeeting.id);
-        const tw = document.getElementById('thisWeekViewLink'); if (tw) tw.href = meetingUrl;
-        const sn = document.getElementById('statNextMeetingTile'); if (sn) sn.href = meetingUrl;
-      } else {
-        // No meeting → links default to meeting.html (already in markup)
+        if (tw) tw.href = meetingUrl;
+        if (sn) sn.href = meetingUrl;
       }
+      // Always also attach the create-or-open handler so taps work even when no
+      // meeting exists yet (preventDefault → openOrCreateWeeklyMeeting).
+      const wireMeetingLink = (el) => {
+        if (!el) return;
+        el.addEventListener('click', async (e) => {
+          e.preventDefault();
+          await openOrCreateWeeklyMeeting(orgId);
+        });
+      };
+      wireMeetingLink(tw);
+      wireMeetingLink(sn);
 
       // This Week todos panel — pulled from the focused meeting's todos
       const todosWrap = document.getElementById('thisWeekTodos');
@@ -881,34 +894,42 @@
     // Run Weekly Meeting: open this-week's existing meeting if there is one, otherwise
     // create a new meeting row for the current Monday and open that. Same logic as the
     // button on operations.html (which was the old home for this affordance). v0.5.174.
+    // v0.5.201 — Shared "open or create this week's meeting" handler. Used by
+    // the Run Weekly Meeting button (top of dashboard), the View Meeting link
+    // in the This Week panel, and the Next Meeting stat tile. All three now
+    // behave identically — tap → find this week's meeting if it exists, else
+    // create one, then navigate to run-meeting.html?id=…
+    async function openOrCreateWeeklyMeeting(activeId) {
+      if (!activeId) return;
+      const d = new Date();
+      const day = d.getDay();
+      d.setDate(d.getDate() + ((day === 0 ? -6 : 1) - day));
+      const mondayIso = d.toISOString().slice(0, 10);
+      const { data: existing } = await supabase
+        .from('meetings')
+        .select('id')
+        .eq('organisation_id', activeId)
+        .eq('meeting_date', mondayIso)
+        .maybeSingle();
+      let meetingId = existing && existing.id;
+      if (!meetingId) {
+        const q = 'Q' + (Math.floor(new Date().getMonth() / 3) + 1) + ' ' + new Date().getFullYear();
+        const { data: created, error } = await supabase
+          .from('meetings')
+          .insert({ organisation_id: activeId, meeting_date: mondayIso, status: 'scheduled', quarter: q })
+          .select('id')
+          .single();
+        if (error) { alert('Could not start meeting: ' + error.message); return; }
+        meetingId = created.id;
+      }
+      window.location.href = 'run-meeting.html?id=' + meetingId;
+    }
     function wireRunMeetingButton(btnId, activeId) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        if (!activeId) return;
-        const d = new Date();
-        const day = d.getDay();
-        d.setDate(d.getDate() + ((day === 0 ? -6 : 1) - day));
-        const mondayIso = d.toISOString().slice(0, 10);
-        const { data: existing } = await supabase
-          .from('meetings')
-          .select('id')
-          .eq('organisation_id', activeId)
-          .eq('meeting_date', mondayIso)
-          .maybeSingle();
-        let meetingId = existing && existing.id;
-        if (!meetingId) {
-          const q = 'Q' + (Math.floor(new Date().getMonth() / 3) + 1) + ' ' + new Date().getFullYear();
-          const { data: created, error } = await supabase
-            .from('meetings')
-            .insert({ organisation_id: activeId, meeting_date: mondayIso, status: 'scheduled', quarter: q })
-            .select('id')
-            .single();
-          if (error) { alert('Could not start meeting: ' + error.message); return; }
-          meetingId = created.id;
-        }
-        window.location.href = 'run-meeting.html?id=' + meetingId;
+        await openOrCreateWeeklyMeeting(activeId);
       });
     }
 

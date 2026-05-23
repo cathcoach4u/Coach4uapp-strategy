@@ -4,6 +4,34 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.201
+- **Fixed the "View Meeting" link in This Week + Next Meeting stat tile.** User: "The weekly meeting start button and link to go back to meeting isn't working" → clarified that the Run Weekly Meeting button works, but the View Meeting link doesn't (on both parent + child dashboards).
+
+### Root cause
+The `View Meeting ›` link in the This Week panel and the Next Meeting stat tile in the stat row only navigated to a specific meeting (`run-meeting.html?id=…`) WHEN a meeting already existed for the current week. With no meeting yet, both fell back to their default `href="meeting.html"` (the past-meetings list page) — which felt like "broken" because the user expected to land in *this week's* meeting workspace, not a list of past ones.
+
+The Run Weekly Meeting button worked correctly because `wireRunMeetingButton` always created-or-opened the meeting via a click handler.
+
+### Fix
+- Extracted the create-or-open logic into a shared `openOrCreateWeeklyMeeting(activeId)` helper.
+- `wireRunMeetingButton(btnId, activeId)` now wraps it (no behaviour change).
+- New `wireMeetingLink(el)` helper inside `renderDashboard` attaches the same click handler to:
+  - `#thisWeekViewLink` (the View Meeting › link in the This Week panel head)
+  - `#statNextMeetingTile` (the Next Meeting stat tile)
+- Default `href` on both elements stays as `meeting.html` so middle-click / right-click → "Open in new tab" still navigates to a sensible fallback; normal taps run `e.preventDefault()` + `openOrCreateWeeklyMeeting`.
+
+### Net effect
+All three home-dashboard meeting entry points now behave identically:
+- **Run Weekly Meeting button** (top of dashboard)
+- **View Meeting › link** (This Week panel head)
+- **Next Meeting stat tile** (stat row)
+
+Tap any of the three → find this week's meeting if it exists, else create one, then navigate to `run-meeting.html?id=…`. Same code path, same result.
+
+### No SQL.
+
+---
+
 ## v0.5.200
 - **Unified home dashboard for parent + child businesses.** User: "The home pages should be the same for parent and child. ... Right now the child ones are different" → "Yes do that".
 
