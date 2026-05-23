@@ -246,7 +246,7 @@
     if(!meeting_date){showToast('Date is required','error');return}
     const { data, error } = await supabase
       .from('meetings')
-      .insert({ organisation_id: orgId, meeting_date, quarter, status: 'scheduled' })
+      .insert({ organisation_id: orgId, meeting_date, quarter, status: 'in_progress' })
       .select()
       .single();
     if (error || !data) {

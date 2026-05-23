@@ -196,7 +196,7 @@
       if (existing && existing.id) return existing.id;
       const { data: created, error } = await supabase
         .from('meetings')
-        .insert({ organisation_id: orgId, meeting_date: mondayIso, status: 'scheduled', quarter: currentQuarter() })
+        .insert({ organisation_id: orgId, meeting_date: mondayIso, status: 'in_progress', quarter: currentQuarter() })
         .select('id')
         .single();
       if (error) throw error;

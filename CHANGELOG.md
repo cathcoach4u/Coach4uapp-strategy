@@ -4,6 +4,34 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.209
+- **Dropped "Scheduled" status + removed back link from meeting workspace.** Two user asks:
+  1. *"I think the meeting should be in progress or completed. No scheduled"*
+  2. *"I don't think this back link is needed"* (screenshot of run-meeting.html showing `← Past Meetings` in the navy header, with the title `Your ...` truncated due to cramped header).
+
+### (1) Status — In Progress or Completed only
+- `run-meeting.html` — status dropdown now only renders **In Progress** + **Completed** options. The Scheduled option is gone.
+- Selected-state logic: `status !== 'completed'` shows as In Progress (any historical `'scheduled'` row also displays as In Progress).
+- The DB CHECK constraint on `meetings.status` still allows `scheduled` (historical data preserved); the option just isn't surfaced in the UI.
+
+### (2) New meetings default to in_progress
+Four insert sites changed from `status: 'scheduled'` → `status: 'in_progress'`:
+- `business.html` — `openOrCreateWeeklyMeeting` (Run Weekly Meeting button on home).
+- `todos.html` — `findOrCreateThisWeekMeeting` (when adding a todo creates this week's meeting).
+- `meeting.html` — new-meeting modal save handler.
+
+Side effect: the floating green "Meeting in progress" pill (v0.5.207) now appears immediately on Run Weekly Meeting tap, since the meeting is already in_progress. Previously the pill appeared but represented a scheduled meeting which felt mismatched.
+
+### (3) Back link removed from run-meeting.html
+- `<a href="meeting.html" class="header-back">← Past Meetings</a>` deleted from the navy header.
+- To reach the meetings list now: Operations → Weekly Meetings (one tap via bottom-nav + activity card).
+- Matches the v0.5.189 / v0.5.191 audit principle — back link is redundant when bottom-nav covers the destination, and frees header space on iPhone where the page title was being ellipsised.
+
+### No SQL.
+- `meetings.status` column + CHECK constraint untouched. `'scheduled'` is still a valid stored value; older rows render correctly.
+
+---
+
 ## v0.5.208
 - **Annual + quarterly session audit (matches the v0.5.207 weekly-meeting fix).** User: "Now go to annual and quarterly sessions and do the same audit and check if it is structured to see the persistence pill and each section can be seen."
 

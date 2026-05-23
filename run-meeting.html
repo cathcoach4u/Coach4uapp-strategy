@@ -117,7 +117,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-left">
-        <a href="meeting.html" class="header-back">&#x2190; Past Meetings</a>
+        <!-- v0.5.209 — back link removed; bottom-nav covers it. -->
         <span class="header-title">Your Business Coach</span>
         <span id="activeBizName" class="biz-pill"></span>
       </div>
@@ -278,8 +278,9 @@
         <div class="meeting-detail-heading" style="justify-content:flex-end;">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <select class="field-select" id="meeting-status">
-              <option value="scheduled" ${m.status==='scheduled'?'selected':''}>Scheduled</option>
-              <option value="in_progress" ${m.status==='in_progress'?'selected':''}>In Progress</option>
+              <!-- v0.5.209 — "Scheduled" dropped; meetings are either In Progress
+                   (you've started running it) or Completed (you've wrapped up). -->
+              <option value="in_progress" ${m.status!=='completed'?'selected':''}>In Progress</option>
               <option value="completed" ${m.status==='completed'?'selected':''}>Completed</option>
             </select>
           </div>
