@@ -429,7 +429,7 @@
            Account tab → index.html still let users navigate to children. -->
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.214</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.215</p>
 
   </div>
 
@@ -534,6 +534,29 @@
       // ── Meetings ──
       const mondayIso = thisMondayIso();
       const todayIso = new Date().toISOString().slice(0, 10);
+
+      // v0.5.215 — Auto-complete meetings left in_progress past their meeting_date.
+      // Honest signal: a meeting belongs to its day; if today is past that day and
+      // nobody hit End / Completed, flip the status here so the row reflects reality
+      // (and the floating pill stops nagging). Doesn't touch today's or future ones.
+      // Fire-and-forget — we don't await the update; subsequent reads use the
+      // patched local objects, so the dashboard renders correctly regardless of
+      // whether the DB write is in-flight.
+      const stale = meetings.filter(m => m.status === 'in_progress' && m.meeting_date < todayIso);
+      if (stale.length) {
+        const ids = stale.map(m => m.id);
+        stale.forEach(m => { m.status = 'completed'; });
+        supabase.from('meetings').update({ status: 'completed' }).in('id', ids)
+          .then(({ error }) => { if (error) console.warn('Auto-complete stale meetings failed:', error.message); });
+        // If the floating pill was pointing at one of these stale meetings, clear it.
+        try {
+          const pillData = JSON.parse(localStorage.getItem('coach4u_active_meeting') || 'null');
+          if (pillData && pillData.id && ids.some(id => String(id) === String(pillData.id))) {
+            if (window.activeMeeting) window.activeMeeting.clear();
+          }
+        } catch (_) {}
+      }
+
       const thisWeekMeeting = meetings.find(x => x.meeting_date === mondayIso);
       const upcoming = meetings.slice().filter(m => m.status !== 'completed' && m.meeting_date >= todayIso)
                                 .sort((a,b) => (a.meeting_date||'').localeCompare(b.meeting_date||''))[0];

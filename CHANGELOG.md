@@ -4,6 +4,45 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.215
+- **Auto-complete meetings left in_progress past their meeting day.** User: "What happens if they just leave the meeting open? Does it automatically close?" → "Yes" (to option 2 of the two I offered: auto-complete by date).
+
+### Diagnosis
+A meeting opened (or created via Run Weekly Meeting) defaults to `status: 'in_progress'`. If the user never taps End / Completed, the row stays `in_progress` forever:
+- Floating green pill keeps showing across every business-level page indefinitely
+- Home button stays as "Resume This Week's Meeting"
+- Quarter rollups don't reflect meetings being closed
+- Next Monday's tap on Run creates a new meeting alongside the still-open old one
+
+### Fix — `business.html` `renderDashboard`
+Right after `meetings = meetingsRes.data`, scan for stale rows:
+```js
+const stale = meetings.filter(m => m.status === 'in_progress' && m.meeting_date < todayIso);
+if (stale.length) {
+  const ids = stale.map(m => m.id);
+  stale.forEach(m => { m.status = 'completed'; });          // patch local
+  supabase.from('meetings').update({ status: 'completed' })  // write DB (fire-and-forget)
+    .in('id', ids)
+    .then(({ error }) => { if (error) console.warn('…'); });
+  // Clear pill if it was pointing at a stale meeting
+  …
+}
+```
+
+### Behaviour
+- **Today's meeting**: untouched (`meeting_date >= today` excluded).
+- **Future meetings**: untouched (rare — but scheduled-ahead meetings stay scheduled until their day).
+- **Yesterday's `in_progress`**: flipped to `completed` next time the user lands on the home dashboard.
+- **Floating pill cleanup**: if the localStorage pill was pointing at a stale meeting, `window.activeMeeting.clear()` is called so the pill disappears.
+- **Idempotent**: once flipped, the row is `completed` so subsequent dashboard loads skip it.
+
+### Tradeoff
+If someone runs a meeting past midnight (rare for weekly), the next dashboard load after midnight will mark it completed. They can still see the meeting via Operations → Weekly Meetings and even reopen the workspace — the data isn't lost, just the status reflects it's no longer the "active" meeting of the day.
+
+### No SQL.
+
+---
+
 ## v0.5.214
 - **Removed the Child Businesses panel from the parent dashboard.** User: "Child business on dashboard just taking up real estate. Remove."
 
