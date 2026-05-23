@@ -4,6 +4,20 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.179
+- **Trim + re-order the parent dashboard.** Four changes on `business.html`'s parent-mode (rendered when the active biz has children, e.g. IASHQ):
+- **(1) Group Strategy panel** — shows ONLY the 12-Month Goal row. The 10-Year Vision and 3-Year Outlook rows were dropped. The JS still computes the 10yr / 3yr text from `targets`, but `setText('parentTenYear', …)` / `setText('parentThreeYear', …)` become no-ops because the elements no longer exist in the DOM — `setText` guards with `if (!el) return`.
+- **(2) Group Financials panel** — shows ONLY 2 cells: "1-Year Revenue Target" + "Last 12mo Profit". The "Last 12mo Revenue" and "Last 12mo Expenses" cells were dropped. `setFin` got the same `if (!el) return` guard so the remaining calls don't try to write to gone-elements.
+- **(3) Panel order** changed:
+  - was: Group Strategy → This Quarter's Priorities → Group Financials → Child Businesses
+  - is: **Group Strategy → Group Financials → This Quarter's Priorities → Child Businesses**
+  - Rationale: financials are the headline number; the user wants to glance at them right after the strategy line.
+- **(4) Child cards** — show ONLY "Goals on track: X of N". Removed the "Open Issues:" and "Next meeting:" rows. The `allChildIssues` / `allChildMeetings` queries still fire (they're cheap, may be used elsewhere later); the maps just aren't rendered.
+- **Net:** parent dashboard reads tighter — 4 panels in the new order, each with less competing detail. Same data still in the database; readers just see a focused subset.
+- **No SQL.**
+
+---
+
 ## v0.5.178
 - **Align heading positions across the 5 hub pages.** User: "If you look at each page the headings all start at a different spot. Should all be consistent."
 - **Root cause:** `css/style.css` line 161 sets a global `.container { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }`, with a `@media (max-width: 640px)` override to `padding: 20px 16px`. Four hubs (Home / Planning / Strategy / Operations) overrode only `padding-bottom: 80px` (or 88px) in their inline `<style>` blocks. CSS cascade: their other three sides inherited the global rule, so the heading sat ~32px (or ~20px on mobile) below the container top edge and ~20px (16px mobile) from the left. `learning-vault.html` used the shorthand `padding: 0 0 90px`, which **fully resets** all four sides to 0/0/90/0 — its heading sat at the container's top-left corner.

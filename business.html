@@ -350,6 +350,7 @@
         <a class="view-plan-btn" href="one-page-plan.html">&#x1F4CB;&nbsp; View One-Page Plan</a>
         <a class="view-plan-btn" href="one-page-operations.html">&#x1F4CB;&nbsp; View One-Page Operations</a>
       </div>
+      <!-- v0.5.179 — Group Strategy keeps only the 12-month goal -->
       <div class="dash-panel">
         <div class="panel-head">
           <span class="panel-title">&#x1F3AF; Group Strategy</span>
@@ -357,16 +358,30 @@
         </div>
         <div class="panel-body">
           <div class="group-target-row">
-            <span class="group-target-label">10-Year Vision</span>
-            <div class="group-target-value empty" id="parentTenYear">Not set</div>
-          </div>
-          <div class="group-target-row">
-            <span class="group-target-label">3-Year Outlook</span>
-            <div class="group-target-value empty" id="parentThreeYear">Not set</div>
-          </div>
-          <div class="group-target-row">
             <span class="group-target-label">12-Month Goal</span>
             <div class="group-target-value empty" id="parentOneYear">Not set</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- v0.5.179 — Group Financials keeps only Revenue Target + Last 12mo Profit -->
+      <div class="dash-panel">
+        <div class="panel-head">
+          <span class="panel-title">&#x1F4B0; Group Financials</span>
+          <a class="panel-link" href="financials.html">Edit &#x203A;</a>
+        </div>
+        <div class="panel-body">
+          <div class="financial-grid">
+            <div class="financial-cell">
+              <div class="financial-label">1-Year Revenue Target</div>
+              <div class="financial-value empty" id="groupRevenueTarget">&mdash;</div>
+              <div class="financial-sub">summed across group</div>
+            </div>
+            <div class="financial-cell">
+              <div class="financial-label">Last 12mo Profit</div>
+              <div class="financial-value empty" id="groupProfit">&mdash;</div>
+              <div class="financial-sub">revenue &minus; expenses</div>
+            </div>
           </div>
         </div>
       </div>
@@ -385,37 +400,6 @@
 
       <div class="dash-panel">
         <div class="panel-head">
-          <span class="panel-title">&#x1F4B0; Group Financials</span>
-          <a class="panel-link" href="financials.html">Edit &#x203A;</a>
-        </div>
-        <div class="panel-body">
-          <div class="financial-grid">
-            <div class="financial-cell">
-              <div class="financial-label">1-Year Revenue Target</div>
-              <div class="financial-value empty" id="groupRevenueTarget">&mdash;</div>
-              <div class="financial-sub">summed across group</div>
-            </div>
-            <div class="financial-cell">
-              <div class="financial-label">Last 12mo Revenue</div>
-              <div class="financial-value empty" id="groupRevenueActual">&mdash;</div>
-              <div class="financial-sub">combined actuals</div>
-            </div>
-            <div class="financial-cell">
-              <div class="financial-label">Last 12mo Expenses</div>
-              <div class="financial-value empty" id="groupExpenses">&mdash;</div>
-              <div class="financial-sub">combined actuals</div>
-            </div>
-            <div class="financial-cell">
-              <div class="financial-label">Last 12mo Profit</div>
-              <div class="financial-value empty" id="groupProfit">&mdash;</div>
-              <div class="financial-sub">revenue &minus; expenses</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="dash-panel">
-        <div class="panel-head">
           <span class="panel-title">&#x1F3E2; Child Businesses</span>
         </div>
         <div class="panel-body">
@@ -424,7 +408,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.178</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.179</p>
 
   </div>
 
@@ -690,19 +674,12 @@
       const pt = (parentTargets.data || {});
       const setText = (id, val) => {
         const el = document.getElementById(id);
+        if (!el) return; // Group Strategy panel no longer renders 10-year / 3-year rows (v0.5.179)
         const v = (val || '').toString().trim();
         if (v) { el.classList.remove('empty'); el.textContent = v; }
         else   { el.classList.add('empty');    el.textContent = 'Not set'; }
       };
-      setText('parentTenYear', pt.ten_year);
-      // 3-Year: combine three_year_desc with numbers if present
-      const threeYearBits = [];
-      if (pt.three_year_date)    threeYearBits.push('Target: ' + pt.three_year_date);
-      if (pt.three_year_revenue) threeYearBits.push('Revenue ' + pt.three_year_revenue);
-      if (pt.three_year_profit)  threeYearBits.push('Profit ' + pt.three_year_profit);
-      const threeYearText = [pt.three_year_desc, threeYearBits.length ? threeYearBits.join(' · ') : null]
-        .filter(Boolean).join('\n');
-      setText('parentThreeYear', threeYearText);
+      // 10-year + 3-year rows removed from the panel in v0.5.179 — only 12-Month Goal remains.
       // 12-Month
       const oneYearBits = [];
       if (pt.one_year_date)    oneYearBits.push('Target: ' + pt.one_year_date);
@@ -744,12 +721,11 @@
       });
       const setFin = (id, val, isEmpty) => {
         const el = document.getElementById(id);
+        if (!el) return; // groupRevenueActual + groupExpenses cells removed in v0.5.179
         if (isEmpty) { el.classList.add('empty'); el.textContent = '—'; }
         else { el.classList.remove('empty'); el.textContent = val; }
       };
       setFin('groupRevenueTarget', parsedAnyTarget ? fmtMoney(totalTarget) : '—', !parsedAnyTarget);
-      setFin('groupRevenueActual', finRows.length ? fmtMoney(totalRev) : '—', !finRows.length);
-      setFin('groupExpenses',      finRows.length ? fmtMoney(totalExp) : '—', !finRows.length);
       setFin('groupProfit',        finRows.length ? fmtMoney(totalRev - totalExp) : '—', !finRows.length);
 
       // ── Child cards: per-child snapshot (issues / goals / next meeting) ──
@@ -771,13 +747,9 @@
 
       const cardsEl = document.getElementById('childCards');
       cardsEl.innerHTML = children.map(c => {
-        const issues = issuesPerChild.get(c.id) || 0;
-        const rocks  = rocksPerChild.get(c.id) || { total: 0, onTrack: 0 };
-        const mtg    = meetingsPerChild.get(c.id);
-        const mtgLabel = mtg ? fmtShortDate(mtg.meeting_date) : '—';
-        const issuesValClass = issues === 0 ? 'val empty' : 'val';
+        const rocks = rocksPerChild.get(c.id) || { total: 0, onTrack: 0 };
+        // v0.5.179 — Open Issues + Next Meeting removed from child cards; only Goals on track remains
         const goalsValClass = (rocks.total === 0) ? 'val empty' : 'val';
-        const mtgValClass = mtg ? 'val' : 'val empty';
         return `
           <div class="child-card" data-org-id="${escapeHtml(c.id)}" data-org-name="${escapeHtml(c.name)}">
             <div class="child-card-head">
@@ -786,9 +758,7 @@
               <span class="child-card-open">Open ›</span>
             </div>
             <div class="child-card-mini">
-              <div><span class="label">Open Issues:</span><span class="${issuesValClass}">${issues}</span></div>
               <div><span class="label">Goals on track:</span><span class="${goalsValClass}">${rocks.onTrack} of ${rocks.total}</span></div>
-              <div><span class="label">Next meeting:</span><span class="${mtgValClass}">${escapeHtml(mtgLabel)}</span></div>
             </div>
           </div>`;
       }).join('');
