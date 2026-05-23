@@ -4,6 +4,34 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.185
+- **One-page plan + one-page operations: screen-first layout for phones + portrait tablets.** User: "I really like the one page printed plan but can this information appear online screen first. ... I just think for those people that prefer to see it on screen."
+
+### Approach
+Rather than create separate screen-only files, the existing `one-page-plan.html` and `one-page-operations.html` are now responsive. Same URL, same data fetching, two presentations:
+- **Screen viewport ≥ 820px** — current 3-column landscape layout (unchanged).
+- **Screen viewport < 820px** (phone, portrait tablet) — single-column stacked layout with thumb-readable typography.
+- **Print** — current 3-column landscape A4 layout (unchanged, always wins via `@media print`).
+
+The `screen` keyword on the new mobile rules (`@media screen and (max-width: 820px)`) prevents them applying when printing, so tapping Print / PDF on a phone still outputs the proper landscape A4.
+
+### What the screen layout does
+- `.plan-page` — drops the `min-width: 760px` (plan) / `min-width: 820px` (ops) so the doc collapses to viewport width.
+- `.doc-body` — switches `grid-template-columns` from `1fr 1.45fr 1fr` (plan) / `1fr 1.55fr 1fr` (ops) to a single `1fr`, so the 3 cards stack vertically.
+- `.doc-col` — swaps `border-right` (column divider) for `border-bottom` (row divider) so the visual rhythm follows the stack.
+- **Typography bumped for thumb reading**: field labels 0.56→0.66rem, field values 0.76→0.95rem, column headings 0.6→0.72rem, value pills 0.68→0.82rem, num-list items 0.73→0.92rem, padding 14→18px.
+- `.fin-strip-body` — Financial Outlook strip (Last 12/Next 12 on plan; Last Year/This Year on ops) stacks to 1 column.
+- **Operations scorecard**: `#opp-scorecard` gets `overflow-x: auto` so the wide weekly-numbers table can scroll horizontally inside its column while the rest of the doc still stacks normally. Cell padding bumped from 4px to 6-7px for finger taps.
+
+### Cleanup
+- Removed the obsolete "← Scroll right to see the full plan" mobile-hint banner from both files (no longer needed — the doc fits the viewport now).
+- Toolbar hint updated: "Scroll to see full plan · Print for landscape A4" → "Tap Print to save as PDF or print landscape A4".
+
+### Entry points
+Unchanged. The `🗓️ View One-Page Plan` and `📋 View One-Page Operations` quick-action buttons already live on the Home page (`business.html`) from v0.5.174.
+
+---
+
 ## v0.5.184
 - **Consistent wording + de-duplicated the 12-Month horizon.** User: "The yearly /12 month wording needs to be consistent. Does the split make sense over the 2 pages?" + "It's not intention to have on both pages. Agree with your suggestions."
 

@@ -77,15 +77,10 @@
     }
     .print-btn:hover { background: #0F766E; }
 
-    .mobile-hint {
-      display: none;
-      background: #f0fdfa;
-      border-bottom: 1px solid #d1fae5;
-      padding: 8px 16px;
-      font-size: 0.75rem;
-      color: #065f46;
-    }
-    @media (max-width: 900px) { .mobile-hint { display: block; } }
+    /* v0.5.185 — mobile-hint banner ("scroll right to see…") is obsolete now that
+       the doc has a screen-first layout below 820px. Kept the markup so the diff
+       is small; just never shown. */
+    .mobile-hint { display: none; }
 
     .doc-preview {
       padding: 16px;
@@ -250,6 +245,61 @@
     .doc-footer-text { font-size: 0.6rem; color: #aaa; }
     .doc-footer-tagline { font-size: 0.6rem; color: #0D9488; font-weight: 700; }
 
+    /* ── v0.5.185 — screen-first layout for phones + portrait tablets.
+       Above 820px the original desktop layout (which is also the print layout)
+       is used unchanged. The `screen` keyword keeps these rules from applying
+       when printing — the @media print block below always wins for paper. ── */
+    @media screen and (max-width: 820px) {
+      .doc-preview { padding: 12px; overflow-x: visible; }
+      .plan-page { min-width: 0; }
+
+      .doc-header { padding: 14px 16px; }
+      .doc-company { font-size: 1.1rem; }
+      .doc-company-sub { font-size: 0.78rem; }
+      .doc-plan-title { font-size: 0.7rem; letter-spacing: 1.4px; }
+      .doc-year { font-size: 0.72rem; }
+
+      .doc-body { grid-template-columns: 1fr; }
+      .doc-col {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 18px;
+      }
+      .doc-col:last-child { border-bottom: none; }
+
+      .col-heading {
+        font-size: 0.72rem;
+        letter-spacing: 1.5px;
+        margin-bottom: 14px;
+      }
+      .field { margin-bottom: 14px; }
+      .field-label { font-size: 0.66rem; letter-spacing: 0.6px; margin-bottom: 5px; }
+      .field-value { font-size: 0.95rem; line-height: 1.5; }
+      .field-divider { margin: 14px 0; }
+
+      .value-pill { font-size: 0.82rem; padding: 4px 12px; }
+
+      .fin-row { gap: 8px; }
+      .fin-cell .field-value { font-size: 0.95rem; }
+
+      .num-list li { font-size: 0.92rem; gap: 8px; line-height: 1.45; }
+      .num-list li .n { font-size: 0.85rem; min-width: 18px; }
+
+      .team-line { font-size: 0.9rem; line-height: 1.5; }
+
+      .doc-financials { padding: 16px 18px 18px; }
+      .fin-strip-head { margin-bottom: 12px; }
+      .fin-strip-title { font-size: 0.72rem; letter-spacing: 1.5px; }
+      .fin-strip-body { grid-template-columns: 1fr; gap: 12px; }
+      .fin-strip-col-head { font-size: 0.68rem; margin-bottom: 6px; }
+      .fin-totals { padding: 10px 14px; }
+      .fin-line { font-size: 0.92rem; padding: 5px 0; }
+      .fin-line-label { font-size: 0.7rem; }
+
+      .doc-footer { padding: 10px 16px; flex-wrap: wrap; gap: 4px; }
+      .doc-footer-text, .doc-footer-tagline { font-size: 0.7rem; }
+    }
+
     @page { size: A4 landscape; margin: 7mm 9mm; }
 
     @media print {
@@ -291,7 +341,7 @@
       <span id="activeBizName" class="biz-pill"></span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-      <span class="toolbar-hint">Scroll to see full plan &middot; Print for landscape A4</span>
+      <span class="toolbar-hint">Tap Print to save as PDF or print landscape A4</span>
       <button class="print-btn" onclick="window.print()">&#x1F5A8;&nbsp; Print / PDF</button>
     </div>
   </div>
