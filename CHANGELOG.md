@@ -4,6 +4,33 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.198
+- **Operations one-pager: 4-column flow + new 12 Month Goals column.** User: "Operations one page — Start with 12 month goals, Then issues, Then quarterly goals, Then weekly numbers."
+
+### `one-page-operations.html`
+- Rebuilt to 4 columns in the requested order:
+  1. **12 Month Goals** — reads `targets.one_year_goals`, renders as a teal-numbered bullet list (matches the strategy one-pager).
+  2. **Open Issues** — `category='current'` issues (existing logic).
+  3. **Quarterly Goals** — `rocks` for the current quarter (existing logic).
+  4. **Weekly Numbers** — scorecard table over the last 6 weeks (existing logic).
+- Grid: `1fr 1.55fr 1fr` (3 columns) → `1fr 1fr 1fr 1.4fr` (4 columns). Weekly Numbers gets the wider track because the table is multi-column.
+- Column heading meta for **12 Month Goals** shows the plan year computed from `business_cadence` (`Apr 2026 – Mar 2027`), with the same parent-cadence fallback chain used elsewhere.
+- Inheritance: if this business has no `targets.one_year_goals` row of its own, the 12 Month Goals column falls back to the parent business's row (mirrors the v0.5.197 cadence inheritance pattern). Renders empty placeholder if neither exists.
+- `Promise.all` grows from 4 → 5 queries (`targets` added).
+- New `.num-list` CSS rules copied from the strategy one-pager; mobile `@media` block bumps the font-size for thumb reading.
+
+### `account-ops-plans.html` (cross-business ops carousel)
+- Same 4-column reorder + new 12 Month Goals column.
+- `Promise.all` grows from 3 → 5 queries (`targets` + `business_cadence` added).
+- Per-org targets + cadence stored on the `byOrg` Map.
+- Inheritance loop after data assembly: children without their own `targets` row pick up the parent's (parent is typically in the same `orgIds` batch since the user is usually a member of both). Same for the plan-year anchor.
+- New `renderTwelveMonthBlock` helper + `planYearLabel` helper.
+
+### Out of scope — flagged for clarification
+The user also said: *"I noticed there is a 12 month issues and an issues list. This doesn't look right."* Both cards live on the Operations hub today (`issues.html?category=yearly` and `issues.html?category=current`). Not changing anything until the user confirms whether they want the categories merged, the cards renamed, or one removed.
+
+---
+
 ## v0.5.197
 - **Planning Cadence inheritance — children inherit parent's dates by default.** User: "Will these dates appear on parent and child versions?" + "Yes" (to adding inheritance).
 

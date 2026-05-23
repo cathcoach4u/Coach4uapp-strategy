@@ -143,7 +143,9 @@
 
     .doc-body {
       display: grid;
-      grid-template-columns: 1fr 1.55fr 1fr;
+      /* v0.5.198 — 4 columns: 12 Month Goals · Issues · Quarterly Goals · Weekly Numbers.
+         Weekly Numbers gets a wider track because it's a multi-column table. */
+      grid-template-columns: 1fr 1fr 1fr 1.4fr;
     }
     .doc-col { padding: 14px 16px; border-right: 1px solid #e5e7eb; }
     .doc-col:last-child { border-right: none; }
@@ -168,6 +170,12 @@
     .field:last-child { margin-bottom: 0; }
     .field-divider { border: none; border-top: 1px solid #f0f0f0; margin: 10px 0; }
     .empty-line { font-size: 0.72rem; color: #b0b0b0; font-style: italic; }
+
+    /* v0.5.198 — 12 Month Goals numbered list (matches one-page-plan.html). */
+    .num-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .num-list li { display: flex; gap: 6px; font-size: 0.74rem; color: #2d2d2d; line-height: 1.4; }
+    .num-list li .n { color: #0D9488; font-weight: 800; font-size: 0.68rem; min-width: 13px; padding-top: 1px; flex-shrink: 0; }
+    .num-list.empty-list { color: #b0b0b0; font-style: italic; font-size: 0.72rem; list-style: none; padding: 0; margin: 0; }
 
     /* --- Goals column --- */
     .goal-row {
@@ -334,6 +342,10 @@
       .sc-table .sc-owner { font-size: 0.7rem; }
       .sc-empty { font-size: 0.88rem; padding: 8px 0; }
 
+      /* 12 Month Goals — bump num-list for thumb reading (v0.5.198). */
+      .num-list li { font-size: 0.92rem; gap: 8px; line-height: 1.45; }
+      .num-list li .n { font-size: 0.85rem; min-width: 18px; }
+
       /* Issues */
       .issue-row { padding: 6px 0; column-gap: 8px; }
       .issue-num { font-size: 0.85rem; min-width: 18px; padding-top: 2px; }
@@ -418,6 +430,23 @@
 
       <div class="doc-body">
 
+        <!-- v0.5.198 — 4-column flow: 12 Month Goals → Issues → Quarterly Goals → Weekly Numbers -->
+        <div class="doc-col">
+          <div class="col-heading">
+            <span>12 Month Goals</span>
+            <span class="col-heading-meta" id="opp-year-label"></span>
+          </div>
+          <ul class="num-list" id="opp-twelve-month"></ul>
+        </div>
+
+        <div class="doc-col">
+          <div class="col-heading">
+            <span>Open Issues</span>
+            <span class="col-heading-meta" id="opp-issues-count"></span>
+          </div>
+          <ul class="issue-list" id="opp-issues"></ul>
+        </div>
+
         <div class="doc-col">
           <div class="col-heading">
             <span>Quarterly Goals</span>
@@ -432,14 +461,6 @@
             <span class="col-heading-meta" id="opp-weeks-label"></span>
           </div>
           <div id="opp-scorecard"></div>
-        </div>
-
-        <div class="doc-col">
-          <div class="col-heading">
-            <span>Open Issues</span>
-            <span class="col-heading-meta" id="opp-issues-count"></span>
-          </div>
-          <ul class="issue-list" id="opp-issues"></ul>
         </div>
 
       </div>
@@ -583,6 +604,65 @@
     // ── Issues ──────────────────────────────────────────────────────
     // (v0.5.190 — financials helpers removed; ops one-pager no longer shows them.)
 
+    // v0.5.198 — 12 Month Goals column (numbered list)
+    function renderTwelveMonth(raw) {
+      const el = document.getElementById('opp-twelve-month');
+      if (!el) return;
+      const text = String(raw || '').trim();
+      const items = text
+        ? text.split(/\r?\n/)
+            .map(line => line.trim())
+            .map(line => line.replace(/^\s*(?:\d+[.)]|[-*•])\s+/, '').trim())
+            .filter(Boolean)
+        : [];
+      if (!items.length) {
+        el.innerHTML = '<li style="list-style:none;padding:0;margin:0;color:#b0b0b0;font-style:italic;font-size:0.72rem;">— no 12-month goals recorded —</li>';
+        return;
+      }
+      el.innerHTML = items.map((t, i) =>
+        `<li><span class="n">${i + 1}.</span> ${escapeHtml(t)}</li>`
+      ).join('');
+    }
+    // v0.5.198 — populate the "12 Month Goals" column heading with the plan-year
+    // range from business_cadence. Falls back to the parent biz (inheritance) and
+    // ultimately to the current calendar year, mirroring one-page-plan.html.
+    async function loadYearLabel(orgId) {
+      const el = document.getElementById('opp-year-label');
+      if (!el) return;
+      const setLabel = (annualDateIso) => {
+        if (annualDateIso) {
+          const start = new Date(annualDateIso + 'T00:00:00');
+          const end = new Date(start); end.setFullYear(end.getFullYear() + 1); end.setDate(end.getDate() - 1);
+          const fmt = (d) => d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+          el.textContent = fmt(start) + ' – ' + fmt(end);
+        } else {
+          el.textContent = String(new Date().getFullYear());
+        }
+      };
+      try {
+        const { data: cad } = await supabase
+          .from('business_cadence')
+          .select('last_annual_planning_date, annual_planning_date')
+          .eq('organisation_id', orgId)
+          .maybeSingle();
+        if (cad) { setLabel(cad.last_annual_planning_date || cad.annual_planning_date); return; }
+        const { data: orgRow } = await supabase
+          .from('organisations')
+          .select('parent_organisation_id')
+          .eq('id', orgId)
+          .maybeSingle();
+        if (orgRow && orgRow.parent_organisation_id) {
+          const { data: parentCad } = await supabase
+            .from('business_cadence')
+            .select('last_annual_planning_date, annual_planning_date')
+            .eq('organisation_id', orgRow.parent_organisation_id)
+            .maybeSingle();
+          if (parentCad) { setLabel(parentCad.last_annual_planning_date || parentCad.annual_planning_date); return; }
+        }
+        setLabel(null);
+      } catch (e) { setLabel(null); }
+    }
+
     function renderIssues(issues) {
       const wrap = document.getElementById('opp-issues');
       const countEl = document.getElementById('opp-issues-count');
@@ -635,9 +715,9 @@
       const weeks = [-5,-4,-3,-2,-1,0].map(o => isoAddWeeks(thisMonday, o));
 
       try {
-        // v0.5.190 — financial_periods fetch removed; ops doc no longer shows
-        // annual totals (strategy one-pager owns that view).
-        const [rocksRes, metricsRes, issuesRes, orgRes] = await Promise.all([
+        // v0.5.198 — also fetch targets (12-Month Goals — one_year_goals) so the
+        // new first column on the doc body renders. v0.5.190 removed financials.
+        const [rocksRes, metricsRes, issuesRes, targetsRes, orgRes] = await Promise.all([
           supabase.from('rocks')
             .select('id, description, owner, status, quarter, company_rock, sort_order')
             .eq('organisation_id', orgId)
@@ -653,6 +733,10 @@
             .eq('category', 'current')
             .eq('status', 'open')
             .order('created_at', { ascending: true }),
+          supabase.from('targets')
+            .select('one_year_goals')
+            .eq('organisation_id', orgId)
+            .maybeSingle(),
           cachedName ? Promise.resolve(null) : supabase.from('organisations').select('name').eq('id', orgId).maybeSingle()
         ]);
 
@@ -684,11 +768,29 @@
         renderGoals(rocks);
         renderScorecard(metrics, entriesByMetric, weeks);
         renderIssues(issues);
+        // v0.5.198 — 12 Month Goals column (with parent-targets fallback so children
+        // inherit the parent's 12-month goal list when they don't have their own).
+        const tgRow = (targetsRes && !targetsRes.error) ? targetsRes.data : null;
+        let twelveMonthSource = tgRow && tgRow.one_year_goals;
+        if (!twelveMonthSource) {
+          const { data: orgRow } = await supabase
+            .from('organisations').select('parent_organisation_id').eq('id', orgId).maybeSingle();
+          if (orgRow && orgRow.parent_organisation_id) {
+            const { data: parentTg } = await supabase
+              .from('targets').select('one_year_goals')
+              .eq('organisation_id', orgRow.parent_organisation_id).maybeSingle();
+            if (parentTg) twelveMonthSource = parentTg.one_year_goals;
+          }
+        }
+        renderTwelveMonth(twelveMonthSource);
+        // Defer to async cadence fetch for the plan-year meta in this column's heading.
+        loadYearLabel(orgId);
       } catch (e) {
         console.warn('Operations one-page load error:', e);
         renderGoals([]);
         renderScorecard([], {}, weeks);
         renderIssues([]);
+        renderTwelveMonth(null);
       }
 
       document.body.style.opacity = '1';

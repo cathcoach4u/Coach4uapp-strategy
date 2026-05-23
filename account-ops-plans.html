@@ -136,7 +136,12 @@
     .doc-plan-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; }
     .doc-year { font-size: 0.68rem; opacity: 0.6; margin-top: 2px; text-align: right; }
 
-    .doc-body { display: grid; grid-template-columns: 1fr 1.55fr 1fr; }
+    /* v0.5.198 — 4 columns: 12 Month Goals · Issues · Quarterly Goals · Weekly Numbers. */
+    .doc-body { display: grid; grid-template-columns: 1fr 1fr 1fr 1.4fr; }
+    /* num-list (12 Month Goals) — mirrors one-page-plan.html. */
+    .num-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .num-list li { display: flex; gap: 6px; font-size: 0.74rem; color: #2d2d2d; line-height: 1.4; }
+    .num-list li .n { color: #0D9488; font-weight: 800; font-size: 0.68rem; min-width: 13px; padding-top: 1px; flex-shrink: 0; }
     .doc-col { padding: 14px 16px; border-right: 1px solid #e5e7eb; }
     .doc-col:last-child { border-right: none; }
 
@@ -410,6 +415,30 @@
       return `<table class="sc-table"><thead>${header}</thead><tbody>${body}</tbody></table>`;
     }
 
+    // v0.5.198 — 12 Month Goals column (numbered list, mirrors one-page-plan).
+    function renderTwelveMonthBlock(raw) {
+      const text = String(raw || '').trim();
+      const items = text
+        ? text.split(/\r?\n/)
+            .map(line => line.trim())
+            .map(line => line.replace(/^\s*(?:\d+[.)]|[-*•])\s+/, '').trim())
+            .filter(Boolean)
+        : [];
+      if (!items.length) {
+        return '<li style="list-style:none;padding:0;margin:0;color:#b0b0b0;font-style:italic;font-size:0.72rem;">— no 12-month goals recorded —</li>';
+      }
+      return items.map((t, i) =>
+        `<li><span class="n">${i + 1}.</span> ${escHtml(t)}</li>`
+      ).join('');
+    }
+    function planYearLabel(annualDateIso) {
+      if (!annualDateIso) return String(new Date().getFullYear());
+      const start = new Date(annualDateIso + 'T00:00:00');
+      const end = new Date(start); end.setFullYear(end.getFullYear() + 1); end.setDate(end.getDate() - 1);
+      const fmt = (d) => d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+      return fmt(start) + ' – ' + fmt(end);
+    }
+
     function renderIssuesBlock(issues) {
       if (!issues || !issues.length) {
         return '<li class="empty-line">No open issues. Nice work.</li>';
@@ -449,6 +478,23 @@
 
             <div class="doc-body">
 
+              <!-- v0.5.198 — 4-column flow: 12 Month Goals → Issues → Quarterly Goals → Weekly Numbers -->
+              <div class="doc-col">
+                <div class="col-heading">
+                  <span>12 Month Goals</span>
+                  <span class="col-heading-meta">${escHtml(data.yearLabel || '')}</span>
+                </div>
+                <ul class="num-list">${renderTwelveMonthBlock(data.targets && data.targets.one_year_goals)}</ul>
+              </div>
+
+              <div class="doc-col">
+                <div class="col-heading">
+                  <span>Open Issues</span>
+                  <span class="col-heading-meta">${data.issues.length ? data.issues.length + ' open' : ''}</span>
+                </div>
+                <ul class="issue-list">${renderIssuesBlock(data.issues)}</ul>
+              </div>
+
               <div class="doc-col">
                 <div class="col-heading">
                   <span>Quarterly Goals</span>
@@ -463,14 +509,6 @@
                   <span class="col-heading-meta">Last ${weeks.length} weeks</span>
                 </div>
                 <div>${renderScorecardBlock(data.metrics, data.entriesByMetric, weeks)}</div>
-              </div>
-
-              <div class="doc-col">
-                <div class="col-heading">
-                  <span>Open Issues</span>
-                  <span class="col-heading-meta">${data.issues.length ? data.issues.length + ' open' : ''}</span>
-                </div>
-                <ul class="issue-list">${renderIssuesBlock(data.issues)}</ul>
               </div>
 
             </div>
@@ -505,7 +543,7 @@
         ? window.activeOrg.getSubscription() : null;
       const memQuery = sb
         .from('team_members')
-        .select('organisation_id, organisations!inner(id, name, subscription_id)')
+        .select('organisation_id, organisations!inner(id, name, subscription_id, parent_organisation_id)')
         .eq('user_id', user.id)
         .eq('status', 'active');
       if (subId) memQuery.eq('organisations.subscription_id', subId);
@@ -523,7 +561,11 @@
       }
 
       const orgs = mems
-        .map(m => ({ id: m.organisations.id, name: m.organisations.name }))
+        .map(m => ({
+          id: m.organisations.id,
+          name: m.organisations.name,
+          parent_id: m.organisations.parent_organisation_id || null
+        }))
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       const orgIds = orgs.map(o => o.id);
 
@@ -531,9 +573,9 @@
       const thisMonday = mondayISO(new Date());
       const weeks = [-5,-4,-3,-2,-1,0].map(o => isoAddWeeks(thisMonday, o));
 
-      // v0.5.190 — 3 parallel queries (was 4: financial_periods dropped along
-      // with the Financial Outlook strip).
-      const [rocksRes, metricsRes, issuesRes] = await Promise.all([
+      // v0.5.198 — 5 parallel queries (added targets for 12 Month Goals column +
+      // business_cadence for the plan-year label per business).
+      const [rocksRes, metricsRes, issuesRes, targetsRes, cadenceRes] = await Promise.all([
         sb.from('rocks')
           .select('id, organisation_id, description, owner, status, quarter, company_rock, sort_order')
           .in('organisation_id', orgIds)
@@ -548,17 +590,52 @@
           .in('organisation_id', orgIds)
           .eq('category', 'current')
           .eq('status', 'open')
-          .order('created_at', { ascending: true })
+          .order('created_at', { ascending: true }),
+        sb.from('targets')
+          .select('organisation_id, one_year_goals')
+          .in('organisation_id', orgIds),
+        sb.from('business_cadence')
+          .select('organisation_id, last_annual_planning_date, annual_planning_date')
+          .in('organisation_id', orgIds)
       ]);
 
       const byOrg = new Map();
       orgs.forEach(o => byOrg.set(o.id, {
-        rocks: [], metrics: [], entriesByMetric: {}, issues: []
+        rocks: [], metrics: [], entriesByMetric: {}, issues: [],
+        targets: null, cadence: null, yearLabel: ''  // v0.5.198
       }));
 
       (rocksRes.data   || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.rocks.push(r); });
       (metricsRes.data || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.metrics.push(r); });
       (issuesRes.data  || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.issues.push(r); });
+      // v0.5.198 — targets + cadence per org.
+      if (targetsRes && !targetsRes.error) {
+        (targetsRes.data || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.targets = r; });
+      }
+      if (cadenceRes && !cadenceRes.error) {
+        (cadenceRes.data || []).forEach(r => { const e = byOrg.get(r.organisation_id); if (e) e.cadence = r; });
+      }
+      // Inheritance — children pick up the parent's 12-month goal + plan-year anchor
+      // when they have none of their own (matches v0.5.197 cadence inheritance pattern).
+      orgs.forEach(o => {
+        const e = byOrg.get(o.id); if (!e) return;
+        // Targets fallback
+        if ((!e.targets || !e.targets.one_year_goals) && o.parent_id) {
+          const parentEntry = byOrg.get(o.parent_id);
+          if (parentEntry && parentEntry.targets && parentEntry.targets.one_year_goals) {
+            e.targets = parentEntry.targets;
+          }
+        }
+        // Cadence-driven year label fallback
+        let anchor = e.cadence ? (e.cadence.last_annual_planning_date || e.cadence.annual_planning_date) : null;
+        if (!anchor && o.parent_id) {
+          const parentEntry = byOrg.get(o.parent_id);
+          if (parentEntry && parentEntry.cadence) {
+            anchor = parentEntry.cadence.last_annual_planning_date || parentEntry.cadence.annual_planning_date;
+          }
+        }
+        e.yearLabel = planYearLabel(anchor);
+      });
 
       // Fetch scorecard entries for ALL metrics across all orgs in one round-trip
       const allMetricIds = (metricsRes.data || []).map(m => m.id);
