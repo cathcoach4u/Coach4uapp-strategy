@@ -16,17 +16,34 @@
     body { opacity: 0; transition: opacity 0.2s ease; background: #f4f6f9; }
     .container { padding-bottom: 88px; }
 
-    /* ── Page title ── */
-    .greeting-row {
-      padding: 18px 16px 10px;
+    /* ── Business switcher (v0.5.163) — mirrors .acct-switcher on the account tabs ── */
+    /* Hide the sub-toolbar pill from active-org.js — the in-body switcher below replaces it */
+    .biz-switcher-bar { display: none !important; }
+
+    .biz-switcher {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 16px 0; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px; margin-bottom: 6px;
     }
-    .greeting-name {
-      font-size: 1.2rem; font-weight: 900; color: var(--primary); line-height: 1.2;
-      letter-spacing: -0.2px;
+    .switcher-label {
+      font-size: 0.7rem; color: #888; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .greeting-date { font-size: 0.78rem; color: #888; margin-top: 2px; }
+    .switcher-select {
+      padding: 7px 10px; border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: inherit; font-size: 0.88rem; font-weight: 700;
+      color: var(--primary); background: white;
+      min-width: 180px; cursor: pointer;
+      flex: 1; max-width: 100%;
+    }
+    .biz-extra-action {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 16px 8px; gap: 12px; flex-wrap: wrap;
+    }
     .switch-biz-link {
-      display: inline-block; margin-top: 6px;
+      display: inline-block;
       font-size: 0.72rem; font-weight: 700; color: var(--accent);
       text-decoration: none; letter-spacing: 0.3px;
     }
@@ -234,15 +251,19 @@
 
   <div class="container">
 
-    <!-- Page title -->
-    <div class="greeting-row">
-      <div class="greeting-name" id="bizName">Business Dashboard</div>
-      <div class="greeting-date" id="todayDate"></div>
-      <a href="index.html" id="switchBizLink" class="switch-biz-link" style="display:none;">Switch business &rsaquo;</a>
-      <div id="bizContext" style="display:none;font-size:0.78rem;margin-top:6px;">
+    <!-- Business switcher (v0.5.163) — mirrors the ACCOUNT: switcher pattern on
+         index.html / account-users.html / account-setup.html. Replaces the big
+         greeting heading + date that used to live here. -->
+    <div class="biz-switcher" id="bizSwitcherRow" style="display:none;">
+      <span class="switcher-label">Business:</span>
+      <select id="businessSwitcher" class="switcher-select"></select>
+    </div>
+    <div class="biz-extra-action">
+      <div id="bizContext" style="display:none;font-size:0.78rem;">
         <a id="parentLink" href="#" style="color:var(--accent);font-weight:700;text-decoration:none;display:none;"></a>
         <span id="childrenInfo" style="color:#888;font-weight:600;display:none;margin-left:8px;"></span>
       </div>
+      <a href="index.html" class="switch-biz-link">Account dashboard &rsaquo;</a>
     </div>
 
     <!-- ── Standard dashboard (own org's data) — hidden when this biz is a parent ── -->
@@ -399,7 +420,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.162</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.163</p>
 
   </div>
 
@@ -420,9 +441,7 @@
 
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const now = new Date();
-    document.getElementById('todayDate').textContent =
-      `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    // todayDate removed in v0.5.163 — the greeting-row no longer exists.
 
     // All Coach4U sample-data seeds (strategy + operations + planning) were
     // removed in v0.5.130. Every page now reads from Supabase. ensureSeeds()
@@ -851,15 +870,25 @@
         window.activeOrg.set(activeId, activeRow.organisations.name);
       }
 
-      // Display the current business name + show the switcher when user has more than one
-      const bizNameEl = document.getElementById('bizName');
-      if (bizNameEl && activeRow.organisations) {
-        bizNameEl.textContent = activeRow.organisations.name;
-      }
-      const switchEl = document.getElementById('switchBizLink');
-      if (switchEl) {
-        switchEl.style.display = 'inline-block';
-        switchEl.textContent = memberships.length > 1 ? 'Account dashboard ›' : 'Account dashboard ›';
+      // Populate the BUSINESS: [▾] switcher row (v0.5.163). Mirrors the ACCOUNT
+      // switcher on the account tabs — same CSS, same change-handler pattern.
+      const bizSwitcherRow = document.getElementById('bizSwitcherRow');
+      const bizSel = document.getElementById('businessSwitcher');
+      if (bizSwitcherRow && bizSel) {
+        bizSwitcherRow.style.display = 'flex';
+        bizSel.innerHTML = memberships.map(m => {
+          const id   = m.organisation_id;
+          const name = (m.organisations && m.organisations.name) || '(Unnamed business)';
+          const sel  = id === activeId ? ' selected' : '';
+          return '<option value="' + id + '"' + sel + '>' + escapeHtml(name) + '</option>';
+        }).join('');
+        bizSel.addEventListener('change', () => {
+          const newId = bizSel.value;
+          const m = memberships.find(x => x.organisation_id === newId);
+          if (!m) return;
+          if (window.activeOrg) window.activeOrg.set(newId, m.organisations.name);
+          window.location.reload();
+        });
       }
 
       ensureSeeds();

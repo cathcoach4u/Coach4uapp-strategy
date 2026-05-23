@@ -4,6 +4,25 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.163
+- **Business dashboard gets a `BUSINESS: [▾]` switcher row mirroring `ACCOUNT: [▾]` on the account tabs.** User: "Yes to 1 [BUSINESS: switcher row]. I just like consistency."
+- **Removed from `business.html`:**
+  - `.greeting-row` block (big bold biz name + date + Switch business link)
+  - `.greeting-name` / `.greeting-date` / old `.switch-biz-link` CSS rules
+  - `document.getElementById('todayDate').textContent = …` JS that fed the (now removed) date span
+  - The bizName render block (`bizNameEl.textContent = activeRow.organisations.name;` + the old switchEl wireup)
+- **Added to `business.html`:**
+  - `<div class="biz-switcher" id="bizSwitcherRow"><span class="switcher-label">Business:</span><select id="businessSwitcher" class="switcher-select"></select></div>` at the top of `.container`, before the standard/parent-mode panels
+  - `.biz-switcher` / `.switcher-label` / `.switcher-select` CSS rules — copy of `.acct-switcher` / `.switcher-label` / `.switcher-select` from the account tabs (same padding 16/14, border-bottom, `flex:1; max-width:100%` on the dropdown so it stretches identically)
+  - A `.biz-extra-action` flex row below the switcher with two children: `#bizContext` (the `↑ Part of <parent>` / `↓ N child businesses` context — was inline in greeting-row before) on the left, and a new `Account dashboard ›` link on the right
+  - `.biz-switcher-bar { display: none !important; }` to hide the v0.5.141 sub-toolbar pill from `js/active-org.js` — the in-body switcher now does that job
+  - JS to populate the `<select>` from `memberships`, mark the active option, and reload on change via `activeOrg.set(newId, m.organisations.name)`
+- **Effect:** when you tap into a parent (IASHQ) or a child (IAS General / IAS Life / IAS Outsourcing), the top of the page reads `BUSINESS: [<Name> ▾]` in exactly the same visual layout as `ACCOUNT: [<Name> ▾]` on the Businesses / Users / Setup tabs. The biz switcher is interactive — pick a different business and the page reloads to that one.
+- **No SQL.**
+- **Out of scope:** other business-level pages (strategy.html, operations.html, goals.html, etc.) still rely on the v0.5.141 sub-toolbar pill from `js/active-org.js`. They could get the same in-body BUSINESS switcher in a follow-up, but business.html is where the user lands first and is the priority for consistency.
+
+---
+
 ## v0.5.162
 - **Match child-card styling on parent dashboard to biz-card styling on account dashboard.** User: "The sections in parent and child fix the look of the name of business to match the account."
 - The `.child-card` rules in `business.html` parent-mode were close to but not identical to `.biz-card` in `index.html`. The biz name in child cards appeared smaller (0.95rem vs 1.05rem) and the cards had a tighter corner-radius and padding.
