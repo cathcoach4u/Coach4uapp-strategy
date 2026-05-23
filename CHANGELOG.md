@@ -4,6 +4,28 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.181
+- **Simplify the Targets worksheet: one text box per timeframe + new 5-Year Goal.** User: "Change targets and move to individual boxes for 10 year goal / 5 year goal / 3 year goal / 12 month goal."
+- **Before:** 3 worksheet cards.
+  - 10-Year Vision (one textarea → `ten_year`).
+  - 3-Year Outlook (3-column grid of date/revenue/profit text inputs + a description textarea → `three_year_date`, `three_year_revenue`, `three_year_profit`, `three_year_desc`).
+  - 1-Year Plan (same 3-column grid + a numbered-goals textarea → `one_year_date`, `one_year_revenue`, `one_year_profit`, `one_year_goals`).
+- **After:** 4 cards, each with a single `<textarea>`:
+  - 10-Year Goal → `ten_year`
+  - 5-Year Goal → `five_year` (NEW column added by migration)
+  - 3-Year Goal → `three_year_desc`
+  - 12-Month Goal → `one_year_goals`
+- **`FIELDS` array dropped from 9 → 4.** Only those 4 columns get touched on save now.
+- **Non-destructive:** the other 6 columns (`three_year_date` / `three_year_revenue` / `three_year_profit`, `one_year_date` / `one_year_revenue` / `one_year_profit`) stay in the schema with their existing data intact. They're just no longer editable in the worksheet UI. Consumer pages that read those legacy columns (the standard-mode 1-Year Goal panel on `business.html`, the parent-mode Group Financials Revenue rollup, `one-page-plan.html`'s 3-year / 1-year rows) keep working — they'll show empty for orgs that never had those values, populated for those that did.
+- **Migration (`supabase/v0.5.181-delta.sql`):**
+  ```sql
+  ALTER TABLE public.targets ADD COLUMN IF NOT EXISTS five_year text;
+  NOTIFY pgrst, 'reload schema';
+  ```
+  RLS unchanged — the existing "children read parent targets" SELECT policy already covers the whole row, so the new column inherits the same gating.
+
+---
+
 ## v0.5.180
 - **Strip the last mini-stat from child cards on the parent dashboard.** User: "Remove goals on track in child accounts."
 - v0.5.179 had already trimmed child cards down to a single "Goals on track: X of N" line. This version removes that line too, leaving each child card as just **↳ Name  Open ›**.
