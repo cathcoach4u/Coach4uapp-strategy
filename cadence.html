@@ -95,7 +95,7 @@
     <!-- Quarterly Sessions -->
     <div class="ws-card">
       <div class="ws-card-title">Quarterly Sessions</div>
-      <div class="ws-card-desc">Half- or full-day session each quarter to review the last 90 days and lock in the next 90. Day 2 is optional &mdash; use it if the session runs across two days.</div>
+      <div class="ws-card-desc">Q1, Q2 and Q3 sessions &mdash; the annual planning session above replaces Q4 as the year&rsquo;s end + start. Day 2 is optional, for sessions that run across two days.</div>
 
       <label class="ws-label" style="margin-top:6px;">Q1 session</label>
       <div class="q-grid">
@@ -132,18 +132,10 @@
           <input type="date" id="q3-date-2" class="ws-input" data-key="q3_session_date_2" />
         </div>
       </div>
-
-      <label class="ws-label" style="margin-top:14px;">Q4 session</label>
-      <div class="q-grid">
-        <div>
-          <label class="ws-label" for="q4-date" style="font-size:0.66rem;color:#888;">Day 1</label>
-          <input type="date" id="q4-date" class="ws-input" data-key="q4_session_date" />
-        </div>
-        <div>
-          <label class="ws-label" for="q4-date-2" style="font-size:0.66rem;color:#888;">Day 2 (optional)</label>
-          <input type="date" id="q4-date-2" class="ws-input" data-key="q4_session_date_2" />
-        </div>
-      </div>
+      <!-- v0.5.194 — Q4 removed; the annual planning session replaces it as the
+           year-end / year-start anchor. The columns q4_session_date and
+           q4_session_date_2 stay in the schema in case existing data needs
+           to be preserved; just no longer surfaced or saved from this form. -->
     </div>
 
     <!-- Weekly Team Meeting -->
@@ -190,15 +182,17 @@
       'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
     );
 
-    // v0.5.192/193 — Planning Cadence: per-org rhythm settings (business_cadence table).
-    // v0.5.193 adds last_annual_planning_date + *_date_2 for each session.
+    // v0.5.192/193/194 — Planning Cadence: per-org rhythm settings.
+    // v0.5.193 added last_annual_planning_date + *_date_2 for each session.
+    // v0.5.194 dropped Q4 from the form (annual planning replaces it).
+    // q4_session_date / q4_session_date_2 columns stay in the schema but
+    // are no longer read/written here.
     const FIELDS = [
       'last_annual_planning_date',
       'annual_planning_date', 'annual_planning_date_2',
       'q1_session_date', 'q1_session_date_2',
       'q2_session_date', 'q2_session_date_2',
       'q3_session_date', 'q3_session_date_2',
-      'q4_session_date', 'q4_session_date_2',
       'weekly_meeting_day', 'weekly_meeting_time'
     ];
     const DEBOUNCE_MS = 350;

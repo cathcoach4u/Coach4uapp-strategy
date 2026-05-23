@@ -4,6 +4,30 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.194
+- **Dropped Q4 from the Planning Cadence form.** User: "Remove q4 date. The flow is Annual planning then q1, 2, 3."
+
+The annual planning session acts as the year-end / year-start anchor — Q4 was double-counting that. The flow per year is now:
+
+1. **Annual Planning** (replaces Q4 + kicks off the new year)
+2. **Q1** session
+3. **Q2** session
+4. **Q3** session
+
+### Change — `cadence.html`
+- Q4 session block (Day 1 + Day 2 inputs) removed from the Quarterly Sessions card.
+- Card description updated to: *"Q1, Q2 and Q3 sessions — the annual planning session above replaces Q4 as the year's end + start. Day 2 is optional, for sessions that run across two days."*
+- `FIELDS` array shrinks from 13 → 11 (drops `q4_session_date` and `q4_session_date_2`). The form no longer touches those columns.
+
+### No SQL
+- The `q4_session_date` and `q4_session_date_2` columns from v0.5.192 / v0.5.193 stay in the `business_cadence` schema. Existing data (if any) is preserved; the form just no longer reads or writes them.
+- If you ever want to re-introduce Q4 later, no migration needed — just re-add the inputs.
+
+### Unaffected
+- Plan-year anchor logic on `one-page-plan.html` and `account-plans.html` is keyed by `last_annual_planning_date` first, `annual_planning_date` second — Q4 was never part of that path, so no change.
+
+---
+
 ## v0.5.193
 - **Planning Cadence extensions: last-annual date + 2nd-day per session.** User: "Add in planning cadence — Last annual planning date. And add 2 dates for every session in case they want to do more than one."
 
