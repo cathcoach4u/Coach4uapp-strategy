@@ -4,6 +4,19 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.147
+- **Remove `🏠 Home` from the business-level bottom nav.** User feedback: "I think now home and account are the same?" — `🏠 Home` (→ `business.html`) and `🏛️ Account` (→ `index.html`) felt synonymous even though they pointed at different pages.
+- **Bottom nav on business-level pages is now 5 items:** Planning / Strategy / Operations / Learn / Account.
+- **Reaching `business.html` after the change:**
+  - From a hub (Strategy / Operations / Planning / Learn): unchanged — 1 tap via the navy-header `← Home` link.
+  - From a worksheet (Core Values / Targets / etc.) or operations tool (Goals / Issues / Scorecard / Meeting): 2 taps via the existing header chain (`← Strategy` then `← Home`, or `← Operations` then `← Home`). Previously 1 tap via the now-removed Home tab.
+- **What stays:** the navy-header back-link chain on every page; the biz pill + switcher in the sub-toolbar; the Account tab → `index.html` → tap into any business.
+- **Files patched (22, business-level):** `annual-sessions.html`, `business.html`, `core-focus.html`, `core-values.html`, `financials.html`, `goals.html`, `issues.html`, `leadership-team.html`, `learning-vault.html`, `marketing-strategy.html`, `meeting.html`, `operations.html`, `planning.html`, `quarterly-sessions.html`, `run-annual-session.html`, `run-meeting.html`, `run-quarterly-session.html`, `run-team-checkin.html`, `scorecard.html`, `strategy.html`, `targets.html`, `team-checkins.html`. Done via Python regex over both single-line and multi-line `Home` markup variants.
+- **Side effect:** on `business.html` itself, no bottom-nav item now matches the page → no `.active` highlight there. That's intentional — you're on the home, you don't need a "home" highlight, and adding one would just re-create the redundancy we removed.
+- **No SQL.**
+
+---
+
 ## v0.5.146
 - **Strip the bottom nav at the account level to a single Account item.** User: "the IAS dashboard should have no reference to strategy and operations or Learn. They should all happen at the next level down."
 - The old 6-item nav at the account level was misleading — Home, Planning, Strategy, Operations, Learn all linked to **business-level** pages that require an active business. From the account dashboard (where you haven't picked a business yet) they were either confusing or took you somewhere arbitrary.
