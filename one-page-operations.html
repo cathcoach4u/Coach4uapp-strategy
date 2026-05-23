@@ -18,8 +18,28 @@
       transition: opacity 0.2s ease;
       background: #e8edf2;
       min-height: 100vh;
-      padding-bottom: 24px;
+      padding-bottom: 80px;  /* v0.5.188 — room for the fixed bottom-nav */
     }
+
+    /* v0.5.188 — standard 5-tab bottom-nav, matches every other business-level
+       page. Hidden in print via the @media print block below. */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid #e5e7eb;
+      display: flex; z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+    .bottom-nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 8px 0 6px; text-decoration: none;
+      color: #aaa; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      gap: 3px; transition: color 0.15s;
+    }
+    .bottom-nav-item.active, .bottom-nav-item:hover { color: #0D9488; text-decoration: none; }
+    .bottom-nav-icon { font-size: 20px; line-height: 1; }
 
     .screen-toolbar {
       background: white;
@@ -338,7 +358,7 @@
 
     @media print {
       body { opacity: 1 !important; background: white !important; padding: 0 !important; }
-      .screen-toolbar, .mobile-hint { display: none !important; }
+      .screen-toolbar, .mobile-hint, .bottom-nav { display: none !important; }
       .doc-preview { padding: 0 !important; overflow: visible !important; }
       .plan-page {
         min-width: 0 !important;
@@ -454,6 +474,14 @@
 
     </div>
   </div>
+
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="business.html"><span class="bottom-nav-icon">&#x1F3E0;</span><span>Home</span></a>
+    <a class="bottom-nav-item" href="planning.html"><span class="bottom-nav-icon">&#x1F5FA;&#xFE0F;</span><span>Planning</span></a>
+    <a class="bottom-nav-item" href="strategy.html"><span class="bottom-nav-icon">&#x1F9ED;</span><span>Strategy</span></a>
+    <a class="bottom-nav-item active" href="operations.html"><span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Operations</span></a>
+    <a class="bottom-nav-item" href="learning-vault.html"><span class="bottom-nav-icon">&#x1F4DA;</span><span>Learn</span></a>
+  </nav>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';

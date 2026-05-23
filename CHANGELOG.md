@@ -4,6 +4,24 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.188
+- **Bottom-nav added to the one-page plan + one-page operations.** User: "The link to the one page operations page has a back link to operations. I wonder if it should have the tabs down the bottom like the other pages?"
+
+### Why
+After v0.5.185 made these docs screen-friendly (single-column stacked on phones), the doc scrolls a long way. Without a bottom-nav, the only navigation affordance was the `← Strategy` / `← Operations` back link at the top of the page — so from the bottom of a long scroll, the user had to scroll all the way back up to leave for any other tab. Every other business-level page (22 of them) already has the standard 5-tab nav fixed at the bottom; these two were the odd ones out.
+
+### Change
+`one-page-plan.html` and `one-page-operations.html` each get a `<nav class="bottom-nav">` block matching the other business-level pages:
+- Items: **🏠 Home · 🗺️ Planning · 🧭 Strategy · ⚙️ Operations · 📚 Learn**.
+- Active tab: **Strategy** on `one-page-plan.html`, **Operations** on `one-page-operations.html` — same hub the back link goes to.
+- CSS for `.bottom-nav` + `.bottom-nav-item` + `.bottom-nav-icon` inlined into each file's `<style>` block (matches the existing pattern across the codebase rather than relying on css/style.css).
+- `body { padding-bottom: 24px }` → `80px` so the doc-footer doesn't sit behind the fixed nav.
+
+### Print is unchanged
+The existing `@media print` block in each file now hides `.bottom-nav` alongside `.screen-toolbar` and `.mobile-hint`, so paper output is still just the doc — no nav, no toolbar.
+
+---
+
 ## v0.5.187
 - **External Org Chart URL on the Leadership Team page + One-Page Plan.** User: "Add to organisation chart a way they can add a link to their org chart. This can be created external from app if they want it. Including this link on the one page plan."
 
