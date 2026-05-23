@@ -4,6 +4,16 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.170
+- **Reorder the Learn vault sections to Planning → Strategy → Operations.** User: "In learn Change the order planning, then strategy then operations."
+- Previous order (from v0.5.119 when the vault was built): Strategy → Operations → Planning.
+- New order matches the rhythm of how the user runs their year: Planning sets the direction (annual + quarterly + check-ins), Strategy locks in the foundations (Core Values / Focus / Targets / Marketing / Leadership / Financials), Operations runs the cadence (Goals / Weekly Numbers / Meetings / Issues).
+- **Implementation:** Python script reads `learning-vault.html`, identifies the three `<div class="vault-section">` blocks by their `<!-- ═══ X ═══ -->` markers, lifts them out, and writes them back in the new order. The three blocks themselves (cards, icons, links, descriptions) are byte-identical to before — only their position in the file changed.
+- **Verification:** post-write grep shows the section labels in the new order at lines 128 / 172 / 253.
+- **No SQL.**
+
+---
+
 ## v0.5.169
 - **Strip the redundant `← Home` back-link from hub-page headers.** User: "Can you see this home name looks different. I am ok with home going back to the green pills."
 - **Why:** The Home tab returned to the bottom nav in v0.5.167 (as a green/teal pill icon+label). On hub pages — `planning.html`, `strategy.html`, `operations.html`, `learning-vault.html` — there was *also* a small white-translucent `← Home` link in the top-left of the navy `.site-header`, pointing to the same `business.html`. Two affordances for the same path, styled completely differently → looks like a bug.
