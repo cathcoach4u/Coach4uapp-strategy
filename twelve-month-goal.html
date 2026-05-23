@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Targets | Your Business Coach</title>
+  <title>12 Month Goal | Your Business Coach</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#003366">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,13 +21,8 @@
     .ws-card-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 6px; }
     .ws-card-desc { font-size: 0.78rem; color: #888; margin-bottom: 14px; line-height: 1.4; }
     .ws-hint { font-size: 0.78rem; color: #888; line-height: 1.5; margin: 0 16px 16px; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--accent); }
-    .ws-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--primary); display: block; margin-bottom: 6px; }
-    .ws-input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.88rem; color: var(--text); font-family: inherit; background: white; transition: border-color 0.15s; box-sizing: border-box; }
-    .ws-input:focus { outline: none; border-color: var(--accent); }
     .ws-textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.88rem; color: var(--text); font-family: inherit; background: white; resize: vertical; transition: border-color 0.15s; box-sizing: border-box; line-height: 1.5; }
     .ws-textarea:focus { outline: none; border-color: var(--accent); }
-    .fin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
-    @media (max-width: 480px) { .fin-grid { grid-template-columns: 1fr; } }
     .ws-save-bar { position: fixed; bottom: 56px; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); z-index: 90; }
     .save-status { font-size: 0.78rem; color: #888; }
     .ws-btn { padding: 9px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.15s; }
@@ -45,7 +40,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-left">
-        <a href="strategy.html" class="header-back">&#x2190; Strategy</a>
+        <a href="operations.html" class="header-back">&#x2190; Operations</a>
         <span class="header-title">Your Business Coach</span>
         <span id="activeBizName" class="biz-pill"></span>
       </div>
@@ -55,72 +50,39 @@
   </header>
   <div class="container">
     <div class="ws-header">
-      <h1 class="ws-title">&#x1F3AF; Targets</h1>
-      <p class="ws-sub">Set your long-term vision and the stepping stones to get there &#x2014; 10-year, 5-year, and 3-year goals. (The 12-Month goal lives on Operations.)</p>
+      <h1 class="ws-title">&#x1F3AF; 12 Month Goal</h1>
+      <p class="ws-sub">This year&#x2019;s headline goal &mdash; the 3&#x2013;7 things that must happen to stay on track.</p>
     </div>
 
     <div class="ws-hint">
       <a href="learn/targets.html">Read the Targets guide &#x2192;</a>
     </div>
 
-    <!-- v0.5.181 — 4 simple boxes, one per timeframe. Date / revenue / profit fields
-         from the previous design have been removed from the UI. Their schema columns
-         remain so existing data isn't lost. -->
     <div class="ws-card">
-      <div class="ws-card-title">10-Year</div>
-      <div class="ws-card-desc">Your big, audacious long-term target. Write it as if it has already happened.</div>
-      <textarea class="ws-textarea" rows="3" placeholder="e.g. Be Australia&#x2019;s most trusted business coaching practice with 500 thriving client businesses." data-key="ten_year"></textarea>
-    </div>
-    <div class="ws-card">
-      <div class="ws-card-title">5-Year</div>
-      <div class="ws-card-desc">Halfway to your 10-year vision &mdash; where the business will be in five years.</div>
-      <textarea class="ws-textarea" rows="3" placeholder="e.g. 200 active clients, 6 coaches, two product lines, $4M revenue." data-key="five_year"></textarea>
-    </div>
-    <div class="ws-card">
-      <div class="ws-card-title">3-Year</div>
-      <div class="ws-card-desc">A vivid snapshot of where your business will be in 3 years.</div>
-      <textarea class="ws-textarea" rows="3" placeholder="Describe the business &mdash; team size, clients, capabilities, revenue, culture&#x2026;" data-key="three_year_desc"></textarea>
+      <div class="ws-card-title">12-Month Goal</div>
+      <div class="ws-card-desc">The 3&#x2013;7 things that must happen this year to stay on track. Write each on its own line.</div>
+      <textarea class="ws-textarea" rows="8" placeholder="1. &#10;2. &#10;3. &#10;4. " data-key="one_year_goals"></textarea>
     </div>
   </div>
   <div class="ws-save-bar">
     <span class="save-status" id="saveStatus">Changes will save automatically</span>
-    <button class="ws-btn" onclick="window.location.href='strategy.html'">Done &#x2713;</button>
+    <button class="ws-btn" onclick="window.location.href='operations.html'">Done &#x2713;</button>
   </div>
   <nav class="bottom-nav">
     <a class="bottom-nav-item" href="business.html"><span class="bottom-nav-icon">&#x1F3E0;</span><span>Home</span></a>
     <a class="bottom-nav-item" href="planning.html"><span class="bottom-nav-icon">&#x1F5FA;&#xFE0F;</span><span>Planning</span></a>
-    <a class="bottom-nav-item active" href="strategy.html"><span class="bottom-nav-icon">&#x1F9ED;</span><span>Strategy</span></a>
-    <a class="bottom-nav-item" href="operations.html"><span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Operations</span></a>
+    <a class="bottom-nav-item" href="strategy.html"><span class="bottom-nav-icon">&#x1F9ED;</span><span>Strategy</span></a>
+    <a class="bottom-nav-item active" href="operations.html"><span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Operations</span></a>
     <a class="bottom-nav-item" href="learning-vault.html"><span class="bottom-nav-icon">&#x1F4DA;</span><span>Learn</span></a>
   </nav>
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
     const supabase = createClient('https://eekefsuaefgpqmjdyniy.supabase.co','sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y');
 
-    /* Previous localStorage SEED (kept here as a reference for sample data only —
-       no longer auto-applied. New businesses start with empty inputs.)
-       SEED = {
-         ten_year: "Australia's most trusted business coaching practice — 500 thriving client businesses, a team of 10 coaches, delivering measurable results nationwide.",
-         three_year_date: 'June 2029',
-         three_year_revenue: '$1.2M',
-         three_year_profit: '$360K',
-         three_year_desc: '4 coaches, 80 active clients, systemised 12-month program, recurring revenue model established.',
-         one_year_date: 'Dec 2026',
-         one_year_revenue: '$420K',
-         one_year_profit: '$105K',
-         one_year_goals: '1. Sign 20 new clients through referral and speaking\n2. Launch group coaching program (min. 8 participants)\n3. Hire first associate coach by Q3\n4. Complete and publish Signature Program workbook'
-       }
-    */
-
-    // v0.5.184 — 12-Month section moved out to twelve-month-goal.html (Operations).
-    // The `one_year_goals` column stays in the schema (read by business.html dashboard,
-    // one-page-plan.html, account-plans.html, account-targets.html) — just not edited
-    // from this worksheet anymore.
-    const FIELDS = [
-      'ten_year',
-      'five_year',
-      'three_year_desc'
-    ];
+    // v0.5.184 — Dedicated editor for the 12-Month goal. Writes to targets.one_year_goals
+    // (same column the dashboards + one-pagers + carousels read from). The Targets
+    // worksheet on Strategy no longer edits this field.
+    const FIELDS = ['one_year_goals'];
     let orgId = null;
     const data = {};
     const DEBOUNCE_MS = 300;
@@ -159,7 +121,7 @@
     async function loadRow() {
       const { data: row, error } = await supabase
         .from('targets')
-        .select('*')
+        .select('one_year_goals')
         .eq('organisation_id', orgId)
         .maybeSingle();
       if (error) console.warn('Load failed:', error.message);

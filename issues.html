@@ -127,7 +127,7 @@
         <label class="modal-label">Category</label>
         <select class="modal-select" id="issue-category">
           <option value="current">Issues List &mdash; this week / this quarter</option>
-          <option value="yearly">Yearly Issues &mdash; long-horizon</option>
+          <option value="yearly">12 Month Issues &mdash; long-horizon</option>
           <option value="future">Future Issues List &mdash; backlog</option>
         </select>
       </div>
@@ -187,7 +187,7 @@
   // v0.5.183 — issues split into 3 categories surfaced as 3 cards on Operations.
   const VALID_CATS = ['yearly', 'current', 'future'];
   const CAT_META = {
-    yearly:  { title: '&#x26A1; Yearly Issues',       sub: 'Long-horizon issues to surface at annual planning.' },
+    yearly:  { title: '&#x26A1; 12 Month Issues',     sub: 'Long-horizon issues to surface at annual planning.' },
     current: { title: '&#x1F4CB; Issues List',         sub: 'This week and this quarter &mdash; discuss and resolve.' },
     future:  { title: '&#x23F3; Future Issues List',  sub: 'Backlog of things to address later &mdash; not urgent yet.' }
   };

@@ -4,6 +4,35 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.184
+- **Consistent wording + de-duplicated the 12-Month horizon.** User: "The yearly /12 month wording needs to be consistent. Does the split make sense over the 2 pages?" + "It's not intention to have on both pages. Agree with your suggestions."
+
+### Wording — "Yearly Issues" → "12 Month Issues"
+The Operations card sat at the same time-horizon as "12 Month Goal" but used different words. Renamed everywhere it surfaces:
+- `operations.html` — card title (label only; URL still `issues.html?category=yearly`, DB category value still `'yearly'`).
+- `issues.html` — `CAT_META.yearly.title` switches from "⚡ Yearly Issues" to "⚡ 12 Month Issues" (page heading + `document.title`).
+- `issues.html` — modal Category `<select>` option label "Yearly Issues — long-horizon" → "12 Month Issues — long-horizon".
+
+### Split — 12-Month moves off Strategy, lives only on Operations
+Strategy's Targets card and Operations' "12 Month Goal" card both opened `targets.html`, which showed all 4 timeframes (10/5/3-Year + 12-Month). The user could set the 12-month goal from either entry point, which contradicted the intent that Operations owns the annual horizon.
+
+- **`targets.html`** — dropped the 12-Month card from the UI. Worksheet now has 3 cards: 10-Year, 5-Year, 3-Year. `FIELDS` array shrinks from `['ten_year', 'five_year', 'three_year_desc', 'one_year_goals']` to the first three. Sub-heading updated to mention the move: "10-year, 5-year, and 3-year goals. (The 12-Month goal lives on Operations.)"
+- **New `twelve-month-goal.html`** — dedicated single-textarea editor. Same Operations chrome (← Operations back, Operations active in bottom nav). Reads + writes `targets.one_year_goals` for the active org with the standard 300ms debounce + auto-save pattern. Layout copied from `targets.html` so it feels native.
+- **`operations.html`** — "12 Month Goal" card `href` changed from `targets.html` to `twelve-month-goal.html`.
+- **`strategy.html`** — Targets card description trimmed: "10-year, 5-year, 3-year and 12-month goals" → "10-year, 5-year and 3-year goals".
+
+### Data — no schema change
+The `targets.one_year_goals` column stays in the schema and is still read by everything that consumed it before:
+- `business.html` — 1-Year Goal panel (own + parent rollup).
+- `one-page-plan.html` — printable strategy doc.
+- `account-plans.html` — cross-business strategy carousel.
+- `account-targets.html` — Targets carousel.
+- `run-annual-session.html` + `run-quarterly-session.html` — area link rewriting unchanged.
+
+Only the **editor** moved; the data layer is untouched. Existing 12-month goals continue to display on all dashboards and one-pagers; users now edit them via Operations → 12 Month Goal instead of Strategy → Targets.
+
+---
+
 ## v0.5.183
 - **Strategy + Operations restructure with a 3-way Issues split.** User: "This is the order for strategy: Financials / Core values / Marketing strategy / Leadership team / Organisational chart" + new Operations layout listing 12 Month Goal / Yearly Issues / Quarter Goals / 90 Day Numbers / Issues List / Future Issues List / Weekly Meetings.
 
