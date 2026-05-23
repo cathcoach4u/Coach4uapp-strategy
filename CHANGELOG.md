@@ -4,6 +4,25 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.152
+- **SQL-only release.** Hotfix the broken save on the v0.5.151 Edit-team-member modal, plus add billing fields for the upcoming Account Setup page.
+- **(1) Hotfix — RLS policy on `team_members`.** User report: "Could not save: permission denied for table users". The error came from the long-standing `"invited user accepts own invite"` policy, whose `USING` clause SELECTed `email` from `auth.users` — which the `authenticated` role doesn't have permission to read in current Supabase. The previous code paths (single-row UPDATEs on team_members) seem to have dodged that policy evaluation; the multi-row `.in('id', memberIds)` UPDATE introduced in v0.5.151 hit it.
+  ```sql
+  DROP POLICY IF EXISTS "invited user accepts own invite" ON public.team_members;
+  CREATE POLICY "invited user accepts own invite" ON public.team_members
+    FOR UPDATE
+    USING (
+      invited_email IS NOT NULL
+      AND lower(invited_email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    )
+    WITH CHECK (user_id = auth.uid() AND status = 'active');
+  ```
+  Same semantics — a logged-in user can claim a pending invite that matches their email — but now reads the email from the JWT claim instead of querying `auth.users`. No table access needed.
+- **(2) Billing fields on `subscriptions`.** ADD COLUMN IF NOT EXISTS billing_email, billing_address, billing_tax_id (all nullable text). Used by the upcoming 3-tab Account Setup view in v0.5.153. Owner-owned by the existing "owner updates own subscription" policy (no RLS change needed).
+- **No app code change in this release** — version bump just keeps SW/footer aligned with the migration file. Both fixes shipped via `supabase/v0.5.152-delta.sql`.
+
+---
+
 ## v0.5.151
 - **User cards on the account dashboard become clickable** with a new "Edit team member" modal. User: "I can't click into it. There needs more options the user as they can be admin some or all."
 - **`renderUsers()` changes:**
