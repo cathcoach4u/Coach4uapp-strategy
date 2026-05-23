@@ -4,6 +4,17 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.160
+- **Make the `Account:` row identical across the three account-level tabs.** User: "Account : is different on first page to the other 2."
+- The `+ New client account` button was inline with the switcher on `index.html` (`<div class="acct-switcher">…<button class="switcher-btn">+ New client account</button></div>`). The button:
+  1. squeezed the switcher dropdown narrower than the same dropdown on Users/Setup (`.switcher-select` is `flex: 1`)
+  2. made the switcher row visibly taller (button wraps under on mobile, makes a 2-line row)
+- Moved the button into its own row in a new `.acct-extra-action` wrapper directly under the switcher, right-aligned (`display: flex; justify-content: flex-end; padding: 0 16px 4px;`). Removed the obsolete `margin-left: auto` from `.switcher-btn`.
+- The `Account: [dropdown ▾]` row now renders identically on Businesses / Users / Setup. The create-account button is still on Businesses only (deliberate — see v0.5.159) but no longer interferes with the switcher's layout.
+- **No SQL.**
+
+---
+
 ## v0.5.159
 - **Audit + cleanup of the three account-level tabs.** User: "Audit the account three tabs for consistency and ensure that all of the links work."
 - **Method:** systematic grep across `index.html` / `account-users.html` / `account-setup.html` for: head meta + scripts, site-header structure, account switcher block, bottom nav (active state), footer version label, auth check, membership gate, sign-out wireup, `<a href>` links, `getElementById` references vs declared IDs (scripted via Python).
