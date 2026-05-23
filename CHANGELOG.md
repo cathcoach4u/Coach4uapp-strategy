@@ -4,6 +4,43 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.202
+- **Dropped stat tiles + added Open Issues panel + renamed This Quarter → Quarterly Goals.** User: "Open issues, goals on track, none next meeting not needed on the dashboards home pages. ... wouldn't it just be easier to have the areas visible ie where is says open issues. Can't we just list the issues list. And review quarterly goals. Can it just show the goals."
+
+### Removed
+- The entire `<div class="stat-row">` block (3 stat tiles: Open Issues count, Goals On Track count, Next Meeting date).
+- CSS rules: `.stat-row`, `.stat-tile`, `.stat-num`, `.stat-num.accent/amber/red`, `.stat-label`.
+- JS: `statOpenIssues`, `statGoalsOnTrack`, `statNextMeeting`, `statNextMeetingTile` setters + the `wireMeetingLink(sn)` call.
+- The count-only `issuesCountRes` query is replaced by a full-row `issuesRes` query (same fields issues.html fetches).
+
+### Added — Open Issues panel
+Sits between Quarterly Goals and This Week. Lists the actual `category='current'` open issues for the active org with description + owner.
+- Empty state: *"No open issues. Nice work."*
+- Edit link → `issues.html?category=current` for full management.
+- New `.issue-row` CSS borrows the `.rock-row` look so the panel feels consistent with the Quarterly Goals panel right above it.
+
+### Renamed
+- **This Quarter** → **🏆 Quarterly Goals**. The panel already showed the rock list + progress bar — only the heading changed (and the link copy: "View Goals ›" → "Edit ›" to match the other Edit links).
+
+### Net effect
+The home dashboard reads as a flow with no clicks needed to see open work:
+1. Quick Actions (Run Weekly Meeting + 2 View buttons)
+2. Year Flow
+3. 1-Year Goal
+4. Core Values
+5. **Quarterly Goals** (renamed — progress bar + goals list with status pills)
+6. **Open Issues** (new — actual issues with owner)
+7. This Week (todos)
+
+For parent businesses, **Group Financials** + **Child Businesses** still append below (v0.5.200).
+
+### Meeting links still work
+The Run Weekly Meeting button (top) + View Meeting link in This Week both still wire through `openOrCreateWeeklyMeeting` from v0.5.201 — tap → find this week's meeting if it exists, else create one, then navigate. The Next Meeting stat tile is gone, but the View Meeting link covers the same use case.
+
+### No SQL.
+
+---
+
 ## v0.5.201
 - **Fixed the "View Meeting" link in This Week + Next Meeting stat tile.** User: "The weekly meeting start button and link to go back to meeting isn't working" → clarified that the Run Weekly Meeting button works, but the View Meeting link doesn't (on both parent + child dashboards).
 
