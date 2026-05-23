@@ -4,6 +4,19 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.156
+- **Remove duplicate account name on the Businesses tab.** User: "The name of the business is showing twice on account page."
+- `index.html` was rendering the account name in two places:
+  1. The `<select id="accountSwitcher">` dropdown (live, interactive, lets you switch between accounts) — e.g., `[Insurance Advisory Service NSW Pty Ltd ▾]`
+  2. A large `<h1 class="acct-title" id="accountName">🏢 Insurance Advisory Service NSW Pty Ltd</h1>` immediately below it
+- Dropped the `<h1>` block + the entire `.acct-header` `<div>` wrapper.
+- Dropped the `renderAccountHeader()` JS function (no longer has a target element).
+- Dropped the `renderAccountHeader()` call from `refresh()`.
+- The switcher dropdown is now the sole account-name indicator and remains interactive.
+- `account-users.html` and `account-setup.html` are unchanged — neither had the duplication.
+
+---
+
 ## v0.5.155
 - **Parent business dashboard becomes a holding-co rollup view.** User: "The parents dashboard needs to be more focused on a summary of entire businesses."
 - **Detection:** in `business.html` `init()`, after the active row is resolved, scan `memberships` for any row whose `organisations.parent_organisation_id === activeOrg.id`. If at least one, render parent-mode; otherwise render the existing standard dashboard.

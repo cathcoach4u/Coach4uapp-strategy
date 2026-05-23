@@ -405,10 +405,8 @@
       <button id="newClientAccountBtn" class="switcher-btn">+ New client account</button>
     </div>
 
-    <!-- Section A: Account header -->
-    <div class="acct-header">
-      <h1 class="acct-title" id="accountName">&#x1F3E2; Your account</h1>
-    </div>
+    <!-- Section A: Account header removed in v0.5.156 — the switcher dropdown above
+         already shows the account name. -->
 
     <div class="section" id="businesses">
       <div class="section-head">
@@ -420,7 +418,7 @@
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.155</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.156</p>
 
   </div>
 
@@ -616,15 +614,7 @@
       // per-biz snapshots were dropped in v0.5.149.
     }
 
-    /* ============== render: account header ============== */
-    function renderAccountHeader() {
-      const el = document.getElementById('accountName');
-      if (sub && sub.name && sub.name.trim()) {
-        el.innerHTML = '&#x1F3E2; ' + escHtml(sub.name);
-      } else {
-        el.innerHTML = '&#x1F3E2; Your account <span style="font-size:.7em;color:#888;font-weight:600;">(unnamed)</span>';
-      }
-    }
+    // renderAccountHeader removed in v0.5.156 — the switcher already shows the account name.
 
     function renderSwitcher() {
       const wrap = document.getElementById('acctSwitcher');
@@ -1024,7 +1014,6 @@
     async function refresh() {
       await loadAll();
       renderSwitcher();
-      renderAccountHeader();
       renderBusinesses();
     }
 
