@@ -187,7 +187,7 @@
     .child-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(13,148,136,0.1); }
     .child-card-head {
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      margin-bottom: 10px;
+      /* margin-bottom dropped in v0.5.180 — no mini-stats row below the head anymore */
     }
     .child-card-arrow { color: var(--accent); font-size: 1.15rem; font-weight: 800; line-height: 1; }
     .child-card-name {
@@ -408,7 +408,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.179</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.180</p>
 
   </div>
 
@@ -745,23 +745,16 @@
         if (!meetingsPerChild.has(m.organisation_id)) meetingsPerChild.set(m.organisation_id, m);
       });
 
+      // v0.5.180 — Child cards now show just name + Open. All mini stats removed.
       const cardsEl = document.getElementById('childCards');
-      cardsEl.innerHTML = children.map(c => {
-        const rocks = rocksPerChild.get(c.id) || { total: 0, onTrack: 0 };
-        // v0.5.179 — Open Issues + Next Meeting removed from child cards; only Goals on track remains
-        const goalsValClass = (rocks.total === 0) ? 'val empty' : 'val';
-        return `
+      cardsEl.innerHTML = children.map(c => `
           <div class="child-card" data-org-id="${escapeHtml(c.id)}" data-org-name="${escapeHtml(c.name)}">
             <div class="child-card-head">
               <span class="child-card-arrow">↳</span>
               <span class="child-card-name">${escapeHtml(c.name)}</span>
               <span class="child-card-open">Open ›</span>
             </div>
-            <div class="child-card-mini">
-              <div><span class="label">Goals on track:</span><span class="${goalsValClass}">${rocks.onTrack} of ${rocks.total}</span></div>
-            </div>
-          </div>`;
-      }).join('');
+          </div>`).join('');
 
       cardsEl.querySelectorAll('.child-card').forEach(card => {
         card.addEventListener('click', () => {

@@ -4,6 +4,16 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.180
+- **Strip the last mini-stat from child cards on the parent dashboard.** User: "Remove goals on track in child accounts."
+- v0.5.179 had already trimmed child cards down to a single "Goals on track: X of N" line. This version removes that line too, leaving each child card as just **↳ Name  Open ›**.
+- **HTML:** dropped the entire `<div class="child-card-mini">…</div>` block from the per-card template, including the `goalsValClass` variable. The card template is now just `child-card-head` with the arrow + name + Open chip.
+- **CSS:** nulled the `margin-bottom: 10px` on `.child-card-head` (no row below it anymore).
+- **JS:** `rocksPerChild` Map is still computed (one extra `forEach` over the rocks fetch is cheap and the data may resurface elsewhere), but no longer read. Child-card click handler that switches the active org and reloads is unchanged.
+- **No SQL.**
+
+---
+
 ## v0.5.179
 - **Trim + re-order the parent dashboard.** Four changes on `business.html`'s parent-mode (rendered when the active biz has children, e.g. IASHQ):
 - **(1) Group Strategy panel** — shows ONLY the 12-Month Goal row. The 10-Year Vision and 3-Year Outlook rows were dropped. The JS still computes the 10yr / 3yr text from `targets`, but `setText('parentTenYear', …)` / `setText('parentThreeYear', …)` become no-ops because the elements no longer exist in the DOM — `setText` guards with `if (!el) return`.
