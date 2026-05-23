@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do List | Your Business Coach</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#003366">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { opacity: 0; transition: opacity 0.2s ease; }
+    .container { padding-bottom: 100px; }
+    .ws-header { padding: 20px 16px 0; }
+    .ws-title { font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
+    .ws-sub { font-size: 0.83rem; color: #666; margin: 0 0 20px; line-height: 1.45; }
+    .ws-hint { font-size: 0.78rem; color: #888; line-height: 1.5; margin: 0 16px 16px; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--accent); }
+
+    /* Add row at the top */
+    .add-card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 14px; margin: 0 16px 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .add-input {
+      flex: 1; min-width: 0;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.92rem; color: var(--text);
+      font-family: inherit; background: white; box-sizing: border-box;
+    }
+    .add-input:focus { outline: none; border-color: var(--accent); }
+    .owner-select {
+      flex: 0 1 150px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.92rem; color: var(--primary);
+      font-family: inherit; background: white; cursor: pointer; box-sizing: border-box;
+    }
+    .add-btn {
+      padding: 10px 18px; background: var(--accent); color: white;
+      border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: background 0.15s; flex-shrink: 0;
+    }
+    .add-btn:hover { background: var(--accent-dark); }
+
+    /* Filter toggle */
+    .filter-row { padding: 0 16px 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .filter-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #555; cursor: pointer; user-select: none; }
+    .filter-toggle input { width: 14px; height: 14px; cursor: pointer; }
+    .filter-count { font-size: 0.78rem; color: #888; }
+
+    /* Todo list */
+    .todo-card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 0; margin: 0 16px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); overflow: hidden; }
+    .todo-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #f0f0f0; }
+    .todo-row:last-child { border-bottom: none; }
+    .todo-check { width: 20px; height: 20px; border-radius: 5px; border: 2px solid #ccc; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: white; cursor: pointer; background: white; transition: background 0.1s, border-color 0.1s; }
+    .todo-check.done { background: var(--accent); border-color: var(--accent); }
+    .todo-check.done::after { content: '✓'; }
+    .todo-body { flex: 1; min-width: 0; }
+    .todo-desc { font-size: 0.9rem; font-weight: 600; color: var(--primary); line-height: 1.35; }
+    .todo-desc.done { text-decoration: line-through; color: #aaa; font-weight: 500; }
+    .todo-meta { font-size: 0.74rem; color: #888; margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .todo-meta .owner { color: var(--accent); font-weight: 700; }
+    .todo-meta .due-overdue { color: #DC2626; font-weight: 700; }
+    .todo-meta .sep { color: #ccc; }
+    .todo-del { background: none; border: none; font-size: 0.9rem; color: #c33; cursor: pointer; padding: 4px 6px; flex-shrink: 0; line-height: 1; opacity: 0.5; transition: opacity 0.1s; }
+    .todo-del:hover { opacity: 1; }
+
+    .empty-state { text-align: center; color: #888; font-size: 0.88rem; padding: 24px 16px; font-style: italic; }
+    .toast { position: fixed; bottom: 80px; right: 16px; padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; z-index: 1000; transition: opacity 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .toast.hidden { opacity: 0; pointer-events: none; }
+    .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .toast-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+    .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0 6px; text-decoration: none; color: #aaa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; gap: 3px; transition: color 0.15s; }
+    .bottom-nav-item.active, .bottom-nav-item:hover { color: #0D9488; text-decoration: none; }
+    .bottom-nav-icon { font-size: 20px; line-height: 1; }
+  </style>
+  <script src="js/active-session.js" defer></script>
+  <script src="js/mobile-keyboard.js" defer></script>
+  <script src="js/active-org.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <span class="header-title">Your Business Coach</span>
+        <span id="activeBizName" class="biz-pill"></span>
+      </div>
+      <a href="index.html" class="header-account-btn" title="Account dashboard"><span>&#x1F3DB;&#xFE0F;</span><span>Account</span></a>
+      <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="ws-header">
+      <h1 class="ws-title">&#x1F4CB; To-Do List</h1>
+      <p class="ws-sub">All open action items across your weekly meetings. Tap the checkbox to mark done. New to-dos drop into this week&rsquo;s meeting automatically.</p>
+    </div>
+
+    <!-- Add row -->
+    <div class="add-card">
+      <div class="add-row">
+        <input type="text" class="add-input" id="newTodoDesc" placeholder="Add a to-do&hellip;" />
+        <select class="owner-select" id="newTodoOwner">
+          <option value="">&mdash; Unassigned &mdash;</option>
+        </select>
+        <button class="add-btn" id="addTodoBtn">Add</button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-row">
+      <label class="filter-toggle">
+        <input type="checkbox" id="showDoneToggle" />
+        <span>Show completed</span>
+      </label>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+
+    <!-- List -->
+    <div class="todo-card">
+      <div id="todoList">
+        <div class="empty-state">Loading&hellip;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="business.html"><span class="bottom-nav-icon">&#x1F3E0;</span><span>Home</span></a>
+    <a class="bottom-nav-item" href="planning.html"><span class="bottom-nav-icon">&#x1F5FA;&#xFE0F;</span><span>Planning</span></a>
+    <a class="bottom-nav-item" href="strategy.html"><span class="bottom-nav-icon">&#x1F9ED;</span><span>Strategy</span></a>
+    <a class="bottom-nav-item active" href="operations.html"><span class="bottom-nav-icon">&#x2699;&#xFE0F;</span><span>Operations</span></a>
+    <a class="bottom-nav-item" href="learning-vault.html"><span class="bottom-nav-icon">&#x1F4DA;</span><span>Learn</span></a>
+  </nav>
+
+  <script type="module">
+    'use strict';
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    const supabase = createClient(
+      'https://eekefsuaefgpqmjdyniy.supabase.co',
+      'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
+    );
+
+    let orgId = null;
+    let _todos = [];      // full list (open + done)
+    let _ownerNames = []; // for the add row dropdown
+    let _showDone = false;
+
+    function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
+    function showToast(msg, type='success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'toast toast-' + type;
+      t.classList.remove('hidden');
+      clearTimeout(t._t);
+      t._t = setTimeout(() => t.classList.add('hidden'), 2500);
+    }
+    function fmtDue(iso) {
+      if (!iso) return null;
+      const d = new Date(iso + 'T00:00:00');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.round((d - today) / (1000*60*60*24));
+      const dateStr = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      if (diff < 0) return { label: 'Due ' + dateStr, overdue: true };
+      if (diff === 0) return { label: 'Due today', overdue: false };
+      if (diff === 1) return { label: 'Due tomorrow', overdue: false };
+      return { label: 'Due ' + dateStr, overdue: false };
+    }
+    function fmtMeeting(iso) {
+      if (!iso) return '';
+      const d = new Date(iso + 'T00:00:00');
+      return 'From wk of ' + d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    }
+
+    function thisMondayIso() {
+      const d = new Date();
+      const day = d.getDay();
+      d.setDate(d.getDate() + ((day === 0 ? -6 : 1) - day));
+      return d.toISOString().slice(0, 10);
+    }
+    function currentQuarter() {
+      const d = new Date();
+      return 'Q' + (Math.floor(d.getMonth() / 3) + 1) + ' ' + d.getFullYear();
+    }
+
+    async function findOrCreateThisWeekMeeting() {
+      const mondayIso = thisMondayIso();
+      const { data: existing } = await supabase
+        .from('meetings')
+        .select('id')
+        .eq('organisation_id', orgId)
+        .eq('meeting_date', mondayIso)
+        .maybeSingle();
+      if (existing && existing.id) return existing.id;
+      const { data: created, error } = await supabase
+        .from('meetings')
+        .insert({ organisation_id: orgId, meeting_date: mondayIso, status: 'scheduled', quarter: currentQuarter() })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return created.id;
+    }
+
+    async function loadTodos() {
+      // Cross-meeting query: join through meetings (inner) and filter by org.
+      // RLS on meeting_todos allows reads for active members of the meeting's org.
+      const { data, error } = await supabase
+        .from('meeting_todos')
+        .select('id, description, owner, done, due_date, created_at, meeting_id, meetings!inner(meeting_date, organisation_id)')
+        .eq('meetings.organisation_id', orgId)
+        .order('due_date', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.warn('Load todos failed:', error.message);
+        showToast('Could not load todos: ' + error.message, 'error');
+        _todos = [];
+        return;
+      }
+      _todos = Array.isArray(data) ? data : [];
+    }
+
+    async function loadOwnerOptions() {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('display_name, invited_email, status')
+        .eq('organisation_id', orgId)
+        .neq('status', 'removed');
+      if (error) { console.warn('loadOwnerOptions:', error.message); return; }
+      const names = (data || [])
+        .map(m => (m.display_name && m.display_name.trim()) || (m.invited_email && m.invited_email.trim()) || '')
+        .filter(Boolean);
+      _ownerNames = [...new Set(names)].sort((a, b) => a.localeCompare(b));
+      const sel = document.getElementById('newTodoOwner');
+      sel.innerHTML = '<option value="">— Unassigned —</option>' +
+        _ownerNames.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
+    }
+
+    function renderList() {
+      const wrap = document.getElementById('todoList');
+      const filtered = _showDone ? _todos : _todos.filter(t => !t.done);
+
+      // Update count line
+      const openCount = _todos.filter(t => !t.done).length;
+      const doneCount = _todos.length - openCount;
+      const cnt = document.getElementById('filterCount');
+      cnt.textContent = _showDone
+        ? `${openCount} open · ${doneCount} done`
+        : (openCount === 0 ? '' : `${openCount} open`);
+
+      if (!filtered.length) {
+        wrap.innerHTML = _showDone
+          ? '<div class="empty-state">No to-dos yet. Add one above.</div>'
+          : '<div class="empty-state">No open to-dos. Nice work. 🎉</div>';
+        return;
+      }
+
+      wrap.innerHTML = filtered.map(t => {
+        const due = fmtDue(t.due_date);
+        const meetingDate = t.meetings && t.meetings.meeting_date;
+        const metaBits = [];
+        if (t.owner) metaBits.push(`<span class="owner">${escHtml(t.owner)}</span>`);
+        if (due) metaBits.push(`<span class="${due.overdue ? 'due-overdue' : ''}">${escHtml(due.label)}</span>`);
+        if (meetingDate) metaBits.push(`<span>${escHtml(fmtMeeting(meetingDate))}</span>`);
+        const metaHtml = metaBits.length
+          ? `<div class="todo-meta">${metaBits.join('<span class="sep">·</span>')}</div>`
+          : '';
+        return `
+          <div class="todo-row" data-id="${escHtml(t.id)}">
+            <div class="todo-check ${t.done ? 'done' : ''}" role="button" tabindex="0" aria-label="Toggle done"></div>
+            <div class="todo-body">
+              <div class="todo-desc ${t.done ? 'done' : ''}">${escHtml(t.description || '')}</div>
+              ${metaHtml}
+            </div>
+            <button class="todo-del" aria-label="Delete" title="Delete">&times;</button>
+          </div>
+        `;
+      }).join('');
+
+      // Wire row interactions
+      wrap.querySelectorAll('.todo-row').forEach(row => {
+        const id = row.dataset.id;
+        row.querySelector('.todo-check').addEventListener('click', () => toggleTodo(id));
+        row.querySelector('.todo-del').addEventListener('click', () => deleteTodo(id));
+      });
+    }
+
+    async function toggleTodo(id) {
+      const t = _todos.find(x => String(x.id) === String(id));
+      if (!t) return;
+      const newDone = !t.done;
+      // Optimistic update
+      t.done = newDone;
+      renderList();
+      const { error } = await supabase
+        .from('meeting_todos')
+        .update({ done: newDone })
+        .eq('id', id);
+      if (error) {
+        // Roll back
+        t.done = !newDone;
+        renderList();
+        showToast('Could not update: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteTodo(id) {
+      if (!confirm('Delete this to-do?')) return;
+      const { error } = await supabase.from('meeting_todos').delete().eq('id', id);
+      if (error) { showToast('Could not delete: ' + error.message, 'error'); return; }
+      _todos = _todos.filter(t => String(t.id) !== String(id));
+      renderList();
+      showToast('Deleted');
+    }
+
+    async function addTodo() {
+      const descEl = document.getElementById('newTodoDesc');
+      const ownerEl = document.getElementById('newTodoOwner');
+      const description = descEl.value.trim();
+      if (!description) { showToast('Add a description first', 'error'); return; }
+      const owner = ownerEl.value.trim() || null;
+      // Find/create this week's meeting, then insert the todo.
+      let meetingId;
+      try { meetingId = await findOrCreateThisWeekMeeting(); }
+      catch (e) { showToast('Could not open this week\'s meeting: ' + e.message, 'error'); return; }
+      const { data: created, error } = await supabase
+        .from('meeting_todos')
+        .insert({ meeting_id: meetingId, description, owner, done: false })
+        .select('id, description, owner, done, due_date, created_at, meeting_id, meetings!inner(meeting_date, organisation_id)')
+        .single();
+      if (error) { showToast('Could not add: ' + error.message, 'error'); return; }
+      _todos.unshift(created);
+      descEl.value = ''; ownerEl.value = '';
+      renderList();
+      showToast('Added');
+      descEl.focus();
+    }
+
+    async function init() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!user || error) { window.location.href = 'login.html'; return; }
+      const { data: profile } = await supabase
+        .from('users').select('membership_status').eq('id', user.id).single();
+      if (!profile || profile.membership_status !== 'active') {
+        window.location.href = 'inactive.html'; return;
+      }
+      orgId = window.activeOrg && window.activeOrg.get();
+      if (!orgId) { window.location.href = 'index.html'; return; }
+
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        await supabase.auth.signOut(); window.location.href = 'login.html';
+      });
+      document.getElementById('addTodoBtn').addEventListener('click', addTodo);
+      document.getElementById('newTodoDesc').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addTodo(); }
+      });
+      document.getElementById('showDoneToggle').addEventListener('change', e => {
+        _showDone = e.target.checked;
+        renderList();
+      });
+
+      try {
+        await Promise.all([loadOwnerOptions(), loadTodos()]);
+      } catch (e) { console.warn('Init error:', e); }
+      renderList();
+      document.body.style.opacity = '1';
+    }
+    init();
+  </script>
+</body>
+</html>

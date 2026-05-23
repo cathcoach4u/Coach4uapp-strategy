@@ -378,15 +378,17 @@
       </div>
     </div>
 
-    <!-- This Week (todos from the focused meeting) -->
+    <!-- v0.5.204 — Open To-Dos (was "This Week"). Aggregates open todos across
+         ALL meetings now, so the panel makes sense even with no meeting this
+         week. Link → todos.html (the new full-list view). -->
     <div class="dash-panel">
       <div class="panel-head">
-        <span class="panel-title">This Week</span>
-        <a class="panel-link" id="thisWeekViewLink" href="meeting.html">View Meeting &#x203A;</a>
+        <span class="panel-title">&#x1F4CB; Open To-Dos</span>
+        <a class="panel-link" href="todos.html">View All &#x203A;</a>
       </div>
       <div class="panel-body">
         <ul class="todo-list" id="thisWeekTodos">
-          <li class="todo-item"><div class="todo-check"></div><div><div class="todo-desc" style="color:#aaa;">No todos for this week yet.</div></div></li>
+          <li class="todo-item"><div class="todo-check"></div><div><div class="todo-desc" style="color:#aaa;">No open to-dos.</div></div></li>
         </ul>
       </div>
     </div>
@@ -432,7 +434,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.203</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.204</p>
 
   </div>
 
@@ -542,48 +544,36 @@
                                 .sort((a,b) => (a.meeting_date||'').localeCompare(b.meeting_date||''))[0];
       const nextMeeting = thisWeekMeeting || upcoming || meetings.find(m => m.status !== 'completed') || meetings[0];
 
-      // v0.5.201/202 — The View Meeting link in the This Week panel uses the
-      // shared openOrCreateWeeklyMeeting handler (statNextMeetingTile removed
-      // in v0.5.202 along with the stat-tiles row).
-      const tw = document.getElementById('thisWeekViewLink');
-      if (nextMeeting && tw) {
-        tw.href = 'run-meeting.html?id=' + encodeURIComponent(nextMeeting.id);
-      }
-      // Always attach the create-or-open handler so taps work even when no
-      // meeting exists yet (preventDefault → openOrCreateWeeklyMeeting).
-      const wireMeetingLink = (el) => {
-        if (!el) return;
-        el.addEventListener('click', async (e) => {
-          e.preventDefault();
-          await openOrCreateWeeklyMeeting(orgId);
-        });
-      };
-      wireMeetingLink(tw);  // v0.5.202 — sn (Next Meeting stat tile) removed.
+      // v0.5.204 — View Meeting link in the old "This Week" panel was removed
+      // (the panel is now "Open To-Dos" with a "View All ›" link → todos.html).
+      // Run Weekly Meeting button at the top still uses openOrCreateWeeklyMeeting
+      // via wireRunMeetingButton above — that's the single create-or-open entry.
 
-      // This Week todos panel — pulled from the focused meeting's todos
+      // v0.5.204 — This Week panel now aggregates open todos across ALL of
+      // this org's meetings (not just one focused meeting), so an open todo
+      // from last week stays visible until someone ticks it done. Joins
+      // through meetings to filter by org via the inner-join shortcut.
       const todosWrap = document.getElementById('thisWeekTodos');
-      const focusMeeting = thisWeekMeeting || upcoming || meetings[0];
-      if (focusMeeting) {
-        const { data: todos, error: todosErr } = await supabase
-          .from('meeting_todos')
-          .select('description, owner, done, due_date')
-          .eq('meeting_id', focusMeeting.id)
-          .eq('done', false)
-          .order('created_at', { ascending: true })
-          .limit(4);
-        if (todosErr) console.warn('Load todos failed:', todosErr.message);
-        const list = Array.isArray(todos) ? todos : [];
-        if (list.length) {
-          todosWrap.innerHTML = list.map(t => `
-            <li class="todo-item">
-              <div class="todo-check ${t.done ? 'done' : ''}"></div>
-              <div>
-                <div class="todo-desc ${t.done ? 'done' : ''}">${escapeHtml(t.description || '')}</div>
-                <div class="todo-meta">${escapeHtml(t.owner || '')}${t.due_date ? ' &middot; Due ' + fmtDueDate(t.due_date) : ''}</div>
-              </div>
-            </li>
-          `).join('');
-        }
+      const { data: todos, error: todosErr } = await supabase
+        .from('meeting_todos')
+        .select('description, owner, done, due_date, meetings!inner(organisation_id)')
+        .eq('meetings.organisation_id', orgId)
+        .eq('done', false)
+        .order('due_date', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true })
+        .limit(5);
+      if (todosErr) console.warn('Load todos failed:', todosErr.message);
+      const list = Array.isArray(todos) ? todos : [];
+      if (list.length) {
+        todosWrap.innerHTML = list.map(t => `
+          <li class="todo-item">
+            <div class="todo-check ${t.done ? 'done' : ''}"></div>
+            <div>
+              <div class="todo-desc ${t.done ? 'done' : ''}">${escapeHtml(t.description || '')}</div>
+              <div class="todo-meta">${escapeHtml(t.owner || '')}${t.due_date ? ' &middot; Due ' + fmtDueDate(t.due_date) : ''}</div>
+            </div>
+          </li>
+        `).join('');
       }
 
       // ── Open Issues panel (v0.5.202 — full list, replaced the stat tile) ──

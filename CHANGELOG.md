@@ -4,6 +4,41 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.204
+- **Standalone To-Do List + cross-meeting todo aggregation + 12 Month Goal moved to Strategy.** User: "This week's to do isn't showing anywhere. Should this be a box and sql in operations?" → "Yes" + "I think 12 month goal should go from operations to strategic area (at the bottom)."
+
+### Diagnosis
+The home "This Week" panel only queried todos from ONE focused meeting (`thisWeekMeeting || upcoming || meetings[0]`). If there was no meeting yet for this week, or the focused meeting had no open todos, the panel showed the empty placeholder — even though open todos from prior meetings still needed action. No SQL change needed — `meeting_todos` already has everything (description, owner, done, due_date, meeting_id). Just needed to surface it differently.
+
+### (1) New page — `todos.html`
+- Cross-meeting query: `select(... meetings!inner(meeting_date, organisation_id)).eq('meetings.organisation_id', orgId)` — joins through meetings to filter by org while RLS still enforces membership.
+- Each row: 20px round checkbox (toggle done, optimistic update + rollback on error), description, owner, due-date label (`Due today` / `Due tomorrow` / `Due 5 Jun` / red `Due 30 May` if overdue), `From wk of …` tag showing which meeting it came from.
+- Inline add row at the top: description input + owner select (populated from `team_members`) + Add button. On submit: finds or creates this week's meeting (same `findOrCreateThisWeekMeeting` pattern as the home Run Weekly Meeting button), then inserts the todo into it.
+- Filter toggle "Show completed" reveals done items; default view is open only.
+- Delete button per row.
+- Standard chrome: site-header, biz-pill, bottom-nav (Operations active).
+
+### (2) Home dashboard — "This Week" → "📋 Open To-Dos"
+- JS query swap: `from('meeting_todos').eq('meeting_id', focusMeeting.id)` → `from('meeting_todos').select('..., meetings!inner(organisation_id)').eq('meetings.organisation_id', orgId)`. Limit 5, sorted by `due_date` (nulls last) → `created_at`.
+- Panel title renamed `This Week` → `📋 Open To-Dos`.
+- Panel link `View Meeting ›` → `View All ›` pointing to `todos.html`.
+- Removed the `openOrCreateWeeklyMeeting` click handler from this link — Run Weekly Meeting button at the top owns that flow; having create-or-open on a "View To-Dos" link was confusing.
+- Empty state: "No open to-dos." (was "No todos for this week yet.")
+
+### (3) Operations hub — added To-Do List, removed 12 Month Goal
+- New **✅ To-Do List** card → `todos.html`.
+- **🎯 12 Month Goal** card removed (moved to Strategy per the user's note).
+- New order: Quarter Goals → 90 Day Numbers → Issues List → Future Issues List → Weekly Meetings → To-Do List.
+
+### (4) Strategy hub — added 12 Month Goal at the bottom
+- New **🎯 12 Month Goal** card after Targets → links to the existing `twelve-month-goal.html` (no UI change to the editor itself).
+- New order: Financials → Core Values → Marketing Strategy → Organisational Chart → Targets → 12 Month Goal.
+
+### No SQL.
+`meeting_todos` was already the right shape. Only the UI changed.
+
+---
+
 ## v0.5.203
 - **Renamed weekly-meeting section 1: "Segue — Good News" → "Good News".** User: "Change 'Segue — Good News'. To just share a good news item."
 
