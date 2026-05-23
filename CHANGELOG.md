@@ -4,6 +4,23 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.171
+- **Restyle the top-right Account button from a square chip to a teal pill.** User: "It's the square look instead of the green pill on top right."
+- **CSS change in `css/style.css`** on `.header-account-btn`:
+  - `background: rgba(255,255,255,0.15)` → `background: var(--accent)` (solid teal)
+  - `border: 1px solid rgba(255,255,255,0.3)` → `border: none`
+  - `border-radius: var(--radius-sm)` → `border-radius: 99px` (full pill)
+  - `width: 32px; height: 28px;` → `height: 28px; padding: 0 11px 0 9px;` (auto-width to fit icon + label)
+  - Added `gap: 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.2px;` for the new label
+  - Hover state darkens to `var(--accent-dark)` (was a brighter translucent white)
+- **HTML change on 22 business-level pages** via Python pass:
+  - Old: `<a class="header-account-btn" title="Account dashboard" aria-label="Account dashboard">🏛️</a>` (icon-only)
+  - New: `<a class="header-account-btn" title="Account dashboard"><span>🏛️</span><span>Account</span></a>` (icon + label)
+- The button now matches the green-pill language used by Open buttons on biz cards, role pills, value pills, parent pills etc. Sign Out keeps its existing white-translucent chip — the two top-right buttons now read as distinct affordances rather than two of-the-same.
+- **No SQL.**
+
+---
+
 ## v0.5.170
 - **Reorder the Learn vault sections to Planning → Strategy → Operations.** User: "In learn Change the order planning, then strategy then operations."
 - Previous order (from v0.5.119 when the vault was built): Strategy → Operations → Planning.
