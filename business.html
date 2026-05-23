@@ -74,6 +74,11 @@
     .meeting-btn:hover { background: var(--accent-dark); color: white; text-decoration: none; }
     .meeting-btn-arrow { font-size: 18px; }
 
+    /* Page header — same pattern as Planning / Strategy / Operations / Learn (v0.5.176) */
+    .ws-header { padding: 20px 16px 0; }
+    .ws-title { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
+    .ws-sub { font-size: 0.85rem; color: #666; margin: 0 0 20px; line-height: 1.5; }
+
     /* v0.5.174 — quick-actions row + View One-Page buttons moved to home */
     .quick-actions { padding: 12px 0 0; }
     .view-plan-btn {
@@ -240,6 +245,10 @@
   </header>
 
   <div class="container">
+    <div class="ws-header">
+      <h1 class="ws-title">&#x1F3E0; Home</h1>
+      <p class="ws-sub">Your business overview at a glance &mdash; key numbers, this week's focus, and quarterly priorities.</p>
+    </div>
 
     <!-- v0.5.172 — Removed the in-body BUSINESS: [▾] row that was added in
          v0.5.163. The compact green pill from js/active-org.js (in the sub-toolbar
@@ -421,7 +430,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.175</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.176</p>
 
   </div>
 

@@ -4,6 +4,25 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.176
+- **Add the same heading + sub pattern to Home and Learn, completing the five-hub consistency.** User: "Have home and learn with the same headings."
+- **Home (`business.html`):**
+  - Added `.ws-header` / `.ws-title` / `.ws-sub` CSS (same values as the other hubs).
+  - Inserted `<div class="ws-header"><h1>🏠 Home</h1><p>…</p></div>` at the top of `.container`, just above the parent/child context row (`#bizContextRow`).
+  - Sub copy: *"Your business overview at a glance — key numbers, this week's focus, and quarterly priorities."*
+  - The active-org pill in the sub-toolbar above still shows the business name; the new heading announces *what page you're on*.
+- **Learn (`learning-vault.html`):**
+  - Aligned existing `.vault-header` / `.vault-title` / `.vault-sub` rules to match `.ws-*` values:
+    - padding `24px 16px 4px` → `20px 16px 0`
+    - title font-size `1.15rem` → `1.2rem`
+    - sub margin `0` → `0 0 20px`; line-height `1.45` → `1.5`
+  - Title renamed `📚 Learning Vault` → `📚 Learn` to match the bottom-nav tab label (Home / Planning / Strategy / Operations / Learn).
+  - Sub copy preserved.
+- **Net consistency:** all five hub pages now render an identical-looking heading block (icon-prefixed title + grey sub-line) above their main content. CSS values are byte-identical across the five files — keeps the visual pattern locked in.
+- **No SQL.**
+
+---
+
 ## v0.5.175
 - **Add page-title + sub-description to Strategy and Operations hubs, matching Planning.** User: "The planning page has a heading a description. Do the same heading and sub detail under in the operations and operations."
 - Both hubs (`strategy.html`, `operations.html`) were going straight from the navy header / active-org pill into the activity cards — no page identity, no orienting copy. The Planning page already had a `.ws-header` block above its cards from a previous build.
