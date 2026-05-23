@@ -109,6 +109,50 @@
     .panel-link:hover { text-decoration: underline; }
     .panel-body { padding: 10px 14px 12px; }
 
+    /* ── v0.5.195 — Year Flow (cadence timeline) ── */
+    .flow-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; position: relative;
+    }
+    .flow-row + .flow-row::before {
+      content: ''; position: absolute;
+      left: 11px; top: -5px; height: 12px;
+      width: 2px; background: #e5e7eb;
+    }
+    .flow-row.past + .flow-row::before { background: #d1d5db; }
+    .flow-dot {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 800;
+      flex-shrink: 0; background: white;
+      border: 2px solid #e5e7eb; color: #888;
+    }
+    .flow-row.past .flow-dot { background: #f0fdfa; border-color: #0D9488; color: #0D9488; }
+    .flow-row.next .flow-dot { background: #0D9488; border-color: #0D9488; color: white; box-shadow: 0 0 0 4px rgba(13,148,136,0.15); }
+    .flow-info { flex: 1; min-width: 0; }
+    .flow-label { font-size: 0.85rem; font-weight: 700; color: var(--primary); line-height: 1.3; }
+    .flow-date { font-size: 0.78rem; color: #888; margin-top: 1px; }
+    .flow-row.past .flow-label { color: #6b7280; }
+    .flow-status {
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.5px;
+      padding: 3px 8px; border-radius: 12px;
+      text-transform: uppercase; flex-shrink: 0;
+      background: #f3f4f6; color: #888;
+    }
+    .flow-status.past { background: #ecfdf5; color: #047857; }
+    .flow-status.next { background: rgba(13,148,136,0.15); color: #0D9488; }
+    .flow-empty {
+      padding: 14px 0; text-align: center;
+      color: #888; font-size: 0.85rem; line-height: 1.5;
+    }
+    .flow-empty a { color: var(--accent); font-weight: 700; }
+    .flow-weekly {
+      background: #f8fafc; border-left: 3px solid var(--accent);
+      padding: 8px 12px; margin-top: 12px;
+      font-size: 0.82rem; color: var(--primary);
+      border-radius: 6px; font-weight: 600;
+    }
+
     /* ── This Week ── */
     .todo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
     .todo-item { display: flex; align-items: flex-start; gap: 9px; }
@@ -286,6 +330,17 @@
       </a>
     </div>
 
+    <!-- v0.5.195 — Year Flow: timeline of planning cadence (annual + Q1/Q2/Q3) -->
+    <div class="dash-panel">
+      <div class="panel-head">
+        <span class="panel-title">&#x1F4C5; Year Flow</span>
+        <a class="panel-link" href="cadence.html">Edit &#x203A;</a>
+      </div>
+      <div class="panel-body" id="yearFlow">
+        <div class="flow-empty">Loading&hellip;</div>
+      </div>
+    </div>
+
     <!-- 1-Year Goal -->
     <div class="dash-panel">
       <div class="panel-head">
@@ -408,7 +463,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.194</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.195</p>
 
   </div>
 
@@ -630,6 +685,85 @@
       } else {
         pillsEl.innerHTML = '<span style="font-size:0.78rem;color:#aaa;">No core values set yet.</span>';
       }
+
+      // ── Year Flow panel (v0.5.195) — planning cadence timeline ──
+      // Fetched separately because business_cadence may not exist yet on accounts
+      // that haven't run the v0.5.192 migration; renderYearFlow handles that gracefully.
+      try {
+        const { data: cad, error: cadErr } = await supabase
+          .from('business_cadence')
+          .select('*')
+          .eq('organisation_id', orgId)
+          .maybeSingle();
+        if (cadErr) {
+          console.warn('Year flow load:', cadErr.message);
+          renderYearFlow(null);
+        } else {
+          renderYearFlow(cad);
+        }
+      } catch (e) {
+        console.warn('Year flow load error:', e);
+        renderYearFlow(null);
+      }
+    }
+
+    // v0.5.195 — Year Flow vertical timeline on the home dashboard.
+    function fmtFlowTime(t) {
+      if (!t) return '';
+      const parts = String(t).split(':');
+      const h = parseInt(parts[0], 10);
+      const m = parts[1] || '00';
+      const period = h >= 12 ? 'pm' : 'am';
+      const h12 = ((h + 11) % 12) + 1;
+      return h12 + ':' + m + period;
+    }
+    function renderYearFlow(cadence) {
+      const wrap = document.getElementById('yearFlow');
+      if (!wrap) return;
+      if (!cadence) {
+        wrap.innerHTML = '<div class="flow-empty">Set your planning cadence to see your year flow.<br><a href="cadence.html">Set it up &rarr;</a></div>';
+        return;
+      }
+      const items = [];
+      if (cadence.last_annual_planning_date) items.push({ icon: '🎯', label: 'Annual Planning', date: cadence.last_annual_planning_date });
+      if (cadence.q1_session_date) items.push({ icon: '1', label: 'Q1 Session', date: cadence.q1_session_date });
+      if (cadence.q2_session_date) items.push({ icon: '2', label: 'Q2 Session', date: cadence.q2_session_date });
+      if (cadence.q3_session_date) items.push({ icon: '3', label: 'Q3 Session', date: cadence.q3_session_date });
+      if (cadence.annual_planning_date) items.push({ icon: '🎯', label: 'Annual Planning', date: cadence.annual_planning_date });
+      if (!items.length) {
+        wrap.innerHTML = '<div class="flow-empty">No planning dates set yet.<br><a href="cadence.html">Set up your cadence &rarr;</a></div>';
+        return;
+      }
+      items.sort((a, b) => a.date.localeCompare(b.date));
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const nextUpIdx = items.findIndex(i => i.date >= todayIso);
+      const html = items.map((it, idx) => {
+        let status = 'upcoming';
+        if (it.date < todayIso) status = 'past';
+        else if (idx === nextUpIdx) status = 'next';
+        const d = new Date(it.date + 'T00:00:00');
+        const dateLabel = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+        const statusLabel = { past: '✓ Done', next: 'Next up', upcoming: 'Upcoming' }[status];
+        return `
+          <div class="flow-row ${status}">
+            <div class="flow-dot">${it.icon}</div>
+            <div class="flow-info">
+              <div class="flow-label">${escapeHtml(it.label)}</div>
+              <div class="flow-date">${escapeHtml(dateLabel)}</div>
+            </div>
+            <div class="flow-status ${status}">${statusLabel}</div>
+          </div>`;
+      }).join('');
+      let weeklyLine = '';
+      if (cadence.weekly_meeting_day || cadence.weekly_meeting_time) {
+        const bits = [];
+        if (cadence.weekly_meeting_day) {
+          bits.push(cadence.weekly_meeting_day.charAt(0).toUpperCase() + cadence.weekly_meeting_day.slice(1) + 's');
+        }
+        if (cadence.weekly_meeting_time) bits.push('at ' + fmtFlowTime(cadence.weekly_meeting_time));
+        weeklyLine = `<div class="flow-weekly">📆 Weekly meeting: ${escapeHtml(bits.join(' '))}</div>`;
+      }
+      wrap.innerHTML = html + weeklyLine;
     }
 
     // ── Parent dashboard (v0.5.155) — rollup view across parent + children ──

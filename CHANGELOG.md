@@ -4,6 +4,45 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.195
+- **Year Flow panel on the home dashboard.** User: "Add the dates on dashboard so it looks like a flow for the year."
+
+### What it shows
+A vertical timeline of the planning cadence for the year — up to 5 events sorted by date:
+1. **🎯 Annual Planning** (from `last_annual_planning_date`)
+2. **1** Q1 Session
+3. **2** Q2 Session
+4. **3** Q3 Session
+5. **🎯 Annual Planning** (from `annual_planning_date` — the next one)
+
+Each row has:
+- A dot (numbered 1/2/3 for quarters, 🎯 for annual).
+- Label + formatted date (`5 Jul 2026`).
+- Status pill: `✓ Done` for past, `Next up` (highlighted teal with halo) for the next future event, `Upcoming` for later ones.
+
+Below the timeline, a teal-bordered line rolls up the weekly cadence: `📆 Weekly meeting: Mondays at 9:00am`.
+
+### Where it sits
+Right after the Stat tiles (Open Issues / Goals On Track / Next Meeting) and before the 1-Year Goal panel — so the user sees the macro rhythm before drilling into the year's headline goal.
+
+### Empty states
+- No cadence row (or `business_cadence` table doesn't exist yet): *"Set your planning cadence to see your year flow → Set it up"* (teal link to `cadence.html`).
+- Row exists but no dates filled in: *"No planning dates set yet → Set up your cadence"*.
+
+### Edit link
+The panel head has an **Edit ›** link that goes to `cadence.html`.
+
+### Implementation
+- New CSS rules (`.flow-row`, `.flow-dot`, `.flow-info`, `.flow-label`, `.flow-date`, `.flow-status`, `.flow-empty`, `.flow-weekly`) added to the inline `<style>` in `business.html`.
+- New `<div class="dash-panel">` inserted into `#standardMode` between the stat-row and the 1-Year Goal panel.
+- New `renderYearFlow(cadence)` function: sorts events by date, classifies each as `past` / `next` / `upcoming` against today's ISO date, renders the rows + weekly line.
+- `renderDashboard()` now does a follow-up Supabase query against `business_cadence` (caught defensively) and calls `renderYearFlow` with the result.
+
+### Out of scope
+- Parent-mode (`renderParentMode`) — holding-company dashboard wasn't touched in this version. Easy follow-up if needed (drop in the same panel + render call).
+
+---
+
 ## v0.5.194
 - **Dropped Q4 from the Planning Cadence form.** User: "Remove q4 date. The flow is Annual planning then q1, 2, 3."
 
