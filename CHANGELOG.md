@@ -4,6 +4,30 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.205
+- **Dynamic Run Weekly Meeting button label so the user can see the meeting was persisted.** User: "The weekly meetings I still think it seems to not be working with meetings that when pressing starts it's not persisting and meeting available."
+
+### Diagnosis
+Meetings ARE persisting — `wireRunMeetingButton` inserts via the admin+coach write policy on `meetings`, which works for the org owner. But after v0.5.202 dropped the Next Meeting stat tile and v0.5.204 renamed "This Week" → "Open To-Dos", the home dashboard had NO visible signal that a meeting existed for this week. Tapping "Run Weekly Meeting" a second time silently opened the same meeting (the click handler does find-or-create), but the unchanged button label made it feel like nothing was saved.
+
+### Fix
+In `renderDashboard`, after computing `thisWeekMeeting`, the `#runWeeklyMeetingBtn` label is now set dynamically:
+- **`🗓️ Resume This Week's Meeting`** — a non-completed meeting exists for this Monday (visible feedback the meeting was persisted).
+- **`🗓️ Run Weekly Meeting`** — no meeting for this Monday yet, OR this week's meeting was already completed (so the user starts fresh next time).
+
+Same click handler (`openOrCreateWeeklyMeeting`); just clearer labelling.
+
+### Side benefits
+- A completed meeting for this week reverts to the "Run" label so the user can start a follow-up if needed.
+- Meetings *scheduled for future weeks* don't affect this button (it only checks `thisWeekMeeting` — the row where `meeting_date === thisMonday`).
+
+### No data change
+`meetings` table + RLS untouched. Reachability check: from Operations → Weekly Meetings → `meeting.html`, all persisted meetings are still listed normally with delete + open buttons. The fix is purely about visible feedback on the home dashboard.
+
+### No SQL.
+
+---
+
 ## v0.5.204
 - **Standalone To-Do List + cross-meeting todo aggregation + 12 Month Goal moved to Strategy.** User: "This week's to do isn't showing anywhere. Should this be a box and sql in operations?" → "Yes" + "I think 12 month goal should go from operations to strategic area (at the bottom)."
 

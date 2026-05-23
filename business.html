@@ -434,7 +434,7 @@
       </div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.204</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.205</p>
 
   </div>
 
@@ -543,6 +543,19 @@
       const upcoming = meetings.slice().filter(m => m.status !== 'completed' && m.meeting_date >= todayIso)
                                 .sort((a,b) => (a.meeting_date||'').localeCompare(b.meeting_date||''))[0];
       const nextMeeting = thisWeekMeeting || upcoming || meetings.find(m => m.status !== 'completed') || meetings[0];
+
+      // v0.5.205 — Make the Run Weekly Meeting button label reflect what's
+      // there. If a meeting for this week exists and isn't completed, the
+      // button shows "Resume This Week's Meeting" — visible feedback that
+      // the meeting was persisted and is still active. Otherwise it shows
+      // the default "Run Weekly Meeting" label.
+      const meetingBtn = document.getElementById('runWeeklyMeetingBtn');
+      if (meetingBtn) {
+        const active = thisWeekMeeting && thisWeekMeeting.status !== 'completed';
+        meetingBtn.innerHTML = active
+          ? '\u{1F5D3}\u{FE0F}&nbsp; Resume This Week’s Meeting'
+          : '\u{1F5D3}\u{FE0F}&nbsp; Run Weekly Meeting';
+      }
 
       // v0.5.204 — View Meeting link in the old "This Week" panel was removed
       // (the panel is now "Open To-Dos" with a "View All ›" link → todos.html).
