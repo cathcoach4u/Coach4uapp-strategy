@@ -54,6 +54,7 @@
     .bottom-nav-icon{font-size:20px;line-height:1}
   </style>
   <script src="js/active-session.js" defer></script>
+  <script src="js/active-meeting.js" defer></script>
   <script src="js/mobile-keyboard.js" defer></script>
   <script src="js/active-org.js" defer></script>
 </head>
@@ -210,6 +211,14 @@
           showToast('Delete failed — ' + error.message, 'error');
           btn.disabled = false;
         } else {
+          // v0.5.207 — if the deleted meeting is the one the floating pill
+          // is pointing at, clear the pill so it doesn't link to a 404.
+          try {
+            const cached = JSON.parse(localStorage.getItem('coach4u_active_meeting') || 'null');
+            if (cached && String(cached.id) === String(id) && window.activeMeeting) {
+              window.activeMeeting.clear();
+            }
+          } catch(_) {}
           showToast('Meeting deleted', 'success');
           loadMeetings();
         }

@@ -77,7 +77,15 @@
     .item-list li .item-meta{font-size:.75rem;color:#aaa;white-space:nowrap}
     .item-del-btn{background:none;border:none;cursor:pointer;color:#ccc;font-size:1rem;padding:0 4px;line-height:1}
     .item-del-btn:hover{color:#991b1b}
-    .item-add-row{display:flex;gap:8px}
+    .item-add-row{display:flex;gap:8px;flex-wrap:wrap}
+    /* v0.5.207 — let the input take the full width on phones; the select + Add
+       button drop to a second row instead of getting truncated. */
+    .item-add-row .item-add-input{flex:1 1 100%;min-width:0}
+    .item-add-row .field-select{flex:1 1 auto;min-width:0}
+    .item-add-row .ws-btn{flex:0 0 auto}
+    @media (min-width: 520px){
+      .item-add-row .item-add-input{flex:1 1 auto}
+    }
     .item-add-input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:.88rem;color:var(--text)}
     .item-add-input:focus{outline:none;border-color:var(--accent)}
     .meeting-timer-bar{display:flex;align-items:center;gap:12px;background:#f0fdfa;border-radius:8px;padding:10px 14px;margin-bottom:16px}
@@ -101,6 +109,7 @@
     .bottom-nav-icon{font-size:20px;line-height:1}
   </style>
   <script src="js/active-session.js" defer></script>
+  <script src="js/active-meeting.js" defer></script>
   <script src="js/mobile-keyboard.js" defer></script>
   <script src="js/active-org.js" defer></script>
 </head>
@@ -243,6 +252,18 @@
 
     document.getElementById('ws-title').innerHTML='&#x1F5D3;&#xFE0F; '+fmtDate(_currentMeeting.meeting_date);
     document.getElementById('ws-sub').textContent=(_currentMeeting.quarter?_currentMeeting.quarter+' — ':'')+'Work through the agenda below.';
+
+    // v0.5.207 — Floating "Meeting in progress" pill across all pages.
+    // Set the pill whenever the meeting isn't completed yet; clear it once
+    // the user marks it completed (via timer end or the status dropdown).
+    if (window.activeMeeting) {
+      if (_currentMeeting.status === 'completed') {
+        window.activeMeeting.clear();
+      } else {
+        window.activeMeeting.set(_currentMeeting.id, fmtDate(_currentMeeting.meeting_date), orgId);
+      }
+    }
+
     renderDetail();
   }
 
@@ -252,8 +273,9 @@
     if(_timerInterval){clearInterval(_timerInterval);_timerInterval=null;_timerStart=null;}
     c.innerHTML=`
       <div class="meeting-detail">
-        <div class="meeting-detail-heading">
-          <div><div class="meeting-detail-title">&#x1F5D3; ${fmtDate(m.meeting_date)}</div></div>
+        <!-- v0.5.207 — duplicate date dropped; ws-title at the top already shows it.
+             Status dropdown now sits alone, right-aligned, above the timer bar. -->
+        <div class="meeting-detail-heading" style="justify-content:flex-end;">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <select class="field-select" id="meeting-status">
               <option value="scheduled" ${m.status==='scheduled'?'selected':''}>Scheduled</option>
@@ -274,7 +296,7 @@
           ${agendaSection(4,'Customer &amp; Team Highlights','5 min',renderHeadlines())}
           ${agendaSection(5,'To-Do List','5 min',renderTodos())}
           ${agendaSection(6,'Issues &#x2014; Discuss &amp; Resolve','60 min',renderIssuesView())}
-          ${agendaSection(7,'Conclude &amp; Rate','5 min',renderConclude())}
+          ${agendaSection(7,'Conclude','5 min',renderConclude())}
         </div>
       </div>
     `;
@@ -283,6 +305,11 @@
       const { error } = await supabase.from('meetings').update({ status }).eq('id', m.id);
       if (error) { console.warn('Update meeting status failed:', error.message); showToast('Update failed','error'); return; }
       _currentMeeting.status = status;
+      // v0.5.207 — keep floating pill in sync with status
+      if (window.activeMeeting) {
+        if (status === 'completed') window.activeMeeting.clear();
+        else window.activeMeeting.set(m.id, fmtDate(m.meeting_date), orgId);
+      }
       showToast('Status updated','success');
     });
     const timerBtn=c.querySelector('#timer-btn'),timerEl=c.querySelector('#timer-elapsed');
@@ -297,7 +324,11 @@
         clearInterval(_timerInterval);_timerInterval=null;_timerStart=null;
         timerEl.classList.add('hidden');timerBtn.textContent='▶ Start Meeting';timerBtn.classList.remove('running');
         const { error } = await supabase.from('meetings').update({ status:'completed' }).eq('id', m.id);
-        if (!error) { c.querySelector('#meeting-status').value='completed'; _currentMeeting.status='completed'; }
+        if (!error) {
+          c.querySelector('#meeting-status').value='completed';
+          _currentMeeting.status='completed';
+          if (window.activeMeeting) window.activeMeeting.clear();  // v0.5.207
+        }
         else console.warn('Timer end update failed:', error.message);
       }
     });
@@ -382,12 +413,28 @@
     return `<ul class="item-list" id="headlines-list">${items.length?items.map(h=>`<li><span class="item-text">${escHtml(h.description)}</span><span class="item-meta">${h.type==='good_news'?'&#x1F4A1;':'&#x26A0;'}</span><button class="item-del-btn" data-hid="${h.id}">&times;</button></li>`).join(''):'<li style="color:#aaa;font-style:italic;">No headlines yet.</li>'}</ul><div class="item-add-row"><select class="field-select" id="headline-type" style="flex-shrink:0;padding:7px 10px;"><option value="good_news">&#x1F4A1; Good News</option><option value="headline">&#x26A0; Headline</option></select><input type="text" class="item-add-input" id="headline-input" placeholder="Add a headline..."/><button class="ws-btn" id="add-headline-btn" style="padding:8px 14px;">Add</button></div>`;
   }
   function renderTodos(){
-    const items=_todos;
-    return `<ul class="item-list" id="todos-list">${items.length?items.map(t=>`<li><input type="checkbox" ${t.done?'checked':''} data-tid="${t.id}" style="flex-shrink:0;"/><span class="item-text" style="${t.done?'text-decoration:line-through;color:#aaa':''}">${escHtml(t.description)}</span><span class="item-meta">${t.owner?escHtml(t.owner):''}</span><button class="item-del-btn" data-tid="${t.id}">&times;</button></li>`).join(''):'<li style="color:#aaa;font-style:italic;">No todos yet.</li>'}</ul><div class="item-add-row"><input type="text" class="item-add-input" id="todo-input" placeholder="Add a to-do..."/>${ownerSelectHtml('todo-owner', '', { maxWidth: '140px' })}<button class="ws-btn" id="add-todo-btn" style="padding:8px 14px;">Add</button></div>`;
+    // v0.5.207 — same view + Edit pattern as sections 2/3/6. Items shown as a
+    // clean checklist (checkboxes still tap-able to mark done during the
+    // meeting — common action). The "Edit Full List ›" link goes to the new
+    // dedicated todos.html page where users add / delete / edit due-dates.
+    const head = editRow('todos.html', 'Edit Full List');
+    const items = _todos;
+    if (!items.length) {
+      return head + '<div class="agenda-view-empty">No to-dos yet. Tap Edit Full List to add one.</div>';
+    }
+    const rows = items.map(t => {
+      const owner = (t.owner || '').trim();
+      const meta = owner ? `<div class="meta"><span class="owner">${escHtml(owner)}</span></div>` : '';
+      return `<li class="agenda-view-row"><input type="checkbox" ${t.done ? 'checked' : ''} data-tid="${escHtml(t.id)}" style="margin-top:3px;flex-shrink:0;width:18px;height:18px;cursor:pointer;"/><div class="body"><div class="desc" style="${t.done ? 'text-decoration:line-through;color:#aaa;font-weight:500;' : ''}">${escHtml(t.description)}</div>${meta}</div></li>`;
+    }).join('');
+    return head + `<ul class="agenda-view-list" id="todos-list">${rows}</ul>`;
   }
   function renderConclude(){
+    // v0.5.207 — rating buttons removed. Section is just "Conclude" now —
+    // a notes box for cascading messages + a Save button. Rating column
+    // stays in the DB (historical data preserved), just isn't editable.
     const m = _currentMeeting;
-    return `<div style="margin-bottom:16px;"><span class="label-sm">Meeting Rating (1&#x2013;10)</span><div class="rating-btns">${[...Array(10)].map((_,i)=>`<button class="rating-btn ${m.rating===(i+1)?'selected':''}" data-rating="${i+1}">${i+1}</button>`).join('')}</div></div><div><span class="label-sm">Notes / Cascading Messages</span><textarea class="notes-textarea" id="meeting-notes" placeholder="Any action items or messages to cascade to the team...">${escHtml(m.notes||'')}</textarea><button class="ws-btn-secondary" id="save-notes-btn" style="margin-top:8px;">Save Notes</button></div>`;
+    return `<div><span class="label-sm">Notes / Cascading Messages</span><textarea class="notes-textarea" id="meeting-notes" placeholder="Any action items or messages to cascade to the team...">${escHtml(m.notes||'')}</textarea><button class="ws-btn-secondary" id="save-notes-btn" style="margin-top:8px;">Save Notes</button></div>`;
   }
 
   function wireHeadlines(c){
@@ -416,21 +463,9 @@
   }
 
   function wireTodos(c){
-    const addBtn = c.querySelector('#add-todo-btn');
-    if (addBtn) addBtn.addEventListener('click', async () => {
-      const desc=c.querySelector('#todo-input').value.trim();
-      const owner=c.querySelector('#todo-owner').value.trim();
-      if(!desc)return;
-      const { data, error } = await supabase
-        .from('meeting_todos')
-        .insert({ meeting_id: _currentMeeting.id, description: desc, owner: owner||null, done: false })
-        .select()
-        .single();
-      if (error || !data) { console.warn('Insert todo failed:', error && error.message); showToast('Failed','error'); return; }
-      _todos.push(data);
-      showToast('Added','success');
-      renderDetail();
-    });
+    // v0.5.207 — Add + delete moved to todos.html (cross-meeting view). The
+    // meeting view only needs checkbox tap → mark done, the key during-meeting
+    // action.
     c.querySelectorAll('input[type=checkbox][data-tid]').forEach(cb=>cb.addEventListener('change', async () => {
       const tid = cb.dataset.tid;
       const todo = _todos.find(t => String(t.id) === String(tid));
@@ -438,25 +473,15 @@
       const { error } = await supabase.from('meeting_todos').update({ done: newDone }).eq('id', tid);
       if (error) { console.warn('Update todo failed:', error.message); cb.checked = !cb.checked; showToast('Failed','error'); return; }
       if (todo) todo.done = newDone;
-    }));
-    c.querySelectorAll('.item-del-btn[data-tid]').forEach(btn=>btn.addEventListener('click', async () => {
-      const tid = btn.dataset.tid;
-      const { error } = await supabase.from('meeting_todos').delete().eq('id', tid);
-      if (error) { console.warn('Delete todo failed:', error.message); showToast('Failed','error'); return; }
-      _todos = _todos.filter(t => String(t.id) !== String(tid));
-      renderDetail();
+      // Strike-through the text without re-rendering
+      const row = cb.closest('.agenda-view-row');
+      const desc = row && row.querySelector('.desc');
+      if (desc) desc.style.cssText = newDone ? 'text-decoration:line-through;color:#aaa;font-weight:500;' : '';
     }));
   }
 
   function wireConclude(c){
-    c.querySelectorAll('.rating-btn').forEach(btn=>btn.addEventListener('click', async () => {
-      const rating=parseInt(btn.dataset.rating);
-      const { error } = await supabase.from('meetings').update({ rating }).eq('id', _currentMeeting.id);
-      if (error) { console.warn('Update rating failed:', error.message); showToast('Failed','error'); return; }
-      _currentMeeting.rating = rating;
-      c.querySelectorAll('.rating-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.rating) === rating));
-      showToast('Rating saved','success');
-    }));
+    // v0.5.207 — rating button wiring removed; only notes save remains.
     const notesBtn=c.querySelector('#save-notes-btn');
     if (notesBtn) notesBtn.addEventListener('click', async () => {
       const notes=c.querySelector('#meeting-notes').value;

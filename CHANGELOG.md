@@ -4,6 +4,46 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.207
+Four user asks bundled (all about the weekly meeting UX):
+1. *"Can it be that there is green light flashing that can be click on when a meeting is running."*
+2. *"I don't think the Todo list I'm weekly meeting is structured to show the items and then the edit button. Can't see the to do well on phone."*
+3. *"When a new meeting has started it is showing 2 dates. Clean this."*
+4. *"Remove the rating for meeting and just have the last point conclude."*
+
+### (1) Floating "Meeting in progress" pill — new `js/active-meeting.js`
+Companion to the existing `active-session.js` (planning sessions pill). When `run-meeting.html` loads a meeting whose status isn't `'completed'`, it calls `window.activeMeeting.set(id, label, orgId)` → writes to `localStorage.coach4u_active_meeting`.
+
+The script renders a fixed bottom-centre **bright green pill** ("● 🗓️ Meeting in progress — Mon 30 May →") on every business-level page (added via sed to all 30 pages that already load `active-session.js`). Pill animates with a `box-shadow` pulse + inner-dot ripple. Tap → `run-meeting.html?id=…`.
+
+Hide rules:
+- Doesn't render on the meeting's own workspace page (you're already there).
+- Hides when the active org doesn't match the meeting's org (so switching businesses doesn't show a misleading pill).
+
+Auto-clears when:
+- Status dropdown changes to `'completed'`.
+- Timer-end button stops the meeting.
+- Meeting is deleted from `meeting.html` (the delete handler also clears the pill if it was pointing at that meeting).
+
+### (2) Section 5 (To-Do List) now uses the view + Edit pattern
+Matches sections 2/3/6 from v0.5.206. Items shown as a clean checklist (descriptions, owner, checkbox still tap-able to mark done — the key during-meeting action). The **"Edit Full List ›"** link at top-right goes to `todos.html` (the cross-meeting page from v0.5.204) where users add / delete / change due-dates. Inline add row + delete buttons removed from the meeting view — they're now on `todos.html` only. Strike-through on completed todos updates in place (no re-render).
+
+### Mobile add-row fix (Section 4 — Customer & Team Highlights)
+The `.item-add-row` flex container now wraps with `flex-wrap: wrap`. On phones (< 520px) the input takes the full row width and the type-select + Add button drop to a second row. Previously the type-select got truncated to "— Ow" on iPhone (visible in the user's screenshot). Above 520px the original single-row layout returns.
+
+### (3) Duplicate date cleaned
+`run-meeting.html` was rendering the meeting date twice — once in the `ws-title` page header and again in `meeting-detail-title` at the top of the agenda card. Dropped the inner duplicate; the status dropdown now sits alone (right-aligned) above the timer bar. Page header at the top is now the single source of truth for the meeting date.
+
+### (4) Rating removed from Section 7
+- Section title: `"Conclude & Rate"` → `"Conclude"`.
+- `renderConclude()` no longer emits the 1–10 rating buttons; only the Notes / Cascading Messages textarea + Save Notes button remain.
+- `wireConclude()` no longer wires the rating button handlers (only the notes save).
+- The `meetings.rating` column **stays in the schema** — historical ratings preserved; new meetings just leave it null.
+
+### No SQL.
+
+---
+
 ## v0.5.206
 - **Weekly meeting agenda sections now show the items inline with an Edit ›  link.** User: "Can the weekly meetings be structured so it shows the items and then has an edit button similar to the dashboard. ... if I click on quarterly goal I see the goals and if I need to edit them I click on edit. And this is the same do all of the sections in weekly meeting."
 
