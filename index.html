@@ -206,6 +206,19 @@
       font-size: 0.78rem; color: #aaa; font-style: italic;
     }
 
+    /* ── Mobile tidy-up (v0.5.150) ── */
+    @media (max-width: 600px) {
+      /* Give the business name its own line so it doesn't wrap mid-word
+         when the pills + Open + ⋮ all compete for the same row. */
+      .biz-card-head { gap: 6px; row-gap: 8px; }
+      .biz-name { flex-basis: 100%; flex-grow: 1; font-size: 1rem; line-height: 1.25; margin-bottom: 2px; }
+      .parent-pill, .role-pill { font-size: 0.58rem; padding: 2px 7px; }
+      .biz-open { font-size: 0.74rem; padding: 6px 10px; }
+      /* Keep the indent narrower so the inner content has more room */
+      .biz-card.is-child { margin-left: 22px; }
+      .biz-card.is-child::before { left: -18px; font-size: 1rem; top: 16px; }
+    }
+
     /* ── Snapshot grid ── */
     .snapshot-grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
@@ -414,7 +427,7 @@
       <button id="inviteUserBtn" class="add-btn add-btn-secondary">+ Invite User</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.149</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.150</p>
 
   </div>
 
@@ -769,12 +782,18 @@
         kids.forEach(k => renderOrder.push({ mem: k, isChild: true, hasChildren: false }));
       });
 
-      // Eligible parents (for the inline picker on each row) = top-level admin
-      // businesses in this account, excluding "self". Depth-1 is enforced because
-      // we ONLY offer top-level rows as candidates. A row that itself has children
-      // cannot be made a child (its parent picker is shown as disabled with a hint).
-      const topLevelAdminCandidates = myMemberships.filter(m =>
+      // Candidate pool for the per-row pickers.
+      // - "Parent" picker: candidates are top-level admin orgs (other than self).
+      //   Depth-1 is enforced because we ONLY offer top-level rows — never children.
+      // - "Add child" picker: candidates are STANDALONE admin orgs (no parent of
+      //   their own AND no children of their own). Adding a row that itself has
+      //   children would create a depth-2 chain via those existing grandchildren.
+      const parentCandidates = myMemberships.filter(m =>
         m.role === 'admin' && !m.organisations.parent_organisation_id);
+      const addChildCandidates = myMemberships.filter(m =>
+        m.role === 'admin' &&
+        !m.organisations.parent_organisation_id &&
+        !childrenByParent.has(m.organisations.id));
 
       wrap.innerHTML = renderOrder.map((entry) => {
         const m = entry.mem;
@@ -788,28 +807,53 @@
         const isFirst = topIdx === 0;
         const isLast  = topIdx === topLevel.length - 1;
 
-        // Build the inline parent picker (admin only).
+        // Build the inline controls (admin only). Three cases:
+        //   1. Row is already a parent           → "Status: Parent" + "Add child" picker
+        //   2. Row is a child (has currentParentId) → "Parent" picker (can change/clear)
+        //   3. Row is standalone                 → "Parent" picker AND "Add child" picker
         let parentControl = '';
         if (isAdmin) {
+          const showAddChild = !currentParentId && addChildCandidates.some(c => c.organisation_id !== orgId);
+
           if (hasChildren) {
-            // Has children → can't itself be a child (depth-1 rule). Show disabled.
+            // Already a parent. Locked out of the Parent picker (depth-1), but can add more children.
+            const kids = childrenByParent.get(orgId) || [];
+            const kidNames = kids.map(k => k.organisations.name).join(', ');
             parentControl = `
               <div class="biz-parent-row">
-                <span class="biz-parent-label">Parent</span>
-                <span class="biz-parent-disabled">Has children — can't have a parent</span>
+                <span class="biz-parent-label">Children</span>
+                <span class="biz-parent-disabled">${escHtml(kidNames)}</span>
               </div>`;
           } else {
-            const candidates = topLevelAdminCandidates.filter(c => c.organisation_id !== orgId);
-            const opts = '<option value="">— None —</option>' +
-              candidates.map(c =>
-                `<option value="${escHtml(c.organisation_id)}"${
-                  c.organisation_id === currentParentId ? ' selected' : ''
-                }>${escHtml(c.organisations.name)}</option>`
-              ).join('');
+            // Row is a child OR standalone — show Parent picker
+            const parentOpts = '<option value="">— None —</option>' +
+              parentCandidates
+                .filter(c => c.organisation_id !== orgId)
+                .map(c =>
+                  `<option value="${escHtml(c.organisation_id)}"${
+                    c.organisation_id === currentParentId ? ' selected' : ''
+                  }>${escHtml(c.organisations.name)}</option>`
+                ).join('');
             parentControl = `
               <div class="biz-parent-row">
                 <span class="biz-parent-label">Parent</span>
-                <select class="biz-parent-select" data-org-id="${escHtml(orgId)}">${opts}</select>
+                <select class="biz-parent-select" data-org-id="${escHtml(orgId)}">${parentOpts}</select>
+              </div>`;
+          }
+
+          // "Add child" picker — only when this row has no parent of its own,
+          // AND at least one standalone candidate exists. (A row that's a child
+          // can't itself become a parent — that would create depth-2.)
+          if (showAddChild) {
+            const childOpts = '<option value="">Pick a business…</option>' +
+              addChildCandidates
+                .filter(c => c.organisation_id !== orgId)
+                .map(c => `<option value="${escHtml(c.organisation_id)}">${escHtml(c.organisations.name)}</option>`)
+                .join('');
+            parentControl += `
+              <div class="biz-parent-row biz-add-child-row">
+                <span class="biz-parent-label">Add child</span>
+                <select class="biz-add-child-select" data-org-id="${escHtml(orgId)}">${childOpts}</select>
               </div>`;
           }
         }
@@ -902,6 +946,29 @@
             if (mem) mem.organisations.parent_organisation_id = newParentId;
             try { localStorage.removeItem('coach4u_biz_list_cache'); } catch (_) {}
             renderBusinesses(); // re-render so the tree + other pickers' candidate lists refresh
+          });
+        }
+        // ── Inline "Add child" picker — auto-save on change (v0.5.150) ──
+        const addChildSel = card.querySelector('.biz-add-child-select');
+        if (addChildSel) {
+          addChildSel.addEventListener('change', async () => {
+            const childOrgId = addChildSel.value;
+            if (!childOrgId) return;
+            addChildSel.disabled = true;
+            const { error } = await sb
+              .from('organisations')
+              .update({ parent_organisation_id: orgId })
+              .eq('id', childOrgId);
+            addChildSel.disabled = false;
+            if (error) {
+              alert('Could not add child: ' + error.message);
+              addChildSel.value = '';
+              return;
+            }
+            const childMem = myMemberships.find(x => x.organisation_id === childOrgId);
+            if (childMem) childMem.organisations.parent_organisation_id = orgId;
+            try { localStorage.removeItem('coach4u_biz_list_cache'); } catch (_) {}
+            renderBusinesses();
           });
         }
       });

@@ -4,6 +4,23 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.150
+- **Two fixes on the account dashboard biz table.**
+- **(1) Mobile layout** — names like "IAS General" / "IAS Outsourcing" were wrapping mid-word on phones because the `biz-card-head` row was crammed with: name + Parent pill + admin pill + reorder buttons + Open + ⋮. With `flex: 1` on the name and `flex-wrap: wrap` on the parent, the name shrank instead of wrapping the OTHER items.
+  - Added `@media (max-width: 600px)` rule that forces `.biz-name { flex-basis: 100% }` so the name always claims its own line. The pills, reorder, Open, ⋮ wrap to a second row.
+  - Pills shrink slightly (0.58rem font, 2×7 padding) and Open button (0.74rem, 6×10) for tighter mobile fit.
+  - Child indent tightened (margin-left 28 → 22, marker left -22 → -18, top 18 → 16) to free up inner-content width.
+- **(2) "Add child" picker.** User: "There needs to be a clearer option to pick a child I think." Previously each row only had a "Parent" picker (which sets *this* row's parent). To make IASHQ a parent you had to go to each child and configure it from there — top-down thinking was missing.
+  - Each row's parent-control logic now branches by state:
+    - **Standalone (no parent, no children)** → `Parent: [— None — ▾]` + `Add child: [Pick a business… ▾]`. Either direction works.
+    - **Child (has a parent set)** → `Parent: [<current> ▾]` only. Can change or clear.
+    - **Parent (has children)** → `Children: <names>` read-only chip-list. No Parent picker (depth-1 lock).
+  - New `addChildCandidates` pool: admin rows in the account that are themselves standalone (no parent of their own AND no children of their own). Picking one fires `UPDATE organisations SET parent_organisation_id = <current row id> WHERE id = <picked>` and re-renders.
+  - Replaced the previous "Has children — can't have a parent" hint with a list of the children, which is more informative.
+- **No SQL change.**
+
+---
+
 ## v0.5.149
 - **Account dashboard becomes a compact admin table.** User: "I don't understand why it can't just be more of an admin dashboard where I can reallocate in a table … I don't need the revenue and open issues etc in the account area."
 - **Removed from `index.html`:**
