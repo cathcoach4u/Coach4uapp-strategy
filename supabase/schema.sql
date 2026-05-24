@@ -1131,6 +1131,138 @@ CREATE TRIGGER link_pending_invites_on_signup
 
 
 -- =============================================================
+-- 14. POST-v0.5.132 ADDITIONS (catch-up section)
+-- =============================================================
+-- Everything below was originally shipped as per-version delta files
+-- (supabase/v0.5.NNN-delta.sql). Captured here so a fresh install via
+-- schema.sql alone produces the current production schema.
+
+-- v0.5.140: organisations.sort_order is already declared above; nothing to do.
+
+-- v0.5.145: parent / child business relationships (depth 1, nullable).
+ALTER TABLE public.organisations
+  ADD COLUMN IF NOT EXISTS parent_organisation_id uuid
+    REFERENCES public.organisations(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'organisations_no_self_parent'
+  ) THEN
+    ALTER TABLE public.organisations
+      ADD CONSTRAINT organisations_no_self_parent CHECK (parent_organisation_id <> id);
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS organisations_parent_idx
+  ON public.organisations(parent_organisation_id);
+
+-- v0.5.145 + v0.5.197: children inherit parent strategy + cadence (SELECT only).
+DROP POLICY IF EXISTS "children read parent core_values" ON public.core_values;
+CREATE POLICY "children read parent core_values" ON public.core_values
+  FOR SELECT USING (
+    organisation_id IN (
+      SELECT parent_organisation_id FROM public.organisations
+      WHERE id IN (SELECT public.user_org_ids(auth.uid()))
+        AND parent_organisation_id IS NOT NULL
+    )
+  );
+DROP POLICY IF EXISTS "children read parent core_focus" ON public.core_focus;
+CREATE POLICY "children read parent core_focus" ON public.core_focus
+  FOR SELECT USING (
+    organisation_id IN (
+      SELECT parent_organisation_id FROM public.organisations
+      WHERE id IN (SELECT public.user_org_ids(auth.uid()))
+        AND parent_organisation_id IS NOT NULL
+    )
+  );
+DROP POLICY IF EXISTS "children read parent targets" ON public.targets;
+CREATE POLICY "children read parent targets" ON public.targets
+  FOR SELECT USING (
+    organisation_id IN (
+      SELECT parent_organisation_id FROM public.organisations
+      WHERE id IN (SELECT public.user_org_ids(auth.uid()))
+        AND parent_organisation_id IS NOT NULL
+    )
+  );
+
+-- v0.5.181: targets.five_year column (the simplified Targets worksheet).
+ALTER TABLE public.targets ADD COLUMN IF NOT EXISTS five_year text;
+
+-- v0.5.183: issues.category with CHECK + index. Existing rows backfill to 'current'.
+ALTER TABLE public.issues
+  ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT 'current';
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'issues_category_check'
+  ) THEN
+    ALTER TABLE public.issues
+      ADD CONSTRAINT issues_category_check
+      CHECK (category IN ('yearly','current','future'));
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS issues_org_category_idx
+  ON public.issues(organisation_id, category);
+
+-- v0.5.187: external Org Chart URL on organisations.
+ALTER TABLE public.organisations
+  ADD COLUMN IF NOT EXISTS org_chart_url text;
+
+-- v0.5.192 + v0.5.193 + v0.5.211: business_cadence (planning rhythm).
+-- One row per organisation: annual planning date(s), per-quarter session dates,
+-- weekly meeting day + time. Day-2 columns are optional second-day extensions.
+CREATE TABLE IF NOT EXISTS public.business_cadence (
+  organisation_id            uuid PRIMARY KEY REFERENCES public.organisations(id) ON DELETE CASCADE,
+  annual_planning_date       date,
+  annual_planning_date_2     date,
+  last_annual_planning_date  date,
+  q1_session_date            date,
+  q1_session_date_2          date,
+  q2_session_date            date,
+  q2_session_date_2          date,
+  q3_session_date            date,
+  q3_session_date_2          date,
+  q4_session_date            date,
+  q4_session_date_2          date,
+  weekly_meeting_day         text CHECK (
+    weekly_meeting_day IN ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
+  ),
+  weekly_meeting_time        time,
+  updated_at                 timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.business_cadence ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "members read cadence" ON public.business_cadence;
+CREATE POLICY "members read cadence" ON public.business_cadence
+  FOR SELECT USING (organisation_id IN (SELECT public.user_org_ids(auth.uid())));
+DROP POLICY IF EXISTS "admins write cadence" ON public.business_cadence;
+CREATE POLICY "admins write cadence" ON public.business_cadence
+  FOR ALL
+  USING (organisation_id IN (SELECT public.user_admin_org_ids(auth.uid())))
+  WITH CHECK (organisation_id IN (SELECT public.user_admin_org_ids(auth.uid())));
+-- v0.5.197: children read parent cadence so the Year Flow + plan-year inherit.
+DROP POLICY IF EXISTS "children read parent cadence" ON public.business_cadence;
+CREATE POLICY "children read parent cadence" ON public.business_cadence
+  FOR SELECT USING (
+    organisation_id IN (
+      SELECT parent_organisation_id FROM public.organisations
+      WHERE id IN (SELECT public.user_org_ids(auth.uid()))
+        AND parent_organisation_id IS NOT NULL
+    )
+  );
+
+-- v0.5.211: quarterly_sessions parity with annual_sessions (notes + links + commitments).
+ALTER TABLE public.quarterly_sessions ADD COLUMN IF NOT EXISTS notes text;
+ALTER TABLE public.quarterly_sessions ADD COLUMN IF NOT EXISTS external_links jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.quarterly_sessions ADD COLUMN IF NOT EXISTS commitments    jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+-- v0.5.216: members can INSERT issues (Add — yes, Delete/Update — no).
+DROP POLICY IF EXISTS "members add issues" ON public.issues;
+CREATE POLICY "members add issues" ON public.issues
+  FOR INSERT
+  WITH CHECK (
+    organisation_id IN (SELECT public.user_org_ids(auth.uid()))
+    AND category IN ('current','future')
+  );
+
+
+-- =============================================================
 -- DONE
 -- =============================================================
 -- Next steps (in code, not SQL):

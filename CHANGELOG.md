@@ -4,6 +4,62 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.220
+- **Audit cleanup pass: schema sync, Learn vault reorder, floating-pill coverage, .claude/ scaffolding.**
+
+### (1) Schema source-of-truth sync
+`supabase/schema.sql` was anchored at ~v0.5.132 and missed every schema change since:
+- `business_cadence` table + RLS (v0.5.192/193/197/211)
+- `issues.category` column + CHECK + index (v0.5.183)
+- `organisations.parent_organisation_id` + self-parent CHECK + index (v0.5.145)
+- `organisations.org_chart_url` (v0.5.187)
+- `targets.five_year` (v0.5.181)
+- `quarterly_sessions.notes/external_links/commitments` (v0.5.211)
+- `children read parent` SELECT policies on `core_values`, `core_focus`, `targets`, `business_cadence` (v0.5.145/197)
+- `"members add issues"` INSERT policy (v0.5.216)
+
+Added a new **§14 POST-v0.5.132 ADDITIONS** block at the bottom of `schema.sql` that catches everything up. All `ALTER` / `CREATE TABLE` / `CREATE POLICY` use `IF NOT EXISTS` + `DROP POLICY IF EXISTS` + `DO $$ ... pg_constraint` guards so it's idempotent on a populated DB.
+
+### (2) Learn vault audit
+**Strategy section reordered** to match the Strategy hub (Financials → Core Values → Core Focus → Marketing Strategy → Organisational Chart → Targets → 12 Month Goal). Renamed the "Leadership Team" card to **Organisational Chart** to match the hub copy. Targets card description simplified ("10-year, 5-year and 3-year goals — the longer horizons that anchor the year") since the 12-month is now its own card.
+
+**Operations section added a 5th card — ✅ To-Do List** linking to `todos.html`. Section count bumped 4 → 5 activities. (v0.5.204 added the standalone todos page but never surfaced in Learn.)
+
+### (3) Guide content sync
+- `learn/weekly-team-meeting.html` Common Pitfalls bullet 3 still said "the rating is how you find out the meeting is broken" — but the rating was removed in v0.5.207. Rewrote to "the quick what-worked / what-to-change round is how you find out the meeting is broken".
+- Three guides still used the pre-v0.5.184 term **"1-Year Plan"** instead of **"12-Month Goal"**: `learn/targets.html`, `learn/quarterly-goals.html`, `learn/annual-planning-session.html`. `replace_all` brought them in line.
+
+### (4) Floating-pill script coverage
+Added `<script src="js/active-session.js">` + `<script src="js/active-meeting.js">` defers to the 4 account-* carousel pages that were missing them:
+- `account-annual.html`
+- `account-quarterly.html`
+- `account-checkins.html`
+- `account-meetings.html`
+
+So the floating green meeting-in-progress pill + Resume planning session pill now follow the user across every business-level **and** account-level page (was 30 pages → now 34).
+
+### (5) CLAUDE.md file structure
+The File Structure section now lists:
+- `cadence.html` (added in v0.5.192)
+- `twelve-month-goal.html` (added in v0.5.184)
+- `todos.html` (added in v0.5.204)
+- `js/active-meeting.js` (added in v0.5.207)
+- `js/mobile-keyboard.js` (added in v0.5.130)
+
+Also flagged the `?category=current|future|yearly` query-string on `issues.html`.
+
+### (6) .claude/ scaffolding
+Two additions so Claude doesn't re-derive procedure every session:
+
+- **`.claude/skills/version-bump/SKILL.md`** — codifies the 7-file dance (VERSION → sw.js → 4 footers → CLAUDE.md → CHANGELOG.md). Pulls all the "where does the version number live" knowledge into one invokable skill. The two version-drift bugs (v0.5.143 + v0.5.158) happened because the checklist was prose in CLAUDE.md and got missed; a skill turns it into a callable procedure.
+- **`.claude/hooks/session-start.sh`** (executable) — prints the current version + last 2 CHANGELOG entries when a new Claude session starts. Wired via `.claude/settings.local.json`'s `hooks.SessionStart` config. Means a session that comes back after compaction has immediate "where is production?" context.
+
+### SQL
+If your DB pre-dates v0.5.197, run `schema.sql` (the additions are idempotent). If you've been applying delta files in order, no change needed — production matches.
+
+
+---
+
 ## v0.5.219
 - **Meeting timer button is now Pause/Resume only — status changes via the dropdown.** User: "Can there be a pause meeting rather than end meeting. As there is a completed option" → "Yes put in the simpler version."
 
