@@ -3,23 +3,26 @@
    Caching strategy: Static assets (cache-first), Pages (network-first), API (network-first)
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'coach4u-v0.5.221';
+const CACHE_VERSION = 'coach4u-v0.5.222';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const PAGES_CACHE = CACHE_VERSION + '-pages';
 const API_CACHE = CACHE_VERSION + '-api';
 
+// Relative paths — resolved against the SW's location at install time.
+// Works on GitHub Pages (/yourbusinesscoach/) and any local subpath.
 const STATIC_ASSETS = [
-  '/external-Coach4u-app/',
-  '/external-Coach4u-app/index.html',
-  '/external-Coach4u-app/offline.html',
-  '/external-Coach4u-app/manifest.json',
-  '/external-Coach4u-app/favicon.svg',
-  '/external-Coach4u-app/css/style.css',
-  '/external-Coach4u-app/js/active-session.js',
-  '/external-Coach4u-app/js/active-org.js',
+  './',
+  './index.html',
+  './offline.html',
+  './manifest.json',
+  './favicon.svg',
+  './css/style.css',
+  './js/active-session.js',
+  './js/active-meeting.js',
+  './js/active-org.js',
+  './js/mobile-keyboard.js',
 ];
 
-// Install event: cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
@@ -30,7 +33,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event: clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -45,73 +47,36 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event: implement caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests and non-GET
-  if (!url.pathname.includes('/external-Coach4u-app/') && url.origin !== location.origin) {
-    return;
-  }
+  if (url.origin !== self.location.origin) return;
+  if (request.method !== 'GET') return;
 
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // API requests: network-first with fallback to cache
-  if (url.pathname.includes('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            caches.open(API_CACHE).then((cache) => {
-              cache.put(request, response.clone());
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request).then((cached) => {
-            return cached || new Response(
-              JSON.stringify({ error: 'Offline', fallback: true }),
-              { headers: { 'Content-Type': 'application/json' } }
-            );
-          });
-        })
-    );
-    return;
-  }
-
-  // HTML pages: network-first with fallback to cache
+  // HTML pages: network-first with fallback to cache, then offline.html
   if (request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response.ok) {
-            caches.open(PAGES_CACHE).then((cache) => {
-              cache.put(request, response.clone());
-            });
+            const clone = response.clone();
+            caches.open(PAGES_CACHE).then((cache) => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() => {
-          return caches.match(request).then((cached) => {
-            return cached || caches.match('/external-Coach4u-app/offline.html');
-          });
-        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('./offline.html')))
     );
     return;
   }
 
-  // Static assets (JS, CSS, images): cache-first with fallback to network
+  // Static assets (JS, CSS, images): cache-first, fallback to network
   event.respondWith(
     caches.match(request).then((cached) => {
       return cached || fetch(request).then((response) => {
-        if (response.ok && request.url.includes('/external-Coach4u-app/')) {
-          caches.open(STATIC_CACHE).then((cache) => {
-            cache.put(request, response.clone());
-          });
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
         }
         return response;
       }).catch(() => {

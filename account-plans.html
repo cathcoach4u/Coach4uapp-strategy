@@ -119,6 +119,36 @@
     }
     @media (max-width: 900px) { .mobile-hint { display: block; } }
 
+    /* ===== Group financials rollup (visible above the carousel when 2+ orgs have financials) ===== */
+    .group-fin {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      margin: 16px 16px 0; padding: 14px 16px 12px;
+    }
+    .group-fin-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 10px; gap: 12px; flex-wrap: wrap;
+    }
+    .group-fin-title { font-size: 0.78rem; font-weight: 800; color: var(--primary); letter-spacing: 0.4px; text-transform: uppercase; margin: 0; }
+    .group-fin-sub { font-size: 0.7rem; color: #888; font-weight: 700; letter-spacing: 0.4px; }
+    .group-fin-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .group-fin-col {
+      background: #f8fafc; border: 1px solid #e8eef3; border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .group-fin-col-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      font-size: 0.66rem; font-weight: 800; color: var(--primary);
+      letter-spacing: 0.5px; text-transform: uppercase;
+      padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #e8eef3;
+    }
+    .group-fin-col-meta { color: #999; letter-spacing: 0.4px; font-weight: 700; }
+    @media print {
+      .group-fin { display: none !important; }
+    }
+    @media (max-width: 540px) {
+      .group-fin-body { grid-template-columns: 1fr; }
+    }
+
     /* ===== Business carousel (one plan at a time + arrows) ===== */
     .plans-wrap {
       max-width: 1100px;
@@ -439,6 +469,7 @@
     <p>Step through every business&rsquo; strategic one-pager. Useful for cross-business meetings, board reviews, and spotting alignment gaps.</p>
   </div>
 
+  <div id="groupFinWrap"></div>
   <div id="plansWrap" class="plans-wrap">
     <div class="state-msg">Loading your businesses&hellip;</div>
   </div>
@@ -813,6 +844,57 @@
           const e = byOrg.get(r.organisation_id); if (e) e.cadence = r;
         });
       }
+
+      // Group financials rollup — summed across every business in the account.
+      // Only renders if there are 2+ businesses AND any of them have financial data.
+      (function renderGroupFinancials() {
+        const wrapEl = document.getElementById('groupFinWrap');
+        if (!wrapEl) return;
+        if (orgs.length < 2) return;
+        const groupMap = new Map();
+        let any = false;
+        for (const o of orgs) {
+          const d = byOrg.get(o.id);
+          if (!d || !d.finByPeriod) continue;
+          for (const [iso, row] of d.finByPeriod.entries()) {
+            if (!groupMap.has(iso)) groupMap.set(iso, { revenue: null, expenses: null });
+            const acc = groupMap.get(iso);
+            if (row.revenue !== null) {
+              acc.revenue = (acc.revenue || 0) + row.revenue;
+              any = true;
+            }
+            if (row.expenses !== null) {
+              acc.expenses = (acc.expenses || 0) + row.expenses;
+              any = true;
+            }
+          }
+        }
+        if (!any) return;
+        const fmtRange = arr => fmtMonthShort(arr[0]) + ' → ' + fmtMonthShort(arr[arr.length - 1]);
+        wrapEl.innerHTML = `
+          <div class="group-fin">
+            <div class="group-fin-head">
+              <h2 class="group-fin-title">&#x1F4B0; Group Financials</h2>
+              <span class="group-fin-sub">Summed across all ${orgs.length} businesses</span>
+            </div>
+            <div class="group-fin-body">
+              <div class="group-fin-col">
+                <div class="group-fin-col-head">
+                  <span>Last 12 Months</span>
+                  <span class="group-fin-col-meta">${escHtml(fmtRange(PAST))}</span>
+                </div>
+                <div class="fin-totals">${buildFinTotals(PAST, groupMap)}</div>
+              </div>
+              <div class="group-fin-col">
+                <div class="group-fin-col-head">
+                  <span>Next 12 Months</span>
+                  <span class="group-fin-col-meta">${escHtml(fmtRange(FUTURE))}</span>
+                </div>
+                <div class="fin-totals">${buildFinTotals(FUTURE, groupMap)}</div>
+              </div>
+            </div>
+          </div>`;
+      })();
 
       // Show the data-layer-pending banner if every business returned empty plan data
       const anyData = orgs.some(o => {

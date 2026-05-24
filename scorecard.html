@@ -274,7 +274,7 @@
     hRow.innerHTML=`<th class="col-metric" style="padding:12px 16px;">Metric</th><th class="col-owner">Owner</th><th class="col-goal">Goal</th>${_weeks.map(w=>`<th class="col-week" style="text-align:center;">${fmtWeek(w)}</th>`).join('')}<th style="width:40px;"></th>`;
     tbody.innerHTML='';
     if(!_metrics.length){
-      tbody.innerHTML=`<tr><td colspan="${_weeks.length+4}" style="padding:40px;text-align:center;color:#aaa;font-family:inherit;">No metrics yet &#x2014; add your first measurable above.</td></tr>`;
+      tbody.innerHTML=`<tr><td colspan="${_weeks.length+4}" style="padding:40px;text-align:center;color:#888;font-family:inherit;line-height:1.6;">No metrics yet &mdash; pick 5&ndash;10 numbers that tell you each week whether the business is on track.<br><a href="learn/weekly-numbers.html" style="color:var(--accent);font-weight:700;text-decoration:none;">Read the Weekly Numbers guide &rarr;</a></td></tr>`;
       return;
     }
     _metrics.forEach(metric=>{

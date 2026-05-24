@@ -263,8 +263,6 @@
     if (IS_ACCOUNT) {
       subId = window.activeOrg && window.activeOrg.getSubscription && window.activeOrg.getSubscription();
       if (!subId) { window.location.href = 'index.html'; return; }
-      const back = document.querySelector('.header-back');
-      if (back) { back.setAttribute('href','account-planning.html'); back.textContent = '\u2190 Account Planning'; }
       const pill = document.getElementById('activeBizName');
       if (pill) {
         const accName = (window.activeOrg && window.activeOrg.getSubscriptionName && window.activeOrg.getSubscriptionName()) || 'Account';

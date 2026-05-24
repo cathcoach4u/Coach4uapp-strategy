@@ -4,6 +4,85 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.222
+- **Trial-release hardening pass: fixed PWA caching, deleted legacy hubs, added data export, group financials rollup, better empty states, swipe-to-delete on todos.**
+
+### (1) Service worker paths — actually correct now
+`sw.js` was anchored on `/external-Coach4u-app/` (a path that doesn't exist on this repo). PWA install + offline fallback were silently broken:
+- `cache.addAll(STATIC_ASSETS)` failed because every entry 404'd → no static cache, no offline support
+- The HTML offline fallback `caches.match('/external-Coach4u-app/offline.html')` never resolved → users got the browser's default offline page
+
+**Fix**: rewrote `sw.js` with relative paths (`./`, `./offline.html`, `./css/style.css`, `./js/active-session.js`, etc.). Resolved against the SW's location at install time, so it works on GitHub Pages (`/yourbusinesscoach/`) and any local subpath.
+
+Also dropped the legacy `/api/` cache branch — no app code hits that path; all DB calls go to Supabase directly. CACHE_VERSION bumped to `coach4u-v0.5.222` so every previous cache is invalidated on next page load.
+
+### (2) Legacy account hubs deleted
+`account-strategy.html` / `account-operations.html` / `account-planning.html` have been dead since v0.5.146 when the account-level bottom nav was simplified. The only references were `if (back) { back.setAttribute('href', 'account-planning.html'); ... }` guards on `annual-sessions.html` / `quarterly-sessions.html` / `team-checkins.html` — but `.header-back` was removed from those pages in v0.5.191, so `back` was always null and the assignment was a silent no-op.
+
+Files deleted; the dead `if (back)` lines stripped from the three session list pages.
+
+### (3) Data export
+New **📥 Data Export** card on `account-setup.html`. One row per business in the active subscription with a `⬇ Export JSON` button.
+
+**Contents** (per business, RLS-gated):
+- Strategy: `core_values`, `core_focus`, `targets`, `marketing_strategy`, `leadership_team_members`, `financial_periods`
+- Operations: `scorecard_metrics` + `scorecard_entries` (joined), `rocks`, `issues`, `meetings` + `meeting_headlines` + `meeting_todos` (joined)
+- Planning: `business_cadence`, `annual_sessions`, `quarterly_sessions`, `team_checkins`
+- Multi-tenant: `organisations` row, `team_members` (role + status + display_name + invite metadata)
+
+**Format**:
+```json
+{
+  "exported_at": "2026-05-24T10:42:13.000Z",
+  "app_version": "0.5.222",
+  "schema": "coach4u-business-snapshot/v1",
+  "business_id": "...",
+  "business_name": "...",
+  "data": { /* tables keyed by name */ }
+}
+```
+Filename: `coach4u-<safe-biz-name>-YYYY-MM-DD.json`. Schema versioned so future migrations can detect snapshots from older releases. No server-side code — fully client-side using the user's existing Supabase session.
+
+### (4) Group Financials rollup on account-plans
+`account-plans.html` now renders a **💰 Group Financials** banner above the carousel summing every business's `financial_periods` into one Last-12 / Next-12 view. Only appears when there are 2+ businesses AND any of them have financial data (otherwise it'd just show "—" everywhere, adding noise). Hidden in print mode — each per-business card already prints its own financials, no point printing the rollup twice.
+
+### (5) Empty-state copy upgrades
+Three of the most-hit pages used to say "Nothing here" with no next-step prompt. Now each empty state links to the matching Learn vault guide:
+- `goals.html` — "Pick 3–7 priorities — the things that, if completed, move the business forward this quarter. → Read the Quarterly Goals guide"
+- `scorecard.html` — "Pick 5–10 numbers that tell you each week whether the business is on track. → Read the Weekly Numbers guide"
+- `meeting.html` — "Same day, same time, same agenda every week. → Read the guide"
+
+Other empty states (todos, issues, sessions) already had reasonable copy.
+
+### (6) Swipe-to-delete on To-Dos
+New `js/swipe-delete.js` helper — touch-only, opt-in via `.swipeable` class.
+
+**Behaviour**:
+- Touchstart → record position
+- Touchmove → if mostly horizontal AND going left, translate the row's content; reveal a red "Delete" backdrop behind
+- Touchend at < 50% of row width → snap back to 0; > 50% → animate fully off-screen + trigger the existing `.todo-del` click handler (same Supabase delete + optimistic UI path)
+- Vertical scroll wins if dy > dx in the first 12px → swipe is cancelled, page scrolls normally
+
+Desktop (no touch events) is unchanged — the existing × delete button still works. Auto-attaches via MutationObserver so re-rendered rows pick it up without manual rewiring.
+
+**Applied to** `todos.html` (added `.swipeable` class + script tag). Layout adjusted so the swipeable rows put their flex layout on the inner `.swipe-content` wrapper.
+
+**Not applied to** `issues.html` (the cards have a click-to-edit handler that would conflict with a horizontal touch gesture) or scorecard cells (popovers + numeric inputs make this risky). Both can opt in later once the gesture conflict is resolved.
+
+### Files
+- `sw.js` (rewritten)
+- `account-strategy.html` / `account-operations.html` / `account-planning.html` (deleted)
+- `annual-sessions.html` / `quarterly-sessions.html` / `team-checkins.html` (dead lines removed)
+- `account-setup.html` (data export card + JS)
+- `account-plans.html` (group financials rollup)
+- `goals.html` / `scorecard.html` / `meeting.html` (empty-state copy)
+- `js/swipe-delete.js` (new)
+- `todos.html` (script tag + `.swipeable` class)
+
+### No SQL.
+
+---
+
 ## v0.5.221
 - **Bugfix: "Meeting in progress" pill kept reappearing after the user marked the meeting completed.** User: "Meeting in progress pill is still appearing even though I have completed it. Fix bug."
 

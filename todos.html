@@ -52,6 +52,13 @@
     .todo-card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 0; margin: 0 16px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); overflow: hidden; }
     .todo-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #f0f0f0; }
     .todo-row:last-child { border-bottom: none; }
+    /* v0.5.222 — swipeable rows have their flex layout on .swipe-content (the
+       wrapper that gets translated). The outer .todo-row keeps only the
+       border-bottom so the row separator stays put even while swiping. */
+    .todo-row.swipeable { display: block; padding: 0; }
+    .todo-row.swipeable > .swipe-content {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
+    }
     .todo-check { width: 20px; height: 20px; border-radius: 5px; border: 2px solid #ccc; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: white; cursor: pointer; background: white; transition: background 0.1s, border-color 0.1s; }
     .todo-check.done { background: var(--accent); border-color: var(--accent); }
     .todo-check.done::after { content: '✓'; }
@@ -79,6 +86,7 @@
   <script src="js/active-session.js" defer></script>
   <script src="js/active-meeting.js" defer></script>
   <script src="js/mobile-keyboard.js" defer></script>
+  <script src="js/swipe-delete.js" defer></script>
   <script src="js/active-org.js" defer></script>
 </head>
 <body>
@@ -267,7 +275,7 @@
           ? `<div class="todo-meta">${metaBits.join('<span class="sep">·</span>')}</div>`
           : '';
         return `
-          <div class="todo-row" data-id="${escHtml(t.id)}">
+          <div class="todo-row swipeable" data-id="${escHtml(t.id)}">
             <div class="todo-check ${t.done ? 'done' : ''}" role="button" tabindex="0" aria-label="Toggle done"></div>
             <div class="todo-body">
               <div class="todo-desc ${t.done ? 'done' : ''}">${escHtml(t.description || '')}</div>

@@ -248,7 +248,7 @@
   function renderBoard(goals){
     const board=document.getElementById('goals-board');
     board.innerHTML='';
-    if(!goals.length){board.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x1F3AF;</div><p>No goals for this quarter yet.<br>Add your first priority to get started.</p></div>';updateProgress([]);return;}
+    if(!goals.length){board.innerHTML='<div class="empty-state"><div class="empty-state-icon">&#x1F3AF;</div><p>No quarterly goals yet.<br>Pick 3&ndash;7 priorities &mdash; the things that, if completed, move the business forward this quarter.</p><p style="margin-top:14px;"><a href="learn/quarterly-goals.html" style="color:var(--accent);font-weight:700;text-decoration:none;">Read the Quarterly Goals guide &rarr;</a></p></div>';updateProgress([]);return;}
     updateProgress(goals);
     const company=goals.filter(g=>g.company_rock);
     if(company.length)board.appendChild(renderGroup('&#x25C9; Company Goals',company));

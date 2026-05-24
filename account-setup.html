@@ -72,6 +72,28 @@
     .save-status.ok    { color: #0F766E; }
     .save-status.err   { color: #DC2626; }
 
+    /* Data export card */
+    .export-card { margin: 18px 16px 4px; background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 18px 16px 14px; }
+    .export-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
+    .export-blurb { font-size: 0.78rem; color: #666; margin: 0 0 14px; line-height: 1.5; }
+    .export-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; padding: 10px 0; border-top: 1px solid var(--border);
+    }
+    .export-row:first-of-type { border-top: none; }
+    .export-biz-name { font-size: 0.9rem; font-weight: 700; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .export-btn {
+      background: var(--accent); color: white; border: none;
+      padding: 7px 14px; border-radius: 99px; font-family: inherit;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      white-space: nowrap; transition: background .15s;
+    }
+    .export-btn:hover { background: var(--accent-dark); }
+    .export-btn:disabled { background: #ccc; cursor: wait; }
+    .export-status { font-size: 0.75rem; color: #888; margin-top: 8px; min-height: 1em; }
+    .export-status.ok { color: #0F766E; }
+    .export-status.err { color: #DC2626; }
+
     /* Bottom nav (3-tab account area, v0.5.153) */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -145,7 +167,14 @@
 
     <div class="save-status" id="saveStatus">Changes save automatically.</div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.221</p>
+    <div class="export-card">
+      <h2 class="export-title">&#x1F4E5; Data Export</h2>
+      <p class="export-blurb">Download a complete snapshot of every business in this account &mdash; strategy, operations, planning, and team data. JSON format, one file per business. Useful for backups, migrations, or if you ever want to leave.</p>
+      <div id="exportList"></div>
+      <div class="export-status" id="exportStatus"></div>
+    </div>
+
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.222</p>
   </div>
 
   <nav class="bottom-nav">
@@ -283,6 +312,127 @@
       saveTimer = setTimeout(save, DEBOUNCE_MS);
     }
 
+    // ----- Data Export -----
+    // Per-business JSON snapshot. Reads every org-scoped table the user can
+    // see via RLS, packages with metadata, triggers a download. No server-side
+    // code; RLS does all the gating.
+    const EXPORT_TABLES = [
+      'core_values', 'core_focus', 'targets', 'marketing_strategy',
+      'leadership_team_members', 'financial_periods', 'business_cadence',
+      'scorecard_metrics', 'rocks', 'issues',
+      'meetings', 'annual_sessions', 'quarterly_sessions',
+      'team_checkins'
+    ];
+
+    function setExportStatus(text, kind) {
+      const el = document.getElementById('exportStatus');
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'export-status' + (kind ? ' ' + kind : '');
+    }
+
+    function safeFilename(s) {
+      return String(s || 'business').replace(/[^\w\s.-]/g, '').replace(/\s+/g, '-').toLowerCase().slice(0, 60) || 'business';
+    }
+
+    function downloadJSON(filename, payload) {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function exportBusiness(orgId, orgName, btn) {
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Exporting…';
+      setExportStatus('');
+      try {
+        const queries = EXPORT_TABLES.map(t => sb.from(t).select('*').eq('organisation_id', orgId));
+        // The org metadata itself
+        queries.push(sb.from('organisations').select('*').eq('id', orgId).maybeSingle());
+        // Team members
+        queries.push(sb.from('team_members').select('id, user_id, invited_email, role, status, display_name, invited_at, joined_at').eq('organisation_id', orgId));
+        const results = await Promise.all(queries);
+        const data = {};
+        EXPORT_TABLES.forEach((t, i) => { data[t] = results[i].data || []; });
+        data.organisation = results[EXPORT_TABLES.length].data || null;
+        data.team_members = results[EXPORT_TABLES.length + 1].data || [];
+
+        // Scorecard entries are joined via metric ids — fetch in a second pass
+        const metricIds = (data.scorecard_metrics || []).map(m => m.id);
+        if (metricIds.length) {
+          const { data: entries } = await sb.from('scorecard_entries').select('*').in('metric_id', metricIds);
+          data.scorecard_entries = entries || [];
+        } else {
+          data.scorecard_entries = [];
+        }
+        // Meeting child tables
+        const meetingIds = (data.meetings || []).map(m => m.id);
+        if (meetingIds.length) {
+          const [headlinesRes, todosRes] = await Promise.all([
+            sb.from('meeting_headlines').select('*').in('meeting_id', meetingIds),
+            sb.from('meeting_todos').select('*').in('meeting_id', meetingIds),
+          ]);
+          data.meeting_headlines = headlinesRes.data || [];
+          data.meeting_todos = todosRes.data || [];
+        } else {
+          data.meeting_headlines = [];
+          data.meeting_todos = [];
+        }
+
+        const payload = {
+          exported_at: new Date().toISOString(),
+          app_version: '0.5.222',
+          schema: 'coach4u-business-snapshot/v1',
+          business_id: orgId,
+          business_name: orgName,
+          data
+        };
+        const stamp = new Date().toISOString().slice(0, 10);
+        downloadJSON('coach4u-' + safeFilename(orgName) + '-' + stamp + '.json', payload);
+        setExportStatus('Downloaded ' + orgName + '.json', 'ok');
+      } catch (e) {
+        console.warn('Export failed:', e);
+        setExportStatus('Export failed: ' + (e.message || 'unknown error'), 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    async function renderExportList() {
+      const wrap = document.getElementById('exportList');
+      if (!wrap) return;
+      const { data: orgs } = await sb
+        .from('organisations')
+        .select('id, name, sort_order')
+        .eq('subscription_id', sub.id)
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
+      if (!orgs || !orgs.length) {
+        wrap.innerHTML = '<p style="font-size:0.82rem;color:#888;margin:0;">No businesses yet &mdash; add one from the Businesses tab.</p>';
+        return;
+      }
+      wrap.innerHTML = '';
+      for (const o of orgs) {
+        const row = document.createElement('div');
+        row.className = 'export-row';
+        const name = document.createElement('div');
+        name.className = 'export-biz-name';
+        name.textContent = o.name || '(Unnamed)';
+        const btn = document.createElement('button');
+        btn.className = 'export-btn';
+        btn.type = 'button';
+        btn.textContent = '⬇ Export JSON';
+        btn.addEventListener('click', () => exportBusiness(o.id, o.name || 'business', btn));
+        row.appendChild(name); row.appendChild(btn);
+        wrap.appendChild(row);
+      }
+    }
+
     async function init() {
       const { data: { user }, error } = await sb.auth.getUser();
       if (!user || error) { window.location.href = 'login.html'; return; }
@@ -294,6 +444,7 @@
       sub = await loadSub(user);
       if (!sub) return;
       applyToForm();
+      renderExportList();
 
       ['acctNameInput','billingEmailInput','billingAddressInput','taxIdInput'].forEach(id => {
         const el = document.getElementById(id);

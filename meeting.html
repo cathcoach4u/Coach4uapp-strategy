@@ -86,7 +86,7 @@
     </div>
 
     <div class="meetings-list-wrap">
-      <div id="meetings-list"><div class="empty-state">No meetings yet. Create one with "+ New Meeting".</div></div>
+      <div id="meetings-list"><div class="empty-state">No meetings yet &mdash; same day, same time, same agenda every week.<br>Hit + New Meeting to start. <a href="learn/weekly-team-meeting.html" style="color:var(--accent);font-weight:700;text-decoration:none;">Read the guide &rarr;</a></div></div>
     </div>
   </div>
 
@@ -180,7 +180,7 @@
 
   function renderMeetingsList(meetings){
     const list=document.getElementById('meetings-list');
-    if(!meetings.length){list.innerHTML='<div class="empty-state">No meetings yet. Create one with "+ New Meeting".</div>';return;}
+    if(!meetings.length){list.innerHTML='<div class="empty-state">No meetings yet &mdash; same day, same time, same agenda every week.<br>Hit + New Meeting to start. <a href="learn/weekly-team-meeting.html" style="color:var(--accent);font-weight:700;text-decoration:none;">Read the guide &rarr;</a></div>';return;}
     list.innerHTML=meetings.map(m=>`
       <div class="meeting-item" style="display:flex;align-items:center;gap:8px;">
         <a href="run-meeting.html?id=${encodeURIComponent(m.id)}" style="flex:1;text-decoration:none;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:12px;">
