@@ -285,9 +285,13 @@
             </select>
           </div>
         </div>
-        <div class="meeting-timer-bar">
-          <button class="timer-btn" id="timer-btn">▶ Start Meeting</button>
-          <span class="timer-elapsed hidden" id="timer-elapsed">0:00</span>
+        <div class="meeting-timer-bar" id="timer-bar">
+          <!-- v0.5.219 — button is now Pause/Resume (toggles the visible ticker)
+               rather than Start/End. Status dropdown above is the only way to
+               actually complete the meeting. Default label gets overwritten by
+               JS on render based on m.status. -->
+          <button class="timer-btn" id="timer-btn">&#x23F8; Pause</button>
+          <span class="timer-elapsed" id="timer-elapsed">0:00</span>
           <span style="font-size:.8rem;color:#888;font-family:inherit;">Target: 90 min</span>
         </div>
         <div id="agenda-accordion">
@@ -311,49 +315,62 @@
         if (status === 'completed') window.activeMeeting.clear();
         else window.activeMeeting.set(m.id, fmtDate(m.meeting_date), orgId);
       }
+      // v0.5.219 — hide the timer bar when status flips to completed (and stop
+      // ticker). Re-show + restart if it flips back to in_progress.
+      const bar = c.querySelector('#timer-bar');
+      if (status === 'completed') {
+        if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+        if (bar) bar.style.display = 'none';
+      } else if (bar && bar.style.display === 'none') {
+        bar.style.display = '';
+        // Simplest path back into the running state: re-render.
+        renderDetail();
+        return;
+      }
       showToast('Status updated','success');
     });
-    const timerBtn=c.querySelector('#timer-btn'),timerEl=c.querySelector('#timer-elapsed');
+    // v0.5.219 — Timer button is now Pause/Resume only. It toggles the visible
+    // ticker without changing the meeting's status. To complete the meeting,
+    // the user uses the status dropdown above → "Completed" (which clears the
+    // floating pill via the existing handler). When the meeting is already
+    // completed (e.g. opened from the past-meetings list), the timer bar is
+    // hidden entirely — the meeting is done, no ticker needed.
+    const timerBar = c.querySelector('#timer-bar');
+    const timerBtn = c.querySelector('#timer-btn');
+    const timerEl  = c.querySelector('#timer-elapsed');
+    let _paused = false;
 
-    // v0.5.218 — If the meeting is already in_progress when the user lands on
-    // the page (e.g. returning via the floating green pill or refreshing),
-    // sync the timer UI to that state. Use created_at as the start reference
-    // so elapsed time is meaningful even after navigation. Without this, the
-    // button shows "Start Meeting" and the user thinks they have to begin
-    // over — which is the bug the user reported.
-    if (m.status === 'in_progress' && m.created_at) {
-      _timerStart = new Date(m.created_at).getTime();
+    if (m.status === 'completed') {
+      if (timerBar) timerBar.style.display = 'none';
+    } else {
+      // Anchor elapsed time on the meeting's created_at so reload / pill-return
+      // shows real elapsed since the meeting was opened — not zero.
+      const startMs = m.created_at ? new Date(m.created_at).getTime() : Date.now();
       timerEl.classList.remove('hidden');
-      timerBtn.textContent = '⏹ End Meeting';
+      timerBtn.textContent = '⏸ Pause';
       timerBtn.classList.add('running');
       const tick = () => {
-        const s = Math.floor((Date.now() - _timerStart) / 1000);
+        const s = Math.floor((Date.now() - startMs) / 1000);
         const mm = Math.floor(s / 60), ss = s % 60;
         timerEl.textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
       };
       tick();
       _timerInterval = setInterval(tick, 1000);
-    }
 
-    timerBtn.addEventListener('click',async()=>{
-      if(!_timerStart){
-        _timerStart=Date.now();timerEl.classList.remove('hidden');timerBtn.textContent='⏹ End Meeting';timerBtn.classList.add('running');
-        _timerInterval=setInterval(()=>{const s=Math.floor((Date.now()-_timerStart)/1000);const mm=Math.floor(s/60),ss=s%60;timerEl.textContent=mm+':'+(ss<10?'0':'')+ss;},1000);
-        const { error } = await supabase.from('meetings').update({ status:'in_progress' }).eq('id', m.id);
-        if (!error) { c.querySelector('#meeting-status').value='in_progress'; _currentMeeting.status='in_progress'; }
-        else console.warn('Timer start update failed:', error.message);
-      }else{
-        clearInterval(_timerInterval);_timerInterval=null;_timerStart=null;
-        timerEl.classList.add('hidden');timerBtn.textContent='▶ Start Meeting';timerBtn.classList.remove('running');
-        const { error } = await supabase.from('meetings').update({ status:'completed' }).eq('id', m.id);
-        if (!error) {
-          c.querySelector('#meeting-status').value='completed';
-          _currentMeeting.status='completed';
-          if (window.activeMeeting) window.activeMeeting.clear();  // v0.5.207
+      timerBtn.addEventListener('click', () => {
+        _paused = !_paused;
+        if (_paused) {
+          if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+          timerBtn.textContent = '▶ Resume';
+          timerBtn.classList.remove('running');
+        } else {
+          tick();  // snap to real elapsed (since created_at) and resume ticking
+          _timerInterval = setInterval(tick, 1000);
+          timerBtn.textContent = '⏸ Pause';
+          timerBtn.classList.add('running');
         }
-        else console.warn('Timer end update failed:', error.message);
-      }
-    });
+      });
+    }
     c.querySelectorAll('.agenda-toggle').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const content=btn.nextElementSibling;

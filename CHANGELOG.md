@@ -4,6 +4,35 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.219
+- **Meeting timer button is now Pause/Resume only — status changes via the dropdown.** User: "Can there be a pause meeting rather than end meeting. As there is a completed option" → "Yes put in the simpler version."
+
+### Before
+Timer button toggled between "▶ Start Meeting" and "⏹ End Meeting" — both writes changed `meetings.status` in the DB (start → in_progress, end → completed). The status dropdown right above the button did the same thing, so the two affordances were redundant + confusing.
+
+### After
+Timer button is now purely a visible-ticker control. **Tap = freeze the ticker. Tap again = resume.** No DB writes. Status is changed only through the dropdown:
+
+- **Load with status = `in_progress`**: button shows **⏸ Pause** with the ticker running. Elapsed time anchored on `m.created_at` (so returning via the pill / refreshing / direct URL shows real elapsed since the meeting was created — not zero).
+- **Tap Pause**: ticker stops via `clearInterval`. Button becomes **▶ Resume**.
+- **Tap Resume**: `tick()` snaps to real elapsed (recomputed from `created_at`), interval restarts. Button becomes **⏸ Pause**.
+- **Load with status = `completed`**: entire timer bar is hidden via `display:none` — the meeting is done, no ticker needed.
+- **Dropdown flips to Completed**: timer bar hides + interval clears (in addition to clearing the floating pill, which was already wired in v0.5.207).
+- **Dropdown flips back from Completed → In Progress**: timer bar re-shows; full re-render to restore the running state cleanly.
+
+### Pause state — kept simple
+The paused flag is in-memory only. If the user reloads mid-pause, the displayed time snaps back to "real elapsed since created_at" — not "elapsed when you paused". This is the **simpler version** the user picked (the user accepted this tradeoff in chat). A future version could persist a `paused_at` column on `meetings` to subtract break time from the displayed elapsed if desired.
+
+### Cleanup
+- Removed all `_timerStart` tracking from the click handler (replaced with the `_paused` flag).
+- Removed all `supabase.from('meetings').update({status:...})` writes from the timer button.
+- Default HTML button text changed from "▶ Start Meeting" to "⏸ Pause" — JS overwrites this on load regardless, but it reads better if JS is slow.
+- Added `id="timer-bar"` to the timer container so it can be hidden/shown when status flips.
+
+### No SQL.
+
+---
+
 ## v0.5.218
 - **Three asks bundled.** User: "Annual sessions still have the option for scheduled. Remove this. Just want in progress or completed. (Check quarterly). Also I notice that when I go back to the meeting with the pill does this then stop the active meeting. I have to start the meeting again." + "Heading doesn't look great on phone" (Role Permissions matrix on iPhone showing the header row as "ADMINCOACHMEMBE" — labels colliding).
 
