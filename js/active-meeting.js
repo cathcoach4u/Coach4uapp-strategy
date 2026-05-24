@@ -124,7 +124,12 @@
     const existing = document.getElementById(PILL_ID);
     if (existing) existing.remove();
 
-    autoSetFromMeetingPage();
+    // v0.5.221 — autoSetFromMeetingPage() used to run here, but that caused
+    // a bug: completing the meeting calls window.activeMeeting.clear(),
+    // which clears localStorage and then calls render(), which re-seeded
+    // the pill via autoSet (because we're still on run-meeting.html). Result:
+    // navigating away showed the pill on the next page. Now autoSet runs
+    // only once during init().
 
     const data = read();
     if (!isStillActive(data)) {
@@ -163,6 +168,7 @@
 
   function init() {
     injectStyle();
+    autoSetFromMeetingPage();
     render();
   }
 

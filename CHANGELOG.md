@@ -4,6 +4,44 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.221
+- **Bugfix: "Meeting in progress" pill kept reappearing after the user marked the meeting completed.** User: "Meeting in progress pill is still appearing even though I have completed it. Fix bug."
+
+### Repro
+1. Open `run-meeting.html?id=X`. Pill is in localStorage.
+2. Flip status dropdown to **Completed**. Pill disappears (we're on the matching meeting page; the guard at `js/active-meeting.js:139` hides it).
+3. Tap a bottom-nav tab to navigate away.
+4. Pill is back on the next page. ❌
+
+### Root cause
+`js/active-meeting.js` called `autoSetFromMeetingPage()` from inside `render()`. The status-dropdown handler in `run-meeting.html:314-317` calls `window.activeMeeting.clear()` when status flips to completed. `clear()` runs `clearKey()` (removes the localStorage entry) **then `render()`**. But `render()` immediately re-seeded the pill via `autoSetFromMeetingPage()` because we were still on `run-meeting.html?id=X`:
+
+```js
+function autoSetFromMeetingPage() {
+  // ...
+  if (existing && existing.id === id) return;  // already set — skip
+  // ...
+  write({ id, label: '', org_id: orgId || null, started_at: new Date().toISOString() });
+}
+```
+
+Right after `clear()`, `existing === null` — so the guard at the top passed, and the write reseeded localStorage with the same meeting id. The on-matching-meeting guard at line 139 prevents the pill from rendering on `run-meeting.html` itself, so the bug was silent until the user navigated to another page.
+
+### Fix
+Moved `autoSetFromMeetingPage()` out of `render()` and into `init()`. It now fires exactly once per page load (preserving v0.5.213's deep-link defence: if you open `run-meeting.html?id=X` cold, the pill still gets seeded). It does **not** fire on subsequent `render()` calls (storage events, programmatic clear, etc.), so `clear()` is now final on this page.
+
+### Why not other fixes
+- **Don't call `render()` from `clear()`** — would break cross-tab updates (storage event listener needs render to fire).
+- **Have `autoSet` query the DB for status before seeding** — adds an async round-trip on every page load. Heavy, and we already have run-meeting.html's own loadDetail handling that case correctly.
+- **Move the auto-set call into `init()`** — minimal, preserves existing behaviour, no async needed. ✓
+
+### Files
+- `js/active-meeting.js` (only)
+
+### No SQL.
+
+---
+
 ## v0.5.220
 - **Audit cleanup pass: schema sync, Learn vault reorder, floating-pill coverage, .claude/ scaffolding.**
 
