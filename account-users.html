@@ -55,6 +55,45 @@
       transition: background .15s;
     }
     .section-action:hover { background: rgba(13,148,136,0.08); }
+    .section-blurb { font-size: 0.78rem; color: #888; line-height: 1.5; margin: -4px 0 12px; }
+
+    /* v0.5.217 — Role Permissions reference table. */
+    .perm-card {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      overflow: hidden;
+    }
+    .perm-row {
+      display: grid; grid-template-columns: 1fr 60px 60px 60px;
+      gap: 8px; padding: 9px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.83rem; color: var(--text);
+      align-items: center;
+    }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-head {
+      background: #f8fafc;
+      font-size: 0.7rem; font-weight: 800; color: #888;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 10px 14px;
+    }
+    .perm-section-label {
+      background: #f0fdfa; color: var(--accent);
+      font-size: 0.7rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 8px 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .perm-action { font-weight: 600; color: var(--primary); line-height: 1.35; }
+    .perm-cell { text-align: center; font-weight: 800; font-size: 0.95rem; }
+    .perm-cell.perm-yes { color: #0F766E; }
+    .perm-cell.perm-no  { color: #c0c0c0; font-weight: 600; font-size: 0.85rem; }
+    .perm-note { font-size: 0.62rem; color: #888; font-weight: 700; margin-top: 1px; line-height: 1.1; }
+    @media (max-width: 480px) {
+      .perm-row { grid-template-columns: 1fr 46px 46px 46px; gap: 4px; padding: 8px 10px; font-size: 0.78rem; }
+      .perm-head { padding: 9px 10px; font-size: 0.62rem; }
+      .perm-section-label { padding: 6px 10px; font-size: 0.62rem; }
+      .perm-action { line-height: 1.3; font-size: 0.78rem; }
+    }
 
     /* ── Users / team cards ── */
     .user-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
@@ -206,7 +245,53 @@
       <button id="inviteUserBtn" class="add-btn">+ Invite User</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.216</p>
+    <!-- v0.5.217 — Role Permissions reference table. Lets admins / coaches
+         self-serve "what can each role do" without contacting support. -->
+    <div class="section" id="rolePermissions">
+      <div class="section-head">
+        <span class="section-title">&#x1F510; Role Permissions</span>
+      </div>
+      <p class="section-blurb">What each role can do in a business. Members are read-only by default — except they can add new issues to the Issues List and Future Issues List (added in v0.5.216).</p>
+
+      <div class="perm-card">
+        <div class="perm-row perm-head">
+          <div class="perm-action">Permission</div>
+          <div class="perm-cell">Admin</div>
+          <div class="perm-cell">Coach</div>
+          <div class="perm-cell">Member</div>
+        </div>
+
+        <div class="perm-section-label">Read</div>
+        <div class="perm-row"><div class="perm-action">See all strategy / operations / planning data</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div></div>
+        <div class="perm-row"><div class="perm-action">See aggregated team check-in results</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div></div>
+
+        <div class="perm-section-label">Edit data</div>
+        <div class="perm-row"><div class="perm-action">Add to Issues List / Future Issues List</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div></div>
+        <div class="perm-row"><div class="perm-action">Edit / delete / resolve any issue</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Add to 12 Month Issues (annual planning)</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Edit strategy worksheets (Values, Targets, etc.)</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Edit operations (Goals, Numbers, Meetings, To-Dos)</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Run annual + quarterly planning sessions</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Submit own team check-in response</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div></div>
+
+        <div class="perm-section-label">Team management</div>
+        <div class="perm-row"><div class="perm-action">Invite new team members</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Remove team members</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Change another member&rsquo;s role</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div></div>
+
+        <div class="perm-section-label">Business</div>
+        <div class="perm-row"><div class="perm-action">Rename the business</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Delete the business</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no">—</div><div class="perm-cell perm-no">—</div></div>
+
+        <div class="perm-section-label">Billing</div>
+        <div class="perm-row"><div class="perm-action">Edit account name / billing details</div><div class="perm-cell perm-yes">✓<div class="perm-note">owner only</div></div><div class="perm-cell perm-no">—</div><div class="perm-cell perm-no">—</div></div>
+        <div class="perm-row"><div class="perm-action">Counts against your 3 included seats</div><div class="perm-cell perm-yes">✓</div><div class="perm-cell perm-no"><div class="perm-note" style="color:#0F766E;">exempt</div></div><div class="perm-cell perm-yes">✓</div></div>
+      </div>
+
+      <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
+    </div>
+
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.217</p>
   </div>
 
   <!-- Edit team member modal -->

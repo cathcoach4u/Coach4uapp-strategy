@@ -4,6 +4,35 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.217
+- **Role Permissions reference table + members can't edit issues.** User: "Add a and b" (a = role permissions in admin area; b = hide edit option for members) + "Remove option for edit."
+
+### (a) Role Permissions table — `account-users.html`
+New **🔐 Role Permissions** section appended below the Members list. 4-column grid (Permission / Admin / Coach / Member) with ✓ / — marks per cell, grouped into 5 categories:
+
+| Category | Rows |
+|---|---|
+| Read | See all data; See team check-in results |
+| Edit data | Add issues (current/future); Edit/delete any issue; Add 12 Month Issues; Edit strategy worksheets; Edit operations; Run planning sessions; Submit own check-in |
+| Team management | Invite / Remove members; Change another member's role |
+| Business | Rename business; Delete business |
+| Billing | Edit account name/billing (owner only); Counts against 3 included seats |
+
+Footer note: "Security is enforced at the database layer (Supabase Row Level Security), not just in the UI." So a Member can't bypass restrictions even with raw API access.
+
+Responsive — narrower columns at ≤ 480px so the matrix fits on iPhone.
+
+### (b) Members can no longer Edit issues — `issues.html`
+- New `loadUserRole(userId)` queries `team_members.role` for the active org during init. Sets module-level `_canEdit = (role === 'admin' || role === 'coach')`.
+- `renderCards` checks `_canEdit` before attaching the click-to-edit handler. Member sees the card list with default cursor; tapping does nothing.
+- The category dropdown in the Add modal hides the **12 Month Issues — long-horizon** option for non-editors (Members can only INSERT current/future per v0.5.216 RLS — hiding the option in the UI prevents confusion).
+- Add Issue button + new-issue modal still work for Members on current/future categories. Admins/coaches see no change.
+
+### No SQL.
+v0.5.216 already added the INSERT policy on `issues`. v0.5.217 is purely UI: the reference table + role-gating on the Edit affordance.
+
+---
+
 ## v0.5.216
 - **Members can add to Issues List + Future Issues List.** User: "I would want team members to be able to add to an area in future issues list. But not delete. And also keep adding to the issues list but not delete."
 

@@ -243,8 +243,13 @@
   function renderCards(containerId,issues){
     const c=document.getElementById(containerId);
     if(!issues.length){c.innerHTML='<div class="kanban-empty">None</div>';return;}
-    c.innerHTML=issues.map(i=>`<div class="issue-card" data-id="${i.id}"><div class="issue-desc">${escHtml(i.description)}</div>${i.owner?`<div class="issue-meta"><span class="issue-owner">${escHtml(i.owner)}</span></div>`:''}</div>`).join('');
-    c.querySelectorAll('.issue-card').forEach(card=>card.addEventListener('click',()=>openModal(_issues.find(x=>String(x.id)===card.dataset.id))));
+    // v0.5.217 — Members see issues as read-only cards (no edit modal).
+    // Admins + coaches still get click-to-edit. Cursor reflects the state.
+    const cursorStyle = _canEdit ? '' : 'style="cursor:default;"';
+    c.innerHTML=issues.map(i=>`<div class="issue-card" data-id="${i.id}" ${cursorStyle}><div class="issue-desc">${escHtml(i.description)}</div>${i.owner?`<div class="issue-meta"><span class="issue-owner">${escHtml(i.owner)}</span></div>`:''}</div>`).join('');
+    if (_canEdit) {
+      c.querySelectorAll('.issue-card').forEach(card=>card.addEventListener('click',()=>openModal(_issues.find(x=>String(x.id)===card.dataset.id))));
+    }
   }
 
   document.getElementById('owner-filter').addEventListener('change',()=>{
@@ -264,7 +269,12 @@
     document.getElementById('issue-id').value=isNew?'':issue.id;
     document.getElementById('issue-description').value=isNew?'':(issue.description||'');
     renderOwnerSelect(isNew?'':(issue.owner||''));
-    document.getElementById('issue-category').value = isNew ? CATEGORY : (issue.category || 'current');
+    // v0.5.217 — Members can only add to current/future (RLS blocks yearly).
+    // Hide the yearly option for them so the dropdown reflects what they can save.
+    const catSel = document.getElementById('issue-category');
+    const yearlyOpt = catSel.querySelector('option[value="yearly"]');
+    if (yearlyOpt) yearlyOpt.style.display = _canEdit ? '' : 'none';
+    catSel.value = isNew ? (CATEGORY === 'yearly' && !_canEdit ? 'current' : CATEGORY) : (issue.category || 'current');
     statusSel.value=isNew?'open':(issue.status||'open');
     document.getElementById('issue-solution').value=isNew?'':(issue.solution||'');
     solutionField.style.display=statusSel.value==='resolved'?'':'none';
@@ -373,11 +383,29 @@
       await supabase.auth.signOut(); window.location.href='login.html';
     });
 
-    await loadOwnerOptions();
+    await Promise.all([loadOwnerOptions(), loadUserRole(user.id)]);
     try { await loadIssues(); }
     catch(e){ console.warn('Load error:', e); }
     document.body.style.opacity='1';
   })();
+
+  // v0.5.217 — Resolve this user's role for the active org. Members can only
+  // ADD issues (current + future categories per v0.5.216 RLS); they shouldn't
+  // see the Edit modal when tapping existing issues. canEdit gates row clicks
+  // + the Resolved column visibility (members can't mark resolved either).
+  let _canEdit = true;
+  async function loadUserRole(userId) {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('role')
+      .eq('organisation_id', orgId)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+    if (error) { console.warn('loadUserRole:', error.message); return; }
+    const role = data && data.role;
+    _canEdit = (role === 'admin' || role === 'coach');
+  }
 
   // Owner <select> populated from team_members (canonical names → per-user reports).
   let OWNER_NAMES = [];
