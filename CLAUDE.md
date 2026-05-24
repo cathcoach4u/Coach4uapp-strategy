@@ -357,35 +357,87 @@ annual_sessions, quarterly_sessions, team_checkins
 
 ## Pricing Model
 
-Locked-in for launch:
+Three layers: **SaaS subscription** (the platform) + **AI add-on** (optional) + **Services** (your time).
+
+---
+
+### 1. SaaS Subscription
 
 | Item | Price |
 |---|---|
-| **Base license** — 1 business + 3 users included | **$150/month** |
-| **Each additional business** | **$75/month** |
-| **Each additional user** beyond the included 3 | **$60/month** |
+| **Base** — 2 businesses + up to 5 users | **$150/month** |
+| **3rd business** | **+$75/month** |
+| **4th business** | **+$75/month** |
+| **5th business** | **+$75/month** |
+| **6+ businesses** | Contact us — custom pricing |
 
-### Key principles
-- **Users are global per account**, not per business. One person who's a member of 3 businesses counts as 1 seat. Matches Notion / Slack / Linear.
-- **Subscriptions are account-level** (one subscription per buyer), not per-organisation. The buyer's account can hold N businesses + M users.
-- **Each business is fully isolated** by data — own One-Page Plan, scorecard, sessions, issues — but shares the global user pool.
-- **Coaches** are admin-equivalent for data but billing-exempt (so the coach inside a client's account doesn't consume one of the client's seats).
+**Users beyond 5**: unlimited, no extra charge. No per-seat billing.
 
-### Worked examples
+**Coaches**: admin-equivalent for data, billing-exempt — don't count against the 5-user base.
+
+#### Monthly progression
+
+| Businesses | Monthly |
+|---|---|
+| 1–2 | $150 |
+| 3 | $225 |
+| 4 | $300 |
+| 5 | $375 |
+| 6+ | Contact us |
+
+#### Worked examples
 
 | Client | Configuration | Monthly |
 |---|---|---|
-| Solo founder | 1 business, 1 user | **$150** (3 user seats included, only 1 used) |
-| Small team | 1 business, 5 users | $150 + (2 × $60) = **$270** |
-| Holding co | 3 businesses, 3 users | $150 + $75 + $75 = **$300** |
-| Same with more leaders | 3 businesses, 5 users | $300 + (2 × $60) = **$420** |
-| Larger holding | 5 businesses, 12 users | $150 + (4 × $75) + (9 × $60) = **$990** |
+| Solo founder | 1 business, 3 users | **$150** |
+| Small team | 1 business, 8 users | **$150** (users are unlimited) |
+| Two ventures | 2 businesses, 4 users | **$150** |
+| Holding co | 3 businesses, 6 users | **$225** |
+| Larger holding | 5 businesses, 10 users | **$375** |
+| Large corporate | 10+ businesses | **Contact us** |
 
-Billing logic on subscription change:
-- Add a business → `+$75/month`
-- Add a user beyond the included 3 → `+$60/month`
-- Remove a business → prorated refund / next cycle
-- The buyer's account = the entity Stripe (or chosen billing provider) bills
+#### Key principles
+- **Users are global per account** — one person across 3 businesses = 1 seat, counted once.
+- **Subscriptions are account-level** — one subscription per buyer, holds N businesses.
+- **Each business is fully isolated** — own One-Page Plan, scorecard, sessions, issues, goals.
+- **Coaches are billing-exempt** — full admin-equivalent access without consuming a user seat.
+- **Self-serve up to 5 businesses** — 6+ requires a conversation (custom needs, support scope, pricing).
+
+---
+
+### 2. AI Add-on (optional)
+
+The base software works fully without AI. The AI add-on unlocks AI-powered features across the platform — everything AI is gated behind this subscription.
+
+| Item | Price |
+|---|---|
+| **AI Add-on** | TBD/month per account |
+
+**Planned AI features:**
+- Strategy suggestions based on business data (values, targets, scorecard trends)
+- Coaching prompts during weekly meetings and planning sessions
+- Scorecard analysis — flags trends, missed targets, patterns
+- One-page plan draft generation
+- Team check-in sentiment analysis and insights
+- Natural language queries about business performance
+
+AI is designed to be built into every part of the platform first, then gated — not bolted on as an afterthought. Price will be set when AI features are ready to launch.
+
+---
+
+### 3. Services (your time, quoted separately)
+
+For clients who want hands-on help beyond the software.
+
+| Service | Notes |
+|---|---|
+| **Onboarding & setup** | Account config, data input, first business set up end-to-end. One-time fee — quote based on complexity. |
+| **Coaching retainer** | Ongoing monthly coaching sessions using the platform as the operating system. Your time, billed separately to the software. |
+| **Data input / migration** | Importing existing strategy docs, scorecards, goals from spreadsheets or previous tools. Hourly or fixed package. |
+| **Team training** | Walkthrough session for the leadership team. Per session. |
+| **Integration help** | Connecting to external tools or setting up custom workflows. Quoted per project. |
+
+Services are priced by you per engagement — not automated through the platform.
 
 ## Add a New Member (SQL)
 
