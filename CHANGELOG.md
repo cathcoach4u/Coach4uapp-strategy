@@ -4,6 +4,47 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.218
+- **Three asks bundled.** User: "Annual sessions still have the option for scheduled. Remove this. Just want in progress or completed. (Check quarterly). Also I notice that when I go back to the meeting with the pill does this then stop the active meeting. I have to start the meeting again." + "Heading doesn't look great on phone" (Role Permissions matrix on iPhone showing the header row as "ADMINCOACHMEMBE" — labels colliding).
+
+### (1) Annual + quarterly sessions: drop the "Scheduled" status
+Same change v0.5.209 made for meetings, now applied to sessions:
+- `run-annual-session.html` + `run-quarterly-session.html` — status dropdown now renders only **In Progress** + **Completed**.
+- Selected logic: `status !== 'completed'` shows as In Progress (any historical 'scheduled' row also displays as In Progress).
+- `annual-sessions.html` + `quarterly-sessions.html` — new session inserts default to `status: 'in_progress'` (was 'scheduled').
+- DB CHECK constraint on `*_sessions.status` untouched — 'scheduled' is still a valid stored value for historical data.
+
+### (2) Meeting timer syncs on return via the pill
+**Bug**: tap the floating green pill → land on `run-meeting.html` → timer button shows "▶ Start Meeting" → user thinks they have to begin over.
+
+**Root cause**: the timer state (`_timerStart`, `_timerInterval`) is in module-level JS that resets on every page load. The DB knew the meeting was `in_progress` but the UI showed the initial-state button.
+
+**Fix** in `renderDetail`, before the timer button click handler is wired:
+```js
+if (m.status === 'in_progress' && m.created_at) {
+  _timerStart = new Date(m.created_at).getTime();
+  timerEl.classList.remove('hidden');
+  timerBtn.textContent = '⏹ End Meeting';
+  timerBtn.classList.add('running');
+  const tick = () => { /* compute mm:ss from created_at */ };
+  tick();
+  _timerInterval = setInterval(tick, 1000);
+}
+```
+
+So returning to an in-progress meeting via pill / refresh / direct URL now shows the elapsed time (anchored on `created_at`) + the End button immediately. No fake "Start" prompt.
+
+### (3) Role Permissions matrix — mobile heading fix
+The screenshot showed the header row crammed as "ADMINCOACHMEMBE" because role columns were 46px wide and labels at 0.62rem letter-spacing 0.5px don't fit.
+
+- Role columns bumped 46 → **58px**, gap 4 → 2px (more room for labels).
+- Header font 0.62 → **0.6rem**, letter-spacing 0.5 → **0.2px** (tighter fit).
+- New `@media (max-width: 380px)` breakpoint for ultra-narrow phones: 52px columns, 0.55rem header, 0.1px spacing.
+
+### No SQL.
+
+---
+
 ## v0.5.217
 - **Role Permissions reference table + members can't edit issues.** User: "Add a and b" (a = role permissions in admin area; b = hide edit option for members) + "Remove option for edit."
 

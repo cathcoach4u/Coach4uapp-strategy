@@ -364,8 +364,9 @@
         <div class="session-detail-heading" style="justify-content:flex-end;">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <select class="field-select" id="session-status">
-              <option value="scheduled" ${s.status==='scheduled'?'selected':''}>Scheduled</option>
-              <option value="in_progress" ${s.status==='in_progress'?'selected':''}>In Progress</option>
+              <!-- v0.5.218 — "Scheduled" dropped; sessions are either In Progress
+                   or Completed. Selected logic = `!== completed` means scheduled. -->
+              <option value="in_progress" ${s.status!=='completed'?'selected':''}>In Progress</option>
               <option value="completed" ${s.status==='completed'?'selected':''}>Completed</option>
             </select>
           </div>

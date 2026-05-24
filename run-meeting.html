@@ -314,6 +314,27 @@
       showToast('Status updated','success');
     });
     const timerBtn=c.querySelector('#timer-btn'),timerEl=c.querySelector('#timer-elapsed');
+
+    // v0.5.218 — If the meeting is already in_progress when the user lands on
+    // the page (e.g. returning via the floating green pill or refreshing),
+    // sync the timer UI to that state. Use created_at as the start reference
+    // so elapsed time is meaningful even after navigation. Without this, the
+    // button shows "Start Meeting" and the user thinks they have to begin
+    // over — which is the bug the user reported.
+    if (m.status === 'in_progress' && m.created_at) {
+      _timerStart = new Date(m.created_at).getTime();
+      timerEl.classList.remove('hidden');
+      timerBtn.textContent = '⏹ End Meeting';
+      timerBtn.classList.add('running');
+      const tick = () => {
+        const s = Math.floor((Date.now() - _timerStart) / 1000);
+        const mm = Math.floor(s / 60), ss = s % 60;
+        timerEl.textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
+      };
+      tick();
+      _timerInterval = setInterval(tick, 1000);
+    }
+
     timerBtn.addEventListener('click',async()=>{
       if(!_timerStart){
         _timerStart=Date.now();timerEl.classList.remove('hidden');timerBtn.textContent='⏹ End Meeting';timerBtn.classList.add('running');

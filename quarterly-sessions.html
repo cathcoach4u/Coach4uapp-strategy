@@ -222,7 +222,7 @@
     if(!target_quarter){showToast('Target quarter is required','error');return}
     const payload = {
       session_date, target_quarter,
-      status: 'scheduled', attendance: '', areas_completed: {}
+      status: 'in_progress', attendance: '', areas_completed: {}
     };
     if (IS_ACCOUNT) {
       if (!subId) { showToast('No active account — switch account first','error'); return; }
