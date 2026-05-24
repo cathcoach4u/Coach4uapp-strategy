@@ -4,6 +4,46 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.216
+- **Members can add to Issues List + Future Issues List.** User: "I would want team members to be able to add to an area in future issues list. But not delete. And also keep adding to the issues list but not delete."
+
+### Before
+Only admins + coaches could write to `issues` (the `"admins write issues"` FOR ALL policy). Members were read-only — they couldn't surface a new issue without asking an admin to type it in.
+
+### After
+New additive INSERT-only policy on `public.issues`:
+```sql
+CREATE POLICY "members add issues" ON public.issues
+  FOR INSERT
+  WITH CHECK (
+    organisation_id IN (SELECT public.user_org_ids(auth.uid()))
+    AND category IN ('current', 'future')
+  );
+```
+
+Postgres combines policies with OR for the same operation, giving us this matrix:
+
+| Role | Action | Result |
+|---|---|---|
+| Admin / Coach | INSERT any category | ✅ via `"admins write issues"` |
+| Admin / Coach | UPDATE / DELETE any | ✅ via `"admins write issues"` |
+| Member | INSERT category=current | ✅ via `"members add issues"` |
+| Member | INSERT category=future | ✅ via `"members add issues"` |
+| Member | INSERT category=yearly | ❌ both policies fail → 403 |
+| Member | UPDATE existing issue | ❌ only FOR ALL applies → 403 |
+| Member | DELETE existing issue | ❌ only FOR ALL applies → 403 |
+
+### Why `yearly` stays admin/coach-only
+12 Month Issues are long-horizon items surfaced at the annual planning session — not day-to-day adds that anyone should drop in. Admins/coaches add them deliberately during planning.
+
+### UI behaviour
+`issues.html` still renders the **Add Issue** button + edit modal to everyone. Members can hit Add freely (works). If a member taps an existing issue and tries to Save edits, they'll see an RLS-denied error toast — clear feedback rather than silently hiding the affordance (which would require role-querying every row render). A future refinement could hide the edit modal for non-admins; left as-is for now.
+
+### Requires SQL
+`supabase/v0.5.216-delta.sql`
+
+---
+
 ## v0.5.215
 - **Auto-complete meetings left in_progress past their meeting day.** User: "What happens if they just leave the meeting open? Does it automatically close?" → "Yes" (to option 2 of the two I offered: auto-complete by date).
 
