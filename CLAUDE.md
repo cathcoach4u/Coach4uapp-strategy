@@ -163,6 +163,38 @@ One user can own **multiple `subscriptions`** (one per client account). Active s
 
 Every `account-*.html` carousel page applies the same subscription scoping (v0.5.116). Without it the carousel would mix businesses across every account the user owns.
 
+## Coach + Client Architecture
+
+> **Read this before changing anything about Cath's account setup.** This was correct historically but kept getting confused — this section is the source of truth.
+
+**Cath (cath@coach4u.com.au)** is the coach and the single login. She does NOT sign in as her clients — she owns their subscriptions directly.
+
+She owns **three subscriptions** — all with `owner_user_id = Cath's user ID`. The account switcher shows all three because of the `WHERE owner_user_id = user.id` query in `index.html → loadAll()`:
+
+| Subscription name | `subscription_type` | Contents |
+|---|---|---|
+| Coach4U (or similar) | `'coach'` | Coach4U, Coach4U Development, ABMS — Cath's own businesses |
+| SARUBA | `'business'` | SARUBA client businesses |
+| IAS | `'business'` | IASHQ (parent) → IAS General, IAS Life, IAS Outsourcing |
+
+**SARUBA and IAS have no separate user logins.** Cath manages both entirely from her own login. The account switcher dropdown lets her switch into each client's data.
+
+**IAS parent/child structure (depth-1 tree):**
+- IASHQ — parent
+  - IAS General — child
+  - IAS Life — child
+  - IAS Outsourcing — child
+
+**Setting subscription_type = 'coach' on Cath's primary subscription:**
+Run `supabase/v0.5.228-diagnostic.sql` first to confirm which subscription ID is Cath's own (not SARUBA/IAS). Then run the targeted UPDATE in `supabase/v0.5.226-coach-setup.sql`. **Do not blanket-update all of Cath's subscriptions** — SARUBA and IAS must stay as `'business'` type.
+
+**If SARUBA or IAS are missing from the account switcher:**
+Run `supabase/v0.5.228-diagnostic.sql` to check:
+- If they exist under a different `owner_user_id` → run the UPDATE fix in that file.
+- If they don't exist → recreate via `+ New client account` in `index.html`, or use the SQL template in that file.
+
+**v0.5.227 team-member approach:** `index.html → loadAll()` has a secondary query that finds subscriptions via `team_members.role = 'coach'`. This is a harmless fallback but is **not the primary mechanism** — Cath's direct ownership of all three subscriptions means the first `WHERE owner_user_id = user.id` query handles everything. The v0.5.227-delta.sql Part 2 (inserting Cath as team member in non-owned orgs) should NOT be run for this case.
+
 ## Login Page Standard (Gold Standard v2.2)
 
 `login.html` uses gold standard — no inline `<style>` blocks, no Google Fonts, `css/style.css` handles all login styling.
@@ -196,9 +228,10 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.227
+v0.5.228
 
 ## Latest
+- **v0.5.228** — Architecture correction + diagnostic SQL. Added `## Coach + Client Architecture` section to CLAUDE.md documenting that Cath owns all 3 subscriptions (Coach4U / SARUBA / IAS) and that SARUBA/IAS clients have no separate logins — SARUBA and IAS appear in the switcher via `owner_user_id`, not via team membership. Created `supabase/v0.5.228-diagnostic.sql` to check why SARUBA/IAS may be missing (wrong owner or deleted) with fix SQL included. Rewrote `supabase/v0.5.226-coach-setup.sql` to require identifying the correct subscription ID first rather than blanket-updating all owned subscriptions. No code changes.
 - **v0.5.227** — Coach account switcher: `index.html` `loadAll()` now also queries `team_members` for role='coach' entries, extracts unique subscription IDs from those orgs, and fetches those subscriptions (possible via new RLS policy). They appear in the account switcher prefixed "Client: NAME". SQL migration `v0.5.227-delta.sql` adds the RLS policy and inserts Cath as a coach team member in SARUBA's and IAS's organisations (matched via `LIKE '%saruba%'` / `LIKE '%ias%'` on subscription name). Must run both v0.5.226-coach-setup.sql and v0.5.227-delta.sql in Supabase SQL Editor.
 - **v0.5.226** — Coach account support in account-setup.html. `loadSub` now fetches `subscription_type`. `renderPlanCard()` detects `subscription_type === 'coach'` and renders a "Coach Account" card (role badge, own businesses listed, no billing limit shown) instead of the standard Subscription card. SQL migration `v0.5.226-coach-setup.sql` sets Cath's subscription to `subscription_type = 'coach'` and `included_businesses = 99`. Once run, her card moves from Business Subscriptions → Coaches section in admin.html. SARUBA and IAS to be set up as separate client accounts via "New client account" in yourbusinesscoach index.html.
 - **v0.5.225** — account-setup.html: removed auto-save debounce; added Subscription summary card with business count and parent/child tree. — Trial-release hardening pass. Five things bundled. **(1) Service worker paths fixed** — `sw.js` STATIC_ASSETS array still pointed at `/external-Coach4u-app/…` (a previous repo path). PWA install + offline mode were both broken: cache.addAll silently failed, offline fallback navigated to a 404. Rewrote sw.js with relative paths (`./`, `./offline.html`, etc.) so it works on GitHub Pages (`/yourbusinesscoach/`) and any local subpath. Also dropped the legacy `/api/` cache branch (no in-app API calls hit that path; all DB calls go to Supabase directly). Cache-version bump to `coach4u-v0.5.222` invalidates every previous cache so users get the fix automatically on next load. **(2) Legacy account hubs deleted** — `account-strategy.html`, `account-operations.html`, `account-planning.html` were dead since v0.5.146 (only reachable via dead `if (back)` querySelectors on the session list pages). All three files removed. Dead lines stripped from `annual-sessions.html`, `quarterly-sessions.html`, `team-checkins.html`. **(3) Data export** — new `📥 Data Export` card on `account-setup.html` listing every business in the active subscription with a `⬇ Export JSON` button. One click downloads a complete snapshot: strategy worksheets, financial periods, scorecard metrics + entries, rocks, issues, meetings + headlines + todos, planning sessions, team check-ins, business cadence, team members, org metadata. Format: `coach4u-<biz-name>-YYYY-MM-DD.json` with `schema: coach4u-business-snapshot/v1` for forward-compat. Uses RLS so admins/coaches/members all see only the data they're allowed to. **(4) Group Financials rollup** — `account-plans.html` now shows a **💰 Group Financials** banner above the carousel summing revenue + expenses + profit across every business in the account (Last 12 / Next 12). Only renders when there are 2+ businesses AND any have financial data. Hidden in print mode (each per-business card already prints its own financials). **(5) Empty-state copy upgrades** — `goals.html`, `scorecard.html`, `meeting.html` empty states now point at the matching Learn vault guide instead of just saying "Nothing here". **(6) Swipe-to-delete on To-Dos** — new `js/swipe-delete.js` helper, opt-in via `.swipeable` class. Touch-only (desktop unchanged). Swipe a todo row left → reveals a red "Delete" backdrop → past 50% commits the delete (triggers the existing `.todo-del` click handler so the same Supabase delete + optimistic UI path runs). Issues + scorecard rows not yet opted in (issues has a competing click-to-edit handler; would need conflict resolution before turning on). **No SQL.**
