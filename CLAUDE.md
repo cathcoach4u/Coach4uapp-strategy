@@ -195,10 +195,10 @@ The account switcher shows only one entry. If clients later need their own separ
   - IAS Life — child
   - IAS Outsourcing — child
 
-### IAS client data — what has been seeded (run in Supabase to activate)
+### IAS client data — seeded from May 2026 planning meeting (applied ✓)
 
-Two SQL files were created in v0.5.231–232 from the May 2026 IAS planning meeting notes.
-**Run both in order in the Supabase SQL Editor** (`eekefsuaefgpqmjdyniy`) before expecting data to appear.
+Two SQL migrations were run in v0.5.231–232 from the May 2026 IAS planning meeting notes.
+Both have been applied to the Supabase DB (`eekefsuaefgpqmjdyniy`) — data is live.
 
 **`supabase/v0.5.231-delta.sql`** — IASHQ only:
 - `targets.ten_year` — 10-year vision (by 30/06/2036: self-sustaining business, succession / sale readiness, Jo reducing involvement)
@@ -221,7 +221,7 @@ Both files use `WHERE NOT EXISTS` and `ON CONFLICT DO UPDATE` — safe to re-run
 - Do not create separate subscriptions for SARUBA or IAS — all businesses belong in Coaching with Cath
 - Do not change `owner_user_id` on the Coaching with Cath subscription
 - The v0.5.227-delta.sql Part 2 (inserting Cath as team member in non-owned orgs) should NOT be run
-- Do NOT re-run v0.5.231 or v0.5.232 a second time without checking for existing data — issues and rocks do not have unique constraints and will duplicate
+- Do NOT re-run v0.5.231 or v0.5.232 — both have been applied. Issues and rocks have no unique constraints; re-running will create duplicate rows
 
 ## Login Page Standard (Gold Standard v2.2)
 
@@ -258,15 +258,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 ## Current Version
 v0.5.232
 
-## Pending Actions (must be done outside Claude Code)
-
-> These require manual steps in external tools. Future sessions: check this list before assuming data is missing or a feature is broken.
-
-### SQL migrations to run in Supabase SQL Editor (`eekefsuaefgpqmjdyniy`)
-1. **`supabase/v0.5.231-delta.sql`** — IAS planning meeting data into IASHQ (targets, issues, rocks)
-2. **`supabase/v0.5.232-delta.sql`** — Full IAS data across all 4 orgs (core_focus, one_year_goals, leadership team, per-unit issues)
-
-Once both are run, all IAS content from the May 2026 planning meeting will be visible in the app.
+## Pending Actions
+None outstanding — all SQL migrations applied.
 
 ## Latest
 - **v0.5.232** — Comprehensive IAS data import Part 2. Creates `supabase/v0.5.232-delta.sql` populating all 4 IAS orgs (IASHQ, GI, Life, Outsourcing) from the May 2026 planning meeting: `core_focus` (purpose + niche), `one_year_goals` in targets, leadership team members (Jo/Leah/Teresa with % time allocations per unit, plus Lisa in GI and Fhevy in Life/FP), and per-unit issues for GI, Life and Outsourcing. SQL only — run `v0.5.232-delta.sql` in Supabase SQL Editor to apply.
