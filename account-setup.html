@@ -42,11 +42,17 @@
 
     .page-header { padding: 20px 16px 8px; }
     .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
-    .page-sub { font-size: 0.82rem; color: #666; margin: 0; line-height: 1.5; }
+    .page-sub { font-size: 0.82rem; color: #666; margin: 0 0 12px; line-height: 1.5; }
+
+    /* Section wrapper — matches index.html + account-users.html */
+    .section { padding: 0 16px 16px; margin-top: 22px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+    .section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); }
+    .section-blurb { font-size: 0.78rem; color: #888; line-height: 1.5; margin: -4px 0 12px; }
 
     .form-card {
       background: white; border: 1.5px solid var(--border); border-radius: 12px;
-      margin: 12px 16px; padding: 18px 16px 14px;
+      margin: 0; padding: 18px 16px 14px;
     }
     .form-field { margin-bottom: 14px; }
     .form-field:last-child { margin-bottom: 0; }
@@ -71,7 +77,7 @@
     }
     .btn-save {
       background: #e5e7eb; color: #9ca3af; border: none;
-      padding: 9px 20px; border-radius: 8px; font-family: inherit;
+      padding: 9px 18px; border-radius: 8px; font-family: inherit;
       font-size: 0.88rem; font-weight: 700; cursor: default; transition: background .15s, color .15s;
       white-space: nowrap;
     }
@@ -86,12 +92,11 @@
     .save-status.err   { color: #DC2626; font-weight: 700; }
     .save-status.dirty { color: #d97706; font-weight: 700; }
 
-    /* Subscription summary card */
+    /* Subscription card */
     .plan-card {
       background: white; border: 1.5px solid var(--border); border-radius: 12px;
-      margin: 12px 16px; padding: 18px 16px 14px;
+      margin: 0; padding: 16px;
     }
-    .plan-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin: 0 0 12px; }
     .plan-row {
       display: flex; align-items: baseline; gap: 8px;
       font-size: 0.85rem; padding: 4px 0;
@@ -110,15 +115,16 @@
     .biz-row.child { padding-left: 22px; color: #555; font-size: 0.84rem; }
     .biz-row.child::before { content: '↳'; color: #ccc; margin-right: 2px; }
 
-    /* Data export card */
-    .export-card { margin: 18px 16px 4px; background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 18px 16px 14px; }
-    .export-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
-    .export-blurb { font-size: 0.78rem; color: #666; margin: 0 0 14px; line-height: 1.5; }
+    /* Data export */
+    .export-list {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      overflow: hidden;
+    }
     .export-row {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; padding: 10px 0; border-top: 1px solid var(--border);
+      gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border);
     }
-    .export-row:first-of-type { border-top: none; }
+    .export-row:last-child { border-bottom: none; }
     .export-biz-name { font-size: 0.9rem; font-weight: 700; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .export-btn {
       background: var(--accent); color: white; border: none;
@@ -177,47 +183,59 @@
       <p class="page-sub">The account name and invoicing details used across this client account.</p>
     </div>
 
-    <div class="form-card">
-      <div class="form-field">
-        <label class="form-label" for="acctNameInput">Account name</label>
-        <input class="form-input" id="acctNameInput" type="text" maxlength="120" placeholder="e.g. SARUBA"/>
-        <div class="form-help">Shown at the top of the dashboard and on invoices.</div>
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Account Details</span>
       </div>
+      <div class="form-card">
+        <div class="form-field">
+          <label class="form-label" for="acctNameInput">Account name</label>
+          <input class="form-input" id="acctNameInput" type="text" maxlength="120" placeholder="e.g. SARUBA"/>
+          <div class="form-help">Shown at the top of the dashboard and on invoices.</div>
+        </div>
 
-      <div class="form-field">
-        <label class="form-label" for="billingEmailInput">Billing email</label>
-        <input class="form-input" id="billingEmailInput" type="email" maxlength="120" placeholder="invoices@example.com"/>
-        <div class="form-help">Where invoices and billing notifications get sent. Separate from your login email.</div>
-      </div>
+        <div class="form-field">
+          <label class="form-label" for="billingEmailInput">Billing email</label>
+          <input class="form-input" id="billingEmailInput" type="email" maxlength="120" placeholder="invoices@example.com"/>
+          <div class="form-help">Where invoices and billing notifications get sent. Separate from your login email.</div>
+        </div>
 
-      <div class="form-field">
-        <label class="form-label" for="billingAddressInput">Billing address</label>
-        <textarea class="form-textarea" id="billingAddressInput" maxlength="500" placeholder="Street&#10;City, State Postcode&#10;Country"></textarea>
-        <div class="form-help">Postal address that appears on your invoices.</div>
-      </div>
+        <div class="form-field">
+          <label class="form-label" for="billingAddressInput">Billing address</label>
+          <textarea class="form-textarea" id="billingAddressInput" maxlength="500" placeholder="Street&#10;City, State Postcode&#10;Country"></textarea>
+          <div class="form-help">Postal address that appears on your invoices.</div>
+        </div>
 
-      <div class="form-field">
-        <label class="form-label" for="taxIdInput">Tax ID (ABN / VAT / company number)</label>
-        <input class="form-input" id="taxIdInput" type="text" maxlength="64" placeholder="e.g. ABN 12 345 678 901"/>
-        <div class="form-help">Optional. The legal identifier that appears on your invoices.</div>
-      </div>
+        <div class="form-field">
+          <label class="form-label" for="taxIdInput">Tax ID (ABN / VAT / company number)</label>
+          <input class="form-input" id="taxIdInput" type="text" maxlength="64" placeholder="e.g. ABN 12 345 678 901"/>
+          <div class="form-help">Optional. The legal identifier that appears on your invoices.</div>
+        </div>
 
-      <div class="form-footer" id="formFooter">
-        <button class="btn-save" id="saveBtn" type="button" disabled>Save changes</button>
-        <span class="save-status" id="saveStatus">Changes save automatically.</span>
+        <div class="form-footer" id="formFooter">
+          <button class="btn-save" id="saveBtn" type="button" disabled>Save changes</button>
+          <span class="save-status" id="saveStatus">Changes save automatically.</span>
+        </div>
       </div>
     </div>
 
-    <div class="plan-card" id="planCard"></div>
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title" id="planSectionTitle">Subscription</span>
+      </div>
+      <div class="plan-card" id="planCard"></div>
+    </div>
 
-    <div class="export-card">
-      <h2 class="export-title">&#x1F4E5; Data Export</h2>
-      <p class="export-blurb">Download a complete snapshot of every business in this account &mdash; strategy, operations, planning, and team data. JSON format, one file per business. Useful for backups, migrations, or if you ever want to leave.</p>
-      <div id="exportList"></div>
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Data Export</span>
+      </div>
+      <p class="section-blurb">Download a complete snapshot of every business in this account &mdash; strategy, operations, planning, and team data. JSON format, one file per business. Useful for backups, migrations, or if you ever want to leave.</p>
+      <div class="export-list" id="exportList"></div>
       <div class="export-status" id="exportStatus"></div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.238</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.239</p>
   </div>
 
   <nav class="bottom-nav">
@@ -402,8 +420,9 @@
       }
 
       if (isCoach) {
+        const titleEl = document.getElementById('planSectionTitle');
+        if (titleEl) titleEl.textContent = 'Coach Account';
         wrap.innerHTML = `
-          <h2 class="plan-title">Coach Account</h2>
           <div class="plan-row">
             <span class="plan-label">Role</span>
             <span class="plan-value" style="color:#0D9488">Coach</span>
@@ -426,7 +445,6 @@
       const countColour = count > limit ? '#dc2626' : count === limit ? '#d97706' : '#059669';
 
       wrap.innerHTML = `
-        <h2 class="plan-title">Subscription</h2>
         <div class="plan-row">
           <span class="plan-label">Status</span>
           <span class="plan-value" style="color:${st.colour}">${st.label}</span>

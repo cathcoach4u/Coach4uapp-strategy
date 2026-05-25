@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.239
+- **Account Setup page restructured for design consistency.** HTML body now uses `.section` wrappers with `.section-head` / `.section-title` headings ("Account Details", "Subscription", "Data Export") — matching the pattern already used on `index.html` and `account-users.html`. The form card and plan card now sit inside these sections rather than being bare floated elements. The Data Export block moves from a standalone `.export-card` (with embedded `<h2>` and `<p>`) to a section-wrapped `.export-list` with a `.section-blurb` subtitle. The JS `renderPlanCard()` function's embedded `<h2 class="plan-title">` headings are removed; instead, the section title element (`#planSectionTitle`) is updated to "Coach Account" at runtime for coach-type subscriptions (stays "Subscription" for standard accounts). No data changes, no SQL.
+
 ## v0.5.238
 - **User card role pill alignment fix.** Removed `width: 100%` from `.user-orgs` (the CSS table wrapping each user's business list) and added `width: 1px` to `.user-org-name`. The `width: 1px` + `white-space: nowrap` combination is the standard CSS-table trick for "shrink to content width" — the name cell takes exactly as much space as its text needs, so the ADMIN/COACH/MEMBER pill sits right next to the name rather than floating to the far right edge of the card. Also added `white-space: nowrap` to `.user-org-action` so the Remove button never wraps onto its own line. Works correctly on narrow phone viewports — the longest IAS business name plus pill plus Remove fits within 320px. No SQL.
 
