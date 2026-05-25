@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.230
+- **Consolidated all businesses into single coach subscription.** Ran SQL to move all SARUBA and IAS organisations into the Coaching with Cath subscription, then deleted the now-empty Saruba and IAS subscriptions. All 7 businesses (Coach4U Development / Coach4u / ABMS from SARUBA + IASHQ / IAS General / IAS Life / IAS Outsourcing from IAS) now live under one coach account (`subscription_type='coach'`, `included_businesses=99`) with no billing limits. When clients later need their own separate subscriptions, organisations can be moved and all data follows automatically (scoped by `organisation_id`). Updated `CLAUDE.md` Coach + Client Architecture section to reflect single-subscription model. **No code changes — DB and docs only.**
+
 ## v0.5.229
 - **DB setup complete + CLAUDE.md corrected.** Ran SQL (via Supabase SQL Editor) to fix the coach/client structure: (1) fixed Saruba subscription `subscription_type` from `'owner'` → `'business'`; (2) created **Coaching with Cath** subscription (`subscription_type='coach'`, `included_businesses=99`) owned by cath@coachingwithcath.com.au; (3) created **IAS** subscription (`subscription_type='business'`, `included_businesses=4`) with IASHQ as parent org and IAS General / IAS Life / IAS Outsourcing as children; (4) added cath@coachingwithcath.com.au (user `f8327825`) as admin team member of all four IAS orgs. Corrected `## Coach + Client Architecture` in CLAUDE.md — the two logins are distinct by purpose: `cath@coachingwithcath.com.au` is the yourbusinesscoach login (owns all 3 subscriptions), `cath@coach4u.com.au` is the admin panel only. **No code changes — DB and docs only.**
 

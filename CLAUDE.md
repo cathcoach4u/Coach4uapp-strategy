@@ -176,17 +176,18 @@ Every `account-*.html` carousel page applies the same subscription scoping (v0.5
 
 **Never confuse these.** The `coach4u.com.au` login has no subscriptions with businesses — it is admin-only. All coaching app data belongs to `coachingwithcath.com.au`.
 
-### Three subscriptions (all owned by coachingwithcath.com.au)
+### One subscription (owned by coachingwithcath.com.au)
 
 | Subscription name | `subscription_type` | Contents |
 |---|---|---|
-| Coaching with Cath | `'coach'` | No businesses — Cath's own coach identity |
-| Saruba | `'business'` | Coach4U Development, Coach4u, ABMS — SARUBA client businesses |
-| IAS | `'business'` | IASHQ (parent) → IAS General, IAS Life, IAS Outsourcing |
+| Coaching with Cath | `'coach'` | All businesses — unlimited, no billing |
 
-The account switcher shows all three because `index.html → loadAll()` queries `WHERE owner_user_id = user.id`.
+All 7 businesses live inside the single coach subscription. SARUBA and IAS are **not** separate subscriptions — they are businesses within Coaching with Cath. No billing applies because the subscription is coach type.
 
-**SARUBA and IAS have no separate user logins.** Cath manages both entirely. The account switcher lets her switch between them.
+**SARUBA businesses:** Coach4U Development, Coach4u, ABMS
+**IAS businesses:** IASHQ (parent) → IAS General, IAS Life, IAS Outsourcing
+
+The account switcher shows only one entry. If clients later need their own separate account, their organisations can be moved to a new subscription and all data (rocks, issues, scorecard, meetings etc.) moves with them automatically since it is scoped by organisation ID.
 
 ### IAS parent/child structure (depth-1 tree)
 - IASHQ — parent
@@ -195,9 +196,9 @@ The account switcher shows all three because `index.html → loadAll()` queries 
   - IAS Outsourcing — child
 
 ### What NOT to do
-- Do not change `owner_user_id` on any of the three subscriptions — they are all correctly owned by `coachingwithcath.com.au`
-- Do not set SARUBA or IAS subscriptions to `subscription_type = 'coach'` — they are client accounts
-- The v0.5.227-delta.sql Part 2 (inserting Cath as team member in non-owned orgs) should NOT be run — ownership is the correct mechanism, not team membership
+- Do not create separate subscriptions for SARUBA or IAS — all businesses belong in Coaching with Cath
+- Do not change `owner_user_id` on the Coaching with Cath subscription
+- The v0.5.227-delta.sql Part 2 (inserting Cath as team member in non-owned orgs) should NOT be run
 
 ## Login Page Standard (Gold Standard v2.2)
 
@@ -232,9 +233,10 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.229
+v0.5.230
 
 ## Latest
+- **v0.5.230** — Consolidated all businesses into single coach subscription. Ran SQL to move all SARUBA and IAS organisations into the Coaching with Cath subscription, then deleted the now-empty Saruba and IAS subscriptions. All 7 businesses (Coach4U Development, Coach4u, ABMS + IASHQ + IAS General + IAS Life + IAS Outsourcing) now live under one coach account with no billing limits. Updated CLAUDE.md Coach + Client Architecture section to reflect single-subscription model. No code changes.
 - **v0.5.229** — DB setup complete + CLAUDE.md corrected. Ran SQL to: (1) fix Saruba subscription_type from `'owner'` → `'business'`; (2) create **Coaching with Cath** subscription (subscription_type=`'coach'`) owned by coachingwithcath.com.au; (3) create **IAS** subscription with IASHQ parent + IAS General / IAS Life / IAS Outsourcing children; (4) add cath@coachingwithcath.com.au as admin team member of all 4 IAS orgs. Updated Coach + Client Architecture section in CLAUDE.md — corrected the two-login setup: `coachingwithcath.com.au` = yourbusinesscoach login (owns all 3 subscriptions), `coach4u.com.au` = admin panel only. No code changes.
 - **v0.5.228** — Architecture correction + diagnostic SQL. Added `## Coach + Client Architecture` section to CLAUDE.md documenting that Cath owns all 3 subscriptions (Coach4U / SARUBA / IAS) and that SARUBA/IAS clients have no separate logins — SARUBA and IAS appear in the switcher via `owner_user_id`, not via team membership. Created `supabase/v0.5.228-diagnostic.sql` to check why SARUBA/IAS may be missing (wrong owner or deleted) with fix SQL included. Rewrote `supabase/v0.5.226-coach-setup.sql` to require identifying the correct subscription ID first rather than blanket-updating all owned subscriptions. No code changes.
 - **v0.5.227** — Coach account switcher: `index.html` `loadAll()` now also queries `team_members` for role='coach' entries, extracts unique subscription IDs from those orgs, and fetches those subscriptions (possible via new RLS policy). They appear in the account switcher prefixed "Client: NAME". SQL migration `v0.5.227-delta.sql` adds the RLS policy and inserts Cath as a coach team member in SARUBA's and IAS's organisations (matched via `LIKE '%saruba%'` / `LIKE '%ias%'` on subscription name). Must run both v0.5.226-coach-setup.sql and v0.5.227-delta.sql in Supabase SQL Editor.
