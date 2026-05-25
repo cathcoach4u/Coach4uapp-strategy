@@ -216,7 +216,7 @@
       <div class="export-status" id="exportStatus"></div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.225</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.226</p>
   </div>
 
   <nav class="bottom-nav">
@@ -265,7 +265,7 @@
       const cachedId = (window.activeOrg && window.activeOrg.getSubscription && window.activeOrg.getSubscription()) || null;
       const { data: subs } = await sb
         .from('subscriptions')
-        .select('id, name, billing_email, billing_address, billing_tax_id, owner_user_id, created_at, status, included_businesses')
+        .select('id, name, billing_email, billing_address, billing_tax_id, owner_user_id, created_at, status, included_businesses, subscription_type')
         .eq('owner_user_id', user.id)
         .order('created_at', { ascending: true });
       if (!subs || !subs.length) {
@@ -371,24 +371,14 @@
       const wrap = document.getElementById('planCard');
       if (!wrap || !sub) return;
 
+      const isCoach = sub.subscription_type === 'coach';
+
       const { data: orgs } = await sb
         .from('organisations')
         .select('id, name, parent_organisation_id, sort_order')
         .eq('subscription_id', sub.id)
         .order('sort_order', { ascending: true })
         .order('name', { ascending: true });
-
-      const limit = sub.included_businesses || 2;
-      const count = orgs ? orgs.length : 0;
-
-      const statusLabels = {
-        trial: { label: 'Trial', colour: '#d97706' },
-        active: { label: 'Active', colour: '#059669' },
-        past_due: { label: 'Past due', colour: '#dc2626' },
-        cancelled: { label: 'Cancelled', colour: '#6b7280' }
-      };
-      const st = statusLabels[sub.status] || { label: sub.status || '—', colour: '#888' };
-      const countColour = count > limit ? '#dc2626' : count === limit ? '#d97706' : '#059669';
 
       let bizHtml = '';
       if (orgs && orgs.length) {
@@ -404,6 +394,30 @@
           bizHtml += `<div class="biz-row">🏢 ${escHtml(o.name || '(Unnamed)')}</div>`;
         }
       }
+
+      if (isCoach) {
+        wrap.innerHTML = `
+          <h2 class="plan-title">Coach Account</h2>
+          <div class="plan-row">
+            <span class="plan-label">Role</span>
+            <span class="plan-value" style="color:#0D9488">Coach</span>
+          </div>
+          ${bizHtml ? `<div class="biz-tree"><div class="biz-tree-label">My businesses</div>${bizHtml}</div>` : ''}
+          <p style="font-size:0.75rem;color:#888;margin:12px 0 0;line-height:1.5;">To view a client account, use the account switcher in the Businesses tab.</p>
+        `;
+        return;
+      }
+
+      const limit = sub.included_businesses || 2;
+      const count = orgs ? orgs.length : 0;
+      const statusLabels = {
+        trial: { label: 'Trial', colour: '#d97706' },
+        active: { label: 'Active', colour: '#059669' },
+        past_due: { label: 'Past due', colour: '#dc2626' },
+        cancelled: { label: 'Cancelled', colour: '#6b7280' }
+      };
+      const st = statusLabels[sub.status] || { label: sub.status || '—', colour: '#888' };
+      const countColour = count > limit ? '#dc2626' : count === limit ? '#d97706' : '#059669';
 
       wrap.innerHTML = `
         <h2 class="plan-title">Subscription</h2>

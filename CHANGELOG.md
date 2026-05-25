@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.226
+- **Coach account support in account-setup.html.** `loadSub` now fetches `subscription_type`. `renderPlanCard()` checks if `subscription_type === 'coach'` and renders a "Coach Account" card — shows Role: Coach in teal, lists own businesses, hides the billing limit entirely, and shows a note pointing to the account switcher for client access. Non-coach accounts are unchanged. SQL migration `supabase/v0.5.226-coach-setup.sql` updates Cath's subscription to `subscription_type = 'coach'` and `included_businesses = 99` — must be run in Supabase SQL Editor. Once run, her card moves from Business Subscriptions → Coaches section in admin.html.
+
 ## v0.5.225
 - **account-setup.html: Subscription summary card + Save-button-only saving.** Two changes. **(1) Auto-save removed** — the 3-second debounce that silently saved form changes has been removed. The Save button (always visible, greyed out until dirty, teal when there are changes) is the sole save trigger. A `beforeunload` fallback still attempts a save if the user navigates away with unsaved changes. **(2) Subscription summary card** added between the billing form and the Data Export card. Shows: plan Status (Trial / Active / Past due / Cancelled, colour-coded), Businesses used vs allowed (colour-coded green/amber/red against `included_businesses`), and a full parent/child business tree — parent businesses shown with 🏢 icon, children indented with ↳. Renders from a live `organisations` query scoped to `sub.id`. If at the plan limit, shows "To add more businesses, contact your coach." `loadSub` select expanded to include `status` and `included_businesses`. **No SQL.**
 
