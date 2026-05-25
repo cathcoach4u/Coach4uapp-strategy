@@ -317,11 +317,14 @@
         }
         return;
       }
-      // First save transitions 'empty' → 'own' (or 'override' if a parent exists with data)
+      // First save transitions 'empty' → 'own' (or 'override' if a parent exists).
+      // Only call applyModeUI() when switching to 'override' (shows amber banner).
+      // The 'own' case is UI-identical to 'empty' (banner hidden, inputs enabled),
+      // so skipping the call avoids unnecessary DOM ops on a focused date input.
       if (!ownExists) {
         ownExists = true;
         mode = (parentId && parentCad) ? 'override' : 'own';
-        applyModeUI();
+        if (mode === 'override') applyModeUI();
       }
       flashSaved();
     }
@@ -463,17 +466,22 @@
       document.querySelectorAll('[data-key]').forEach(el => {
         const k = el.dataset.key;
         el.value = data[k] || '';
-        el.addEventListener('input', () => {
-          data[k] = el.value;
-          renderSummaries();
-          scheduleSave();
-        });
-        el.addEventListener('change', () => {
-          // <input type="date"> fires change but sometimes not input on some browsers
-          data[k] = el.value;
-          renderSummaries();
-          scheduleSave();
-        });
+        if (el.type === 'date') {
+          // Use change only for date inputs — input fires with el.value="" while
+          // the user is mid-entry (Chrome returns empty until all parts are filled),
+          // which causes a premature save that wipes the in-progress value.
+          el.addEventListener('change', () => {
+            data[k] = el.value;
+            renderSummaries();
+            scheduleSave();
+          });
+        } else {
+          el.addEventListener('input', () => {
+            data[k] = el.value;
+            renderSummaries();
+            scheduleSave();
+          });
+        }
       });
       renderSummaries();
     }

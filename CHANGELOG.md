@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.233
+- **Dashboard + cadence fixes.** Three changes: **(1) 12-Month Goal link fixed** — the "Edit ›" link on the home dashboard's 1-Year Goal panel was pointing at `targets.html` instead of `twelve-month-goal.html` (the dedicated editor added in v0.5.184). Now links correctly. **(2) Dashboard panel reorder** — on `business.html`, Core Values moved above the Planning Cadence panel so the flow reads: 1-Year Goal → Core Values → Planning Cadence → Quarterly Goals → Open Issues → Open To-Dos. **(3) "Year Flow" renamed to "Planning Cadence"** on the home dashboard to match the linked page name. **(4) Cadence date input bug fixed** — on `cadence.html`, quarterly (and all) date inputs were wired to both `input` and `change` events. Chrome's `<input type="date">` returns `el.value = ""` while the user is still typing month/day parts; if the 350ms debounce fired mid-entry (pause between typing month+day and year), it saved a null value, wiping the in-progress date. Fixed by using `change` only for `<input type="date">` fields — `change` fires when a complete, valid date is committed or the field is cleared, never with a partial value. Also skipped the `applyModeUI()` call on first-save when transitioning `empty → own` (no visible UI change needed, avoids unnecessary DOM ops on focused inputs). **No SQL.**
+
 ## v0.5.232
 - **Comprehensive IAS data import Part 2.** Creates `supabase/v0.5.232-delta.sql` that fully populates all 4 IAS organisations from the May 2026 planning meeting notes. Content added per org:
   - **IASHQ**: `core_focus` (purpose + niche as holding company / operations leadership), `one_year_goals` (FY26–27 priorities including wage allocation framework and succession planning milestones), leadership team (Jo transitioning to HQ, Leah as Ops Manager, Teresa for GI/HQ attendance).
