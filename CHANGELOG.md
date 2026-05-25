@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.234
+- **Dashboard panel reorder.** Core Values moved to first position after the quick-action buttons (Run Weekly Meeting / View One-Page Plan / View One-Page Operations), above the 1-Year Goal panel. New order: Core Values → 1-Year Goal → Planning Cadence → Quarterly Goals → Open Issues → Open To-Dos. No SQL.
+
 ## v0.5.233
 - **Dashboard + cadence fixes.** Three changes: **(1) 12-Month Goal link fixed** — the "Edit ›" link on the home dashboard's 1-Year Goal panel was pointing at `targets.html` instead of `twelve-month-goal.html` (the dedicated editor added in v0.5.184). Now links correctly. **(2) Dashboard panel reorder** — on `business.html`, Core Values moved above the Planning Cadence panel so the flow reads: 1-Year Goal → Core Values → Planning Cadence → Quarterly Goals → Open Issues → Open To-Dos. **(3) "Year Flow" renamed to "Planning Cadence"** on the home dashboard to match the linked page name. **(4) Cadence date input bug fixed** — on `cadence.html`, quarterly (and all) date inputs were wired to both `input` and `change` events. Chrome's `<input type="date">` returns `el.value = ""` while the user is still typing month/day parts; if the 350ms debounce fired mid-entry (pause between typing month+day and year), it saved a null value, wiping the in-progress date. Fixed by using `change` only for `<input type="date">` fields — `change` fires when a complete, valid date is committed or the field is cleared, never with a partial value. Also skipped the `applyModeUI()` call on first-save when transitioning `empty → own` (no visible UI change needed, avoids unnecessary DOM ops on focused inputs). **No SQL.**
 

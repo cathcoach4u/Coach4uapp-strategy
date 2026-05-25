@@ -256,12 +256,13 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.233
+v0.5.234
 
 ## Pending Actions
 None outstanding — all SQL migrations applied.
 
 ## Latest
+- **v0.5.234** — Dashboard panel reorder: Core Values moved to immediately after the quick-action buttons (below "View One-Page Operations"), above the 1-Year Goal panel. No SQL.
 - **v0.5.233** — Dashboard + cadence fixes. **(1)** 1-Year Goal "Edit ›" link fixed: was pointing at `targets.html`, now correctly links to `twelve-month-goal.html`. **(2)** Core Values panel moved above Planning Cadence on home dashboard. **(3)** "Year Flow" panel renamed to "Planning Cadence". **(4)** Cadence date input bug fixed: quarterly (and all) date fields now use `change` event only instead of both `input` + `change` — Chrome's date input returns `el.value=""` during partial entry, so the old `input` handler was triggering premature debounced saves with null values mid-typing. Also skipped unnecessary `applyModeUI()` call on `empty → own` first-save transition. No SQL.
 - **v0.5.232** — Comprehensive IAS data import Part 2. Creates `supabase/v0.5.232-delta.sql` populating all 4 IAS orgs (IASHQ, GI, Life, Outsourcing) from the May 2026 planning meeting: `core_focus` (purpose + niche), `one_year_goals` in targets, leadership team members (Jo/Leah/Teresa with % time allocations per unit, plus Lisa in GI and Fhevy in Life/FP), and per-unit issues for GI, Life and Outsourcing. SQL only — run `v0.5.232-delta.sql` in Supabase SQL Editor to apply.
 - **v0.5.231** — IAS planning meeting notes imported into IASHQ. Created `supabase/v0.5.231-delta.sql` to import: 10-year + 7-year (5-year field) vision targets, 6 current operational issues, 4 future/unresolved issues, and 5 Q2 2026 quarterly goals. SQL only — run `v0.5.231-delta.sql` in Supabase SQL Editor to apply. Ran SQL to move all SARUBA and IAS organisations into the Coaching with Cath subscription, then deleted the now-empty Saruba and IAS subscriptions. All 7 businesses (Coach4U Development, Coach4u, ABMS + IASHQ + IAS General + IAS Life + IAS Outsourcing) now live under one coach account with no billing limits. Updated CLAUDE.md Coach + Client Architecture section to reflect single-subscription model. No code changes.
