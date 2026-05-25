@@ -123,15 +123,18 @@
     .user-body { flex: 1; min-width: 0; }
     .user-name { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
     .user-email { font-size: 0.78rem; color: #888; margin-bottom: 8px; word-break: break-all; }
-    .user-orgs { display: table; width: 100%; border-collapse: collapse; }
+    /* Table shrinks to content width — name column collapses (width:1px + nowrap
+       is the CSS-table trick for "shrink to content"). Pills sit immediately to
+       the right of the name, not floated to the far edge of the card. */
+    .user-orgs { display: table; border-collapse: collapse; }
     .user-org-row { display: table-row; }
     .user-org-name {
-      display: table-cell; vertical-align: middle;
+      display: table-cell; vertical-align: middle; width: 1px;
       font-size: 0.78rem; font-weight: 600; color: var(--primary);
-      padding: 3px 10px 3px 0; white-space: nowrap;
+      padding: 3px 14px 3px 0; white-space: nowrap;
     }
-    .user-org-role { display: table-cell; vertical-align: middle; padding: 3px 8px 3px 0; white-space: nowrap; }
-    .user-org-action { display: table-cell; vertical-align: middle; padding: 3px 0; }
+    .user-org-role { display: table-cell; vertical-align: middle; padding: 3px 10px 3px 0; white-space: nowrap; }
+    .user-org-action { display: table-cell; vertical-align: middle; padding: 3px 0; white-space: nowrap; }
     .user-remove-btn {
       background: none; border: none; cursor: pointer;
       color: #b91c1c; font-size: 0.72rem; font-weight: 700;
@@ -302,7 +305,7 @@
       <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.237</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.238</p>
   </div>
 
   <!-- Edit team member modal -->
