@@ -210,7 +210,7 @@
       'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
     );
 
-    const DEBOUNCE_MS = 400;
+    const DEBOUNCE_MS = 3000;
     let sub = null;
     let allSubs = [];   // every subscription this user owns, for the switcher
     let saveTimer = null;
@@ -474,14 +474,17 @@
       renderExportList();
 
       ['acctNameInput','billingEmailInput','billingAddressInput','taxIdInput'].forEach(id => {
-        const el = document.getElementById(id);
-        el.addEventListener('input', scheduleSave);
-        el.addEventListener('blur',  save);
+        document.getElementById(id).addEventListener('input', scheduleSave);
       });
 
       document.getElementById('saveBtn').addEventListener('click', () => {
         clearTimeout(saveTimer);
         save();
+      });
+
+      window.addEventListener('beforeunload', () => {
+        const btn = document.getElementById('saveBtn');
+        if (btn && btn.style.display !== 'none') save();
       });
 
       document.getElementById('signOutBtn').addEventListener('click', async () => {
