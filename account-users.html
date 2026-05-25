@@ -307,7 +307,7 @@
       <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.244</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.245</p>
   </div>
 
   <!-- Edit team member modal -->
@@ -534,14 +534,21 @@
       const cards = [];
       for (const g of groups.values()) {
         const isMe = g.user_id === user.id;
-        const memberEmail = isMe ? user.email : (g.invited_email || memberEmailMap[g.user_id] || '');
-        const nameDisplay = g.display_name
-          || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
-          || g.invited_email
-          || memberEmailMap[g.user_id]
-          || '(unnamed teammate)';
-        const emailDisplay = memberEmail;
-        const ini = initials(nameDisplay || emailDisplay);
+
+        // Name: display_name set by the user, or full_name from sign-up metadata (Google/Apple).
+        // Never fall back to email — email lives in its own row below.
+        const metaName = isMe ? ((user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || '') : '';
+        const resolvedName = g.display_name || metaName || '';
+
+        // Email: always its own subtitle slot, never the primary name.
+        const emailDisplay = isMe ? user.email : (g.invited_email || memberEmailMap[g.user_id] || '');
+
+        const ini = resolvedName ? initials(resolvedName) : (emailDisplay ? initials(emailDisplay) : '?');
+
+        // Name row: show real name, or a muted "Add name" prompt when missing.
+        const nameHtml = resolvedName
+          ? escHtml(resolvedName) + (isMe ? ' <span style="font-size:.7em;color:#aaa;font-weight:600;">(you)</span>' : '')
+          : '<span style="color:#aaa;font-weight:600;font-style:italic;">' + (isMe ? 'Add your name ›' : '(No name set)') + '</span>';
 
         const orgRows = g.rows.map(r => {
           const isPending = r.status === 'pending';
@@ -550,7 +557,7 @@
             : '<span class="role-pill role-' + r.role + '">' + r.role + '</span>';
           const canRemove = !isMe;
           const removeBtn = canRemove
-            ? `<button class="user-remove-btn" data-action="remove-member" data-member-id="${r.id}" data-member-name="${escHtml(nameDisplay)}" data-org-name="${escHtml(r.organisations.name)}">Remove</button>`
+            ? `<button class="user-remove-btn" data-action="remove-member" data-member-id="${r.id}" data-member-name="${escHtml(resolvedName || emailDisplay)}" data-org-name="${escHtml(r.organisations.name)}">Remove</button>`
             : '';
           return `
             <div class="user-org-row">
@@ -564,10 +571,10 @@
           <div class="user-card" data-user-key="${escHtml(g.key)}" role="button" tabindex="0">
             <div class="user-avatar">${escHtml(ini)}</div>
             <div class="user-body">
-              <div class="user-name">${escHtml(nameDisplay)} ${isMe ? '<span style="font-size:.7em;color:#888;font-weight:600;">(you)</span>' : ''}</div>
-              ${emailDisplay && emailDisplay !== nameDisplay ? '<div class="user-email">' + escHtml(emailDisplay) + '</div>' : ''}
+              <div class="user-name">${nameHtml}</div>
+              ${emailDisplay ? '<div class="user-email">' + escHtml(emailDisplay) + '</div>' : ''}
               <div class="user-orgs">${orgRows}</div>
-              <div class="user-edit-hint">Tap to edit access &rsaquo;</div>
+              <div class="user-edit-hint">Tap to edit &rsaquo;</div>
             </div>
           </div>`);
       }
@@ -597,15 +604,12 @@
       const isMe = group.user_id === user.id;
       const resolvedEmail = isMe ? user.email : (group.invited_email || memberEmailMap[group.user_id] || '');
       const knownEmail = resolvedEmail || null;
-      const nameDisplay = group.display_name
-        || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
-        || group.invited_email
-        || memberEmailMap[group.user_id]
-        || '(unnamed teammate)';
+      const metaName = isMe ? ((user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || '') : '';
+      const resolvedName = group.display_name || metaName || '';
       const emailDisplay = resolvedEmail;
 
-      document.getElementById('userEditAvatar').textContent = initials(nameDisplay || emailDisplay);
-      document.getElementById('userEditName').textContent = nameDisplay + (isMe ? ' (you)' : '');
+      document.getElementById('userEditAvatar').textContent = resolvedName ? initials(resolvedName) : (emailDisplay ? initials(emailDisplay) : '?');
+      document.getElementById('userEditName').textContent = (resolvedName || emailDisplay || '(no name)') + (isMe ? ' (you)' : '');
       document.getElementById('userEditEmail').textContent = emailDisplay || '(no email on file)';
       document.getElementById('userEditDisplayName').value = group.display_name || '';
 
