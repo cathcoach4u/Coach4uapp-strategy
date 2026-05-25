@@ -168,11 +168,19 @@
   // 2 (Numbers Review), 3 (Priorities Review), and 6 (Issues).
   let _scMetrics=[], _scEntries={}, _scWeeks=[], _rocks=[], _issues=[];
   let _timerInterval=null, _timerStart=null;
+  let _meetingFiscalStart = 0;
 
   function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
   function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+type;t.classList.remove('toast-hidden');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add('toast-hidden'),3000)}
   function fmtDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}
-  function currentQuarter(){const d=new Date();return 'Q'+(Math.floor(d.getMonth()/3)+1)+' '+d.getFullYear();}
+  function fiscalQuarterStr(date, startMonth) {
+    const m = date.getMonth(), y = date.getFullYear();
+    if (!startMonth) return 'Q' + (Math.floor(m / 3) + 1) + ' ' + y;
+    const mInFY = (m - startMonth + 12) % 12;
+    const q = Math.floor(mInFY / 3) + 1;
+    const fyY = m >= startMonth ? y : y - 1;
+    return 'Q' + q + ' ' + fyY + '/' + String(fyY + 1).slice(-2);
+  }
   function fmtWeek(iso){const dt=new Date(iso+'T00:00:00');return dt.toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
   function fmtVal(v,type){if(v===null||v===undefined||v==='')return '—';if(type==='currency')return '$'+Number(v).toLocaleString();if(type==='percentage')return v+'%';return String(v);}
 
@@ -187,7 +195,7 @@
     // current open issues) so each agenda section can show the actual items
     // inline. Same queries the dashboard + one-page-operations already use;
     // scoped by orgId via active-org.js (set in init() before this is called).
-    const quarter = currentQuarter();
+    const quarter = fiscalQuarterStr(new Date(), _meetingFiscalStart);
     const thisMondayIso = (() => {
       const d = new Date(); const day = d.getDay();
       d.setDate(d.getDate() + ((day === 0 ? -6 : 1) - day));
@@ -541,6 +549,17 @@
     }
     orgId = window.activeOrg && window.activeOrg.get();
     if (!orgId) { window.location.href = 'index.html'; return; }
+
+    // Fetch cadence to determine fiscal year start for rocks query
+    try {
+      const { data: cad } = await supabase
+        .from('business_cadence')
+        .select('last_annual_planning_date, annual_planning_date')
+        .eq('organisation_id', orgId)
+        .maybeSingle();
+      const cadDateStr = cad && (cad.last_annual_planning_date || cad.annual_planning_date);
+      if (cadDateStr) _meetingFiscalStart = new Date(cadDateStr + 'T00:00:00').getMonth();
+    } catch (e) { /* default to calendar quarters */ }
 
     meetingId = getMeetingId();
     if (!meetingId) {

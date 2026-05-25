@@ -194,32 +194,41 @@
 
   let orgId = null;
   let _goals = [];
+  let _fiscalStartMonth = 0; // derived from business_cadence on init
 
   function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
   function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+type;t.classList.remove('toast-hidden');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add('toast-hidden'),3000)}
 
-  function currentQuarter(){
-    const d = new Date();
-    return 'Q' + (Math.floor(d.getMonth() / 3) + 1) + ' ' + d.getFullYear();
+  // Fiscal-year-aware quarter string.
+  // startMonth=0 → calendar year ("Q2 2026"); startMonth=6 → fiscal year ("Q4 2025/26").
+  function fiscalQuarterStr(date, startMonth) {
+    const m = date.getMonth(), y = date.getFullYear();
+    if (!startMonth) return 'Q' + (Math.floor(m / 3) + 1) + ' ' + y;
+    const mInFY = (m - startMonth + 12) % 12;
+    const q = Math.floor(mInFY / 3) + 1;
+    const fyY = m >= startMonth ? y : y - 1;
+    return 'Q' + q + ' ' + fyY + '/' + String(fyY + 1).slice(-2);
   }
-  function buildQuarterOptions(){
-    // Build a 5-quarter window (previous, current, next 3)
-    const now = new Date();
-    const baseQ = Math.floor(now.getMonth() / 3) + 1;
-    const baseY = now.getFullYear();
+  function buildFiscalQuarterWindow(startMonth) {
+    const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+    const mInFY = startMonth ? (m - startMonth + 12) % 12 : Math.floor(m / 3) * 3;
+    const curQ = startMonth ? Math.floor(mInFY / 3) + 1 : Math.floor(m / 3) + 1;
+    const fyY = (startMonth && m < startMonth) ? y - 1 : y;
     const out = [];
-    for (let offset = -1; offset <= 3; offset++) {
-      let q = baseQ + offset, y = baseY;
-      while (q > 4) { q -= 4; y += 1; }
-      while (q < 1) { q += 4; y -= 1; }
-      out.push('Q' + q + ' ' + y);
+    for (let off = -1; off <= 3; off++) {
+      let q = curQ + off, fy = fyY;
+      while (q > 4) { q -= 4; fy++; }
+      while (q < 1) { q += 4; fy--; }
+      out.push(startMonth ? 'Q' + q + ' ' + fy + '/' + String(fy + 1).slice(-2) : 'Q' + q + ' ' + fy);
     }
     return out;
   }
 
-  function populateQuarterSelects(){
-    const options = buildQuarterOptions();
-    const cur = currentQuarter();
+  function populateQuarterSelects(extraValues = []) {
+    const options = buildFiscalQuarterWindow(_fiscalStartMonth);
+    // Add any DB quarter values not in the fiscal window (backward compat with old calendar labels)
+    extraValues.forEach(v => { if (v && !options.includes(v)) options.push(v); });
+    const cur = fiscalQuarterStr(new Date(), _fiscalStartMonth);
     const html = options.map(q => `<option value="${q}" ${q===cur?'selected':''}>${q}</option>`).join('');
     document.getElementById('quarter-select').innerHTML = html;
     document.getElementById('goal-quarter').innerHTML = html;
@@ -388,7 +397,23 @@
       await supabase.auth.signOut(); window.location.href='login.html';
     });
 
-    populateQuarterSelects();
+    // Fetch cadence to determine fiscal year start month, and distinct existing
+    // quarter values so backward-compat options appear in the dropdown.
+    const [cadRes, existingQRes] = await Promise.all([
+      supabase.from('business_cadence')
+        .select('last_annual_planning_date, annual_planning_date')
+        .eq('organisation_id', orgId)
+        .maybeSingle(),
+      supabase.from('rocks')
+        .select('quarter')
+        .eq('organisation_id', orgId)
+        .not('quarter', 'is', null)
+    ]);
+    const cadDateStr = cadRes.data && (cadRes.data.last_annual_planning_date || cadRes.data.annual_planning_date);
+    if (cadDateStr) _fiscalStartMonth = new Date(cadDateStr + 'T00:00:00').getMonth();
+    const existingQs = [...new Set((existingQRes.data || []).map(r => r.quarter).filter(Boolean))];
+
+    populateQuarterSelects(existingQs);
     await loadOwnerOptions();
     try { await loadGoals(); }
     catch(e){ console.warn('Load error:', e); }

@@ -526,9 +526,13 @@
       if (type === 'percentage') return v + '%';
       return String(v);
     }
-    function currentQuarter() {
-      const d = new Date();
-      return 'Q' + (Math.floor(d.getMonth() / 3) + 1) + ' ' + d.getFullYear();
+    function fiscalQuarterStr(date, startMonth) {
+      const m = date.getMonth(), y = date.getFullYear();
+      if (!startMonth) return 'Q' + (Math.floor(m / 3) + 1) + ' ' + y;
+      const mInFY = (m - startMonth + 12) % 12;
+      const q = Math.floor(mInFY / 3) + 1;
+      const fyY = m >= startMonth ? y : y - 1;
+      return 'Q' + q + ' ' + fyY + '/' + String(fyY + 1).slice(-2);
     }
 
     // ── Goals (rocks) ───────────────────────────────────────────────
@@ -709,8 +713,20 @@
         });
       }
 
+      // Fetch cadence for fiscal year start (used for rocks quarter filter)
+      let _oppFiscalStart = 0;
+      try {
+        const { data: cad } = await supabase
+          .from('business_cadence')
+          .select('last_annual_planning_date, annual_planning_date')
+          .eq('organisation_id', orgId)
+          .maybeSingle();
+        const cadDateStr = cad && (cad.last_annual_planning_date || cad.annual_planning_date);
+        if (cadDateStr) _oppFiscalStart = new Date(cadDateStr + 'T00:00:00').getMonth();
+      } catch (e) { /* default to calendar quarters */ }
+
       // Quarter + weeks
-      const quarter = currentQuarter();
+      const quarter = fiscalQuarterStr(new Date(), _oppFiscalStart);
       document.getElementById('opp-quarter-label').textContent = quarter;
       const thisMonday = mondayISO(new Date());
       const weeks = [-5,-4,-3,-2,-1,0].map(o => isoAddWeeks(thisMonday, o));

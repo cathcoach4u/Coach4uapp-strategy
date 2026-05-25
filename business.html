@@ -365,34 +365,6 @@
       </div>
     </div>
 
-    <!-- v0.5.202 — Open Issues panel (new). Lists the actual current-week issues
-         instead of just the count from the now-removed stat tile. -->
-    <div class="dash-panel">
-      <div class="panel-head">
-        <span class="panel-title">&#x26A1; Open Issues</span>
-        <a class="panel-link" href="issues.html?category=current">Edit &#x203A;</a>
-      </div>
-      <div class="panel-body">
-        <div class="issue-list" id="openIssuesList">
-          <div class="issue-empty" style="font-size:0.78rem;color:#aaa;">No issues recorded yet.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- v0.5.204 — Open To-Dos (was "This Week"). Aggregates open todos across
-         ALL meetings now, so the panel makes sense even with no meeting this
-         week. Link → todos.html (the new full-list view). -->
-    <div class="dash-panel">
-      <div class="panel-head">
-        <span class="panel-title">&#x1F4CB; Open To-Dos</span>
-        <a class="panel-link" href="todos.html">View All &#x203A;</a>
-      </div>
-      <div class="panel-body">
-        <ul class="todo-list" id="thisWeekTodos">
-          <li class="todo-item"><div class="todo-check"></div><div><div class="todo-desc" style="color:#aaa;">No open to-dos.</div></div></li>
-        </ul>
-      </div>
-    </div>
     </div><!-- /standardMode -->
 
     <!-- ── Parent mode — group rollup view, shown when this biz has children (v0.5.155) ── -->
@@ -429,7 +401,7 @@
            Account tab → index.html still let users navigate to children. -->
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.234</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.235</p>
 
   </div>
 
@@ -450,6 +422,7 @@
 
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let _dashFiscalStart = 0; // set in renderDashboard from business_cadence
     // todayDate removed in v0.5.163 — the greeting-row no longer exists.
 
     // All Coach4U sample-data seeds (strategy + operations + planning) were
@@ -472,9 +445,13 @@
       d.setDate(d.getDate() + ((d.getDay() === 0 ? -6 : 1) - d.getDay()));
       return d.toISOString().slice(0, 10);
     }
-    function currentQuarter() {
-      const d = new Date();
-      return 'Q' + (Math.floor(d.getMonth() / 3) + 1) + ' ' + d.getFullYear();
+    function fiscalQuarterStr(date, startMonth) {
+      const m = date.getMonth(), y = date.getFullYear();
+      if (!startMonth) return 'Q' + (Math.floor(m / 3) + 1) + ' ' + y;
+      const mInFY = (m - startMonth + 12) % 12;
+      const q = Math.floor(mInFY / 3) + 1;
+      const fyY = m >= startMonth ? y : y - 1;
+      return 'Q' + q + ' ' + fyY + '/' + String(fyY + 1).slice(-2);
     }
     function fmtShortDate(iso) {
       if (!iso) return '—';
@@ -489,25 +466,27 @@
 
     async function renderDashboard(orgIdArg) {
       const orgId = orgIdArg;
-      const quarter = currentQuarter();
+
+      // Fetch cadence first to compute fiscal-year quarter for the rocks query.
+      const { data: cad } = await supabase
+        .from('business_cadence')
+        .select('last_annual_planning_date, annual_planning_date')
+        .eq('organisation_id', orgId)
+        .maybeSingle();
+      const cadDateStr = cad && (cad.last_annual_planning_date || cad.annual_planning_date);
+      const fiscalStart = cadDateStr ? new Date(cadDateStr + 'T00:00:00').getMonth() : 0;
+      _dashFiscalStart = fiscalStart; // share with openOrCreateWeeklyMeeting
+      const quarter = fiscalQuarterStr(new Date(), fiscalStart);
 
       // ── Parallel Supabase queries for all panel data ──
-      // v0.5.202 — `issuesRes` now fetches the actual issue rows for the new
-      // Open Issues panel (was a count-only query for the removed stat tile).
       const [
-        meetingsRes, issuesRes, rocksRes, targetsRes, valuesRes
+        meetingsRes, rocksRes, targetsRes, valuesRes
       ] = await Promise.all([
         supabase.from('meetings')
           .select('id, meeting_date, status, quarter')
           .eq('organisation_id', orgId)
           .order('meeting_date', { ascending: false })
           .limit(10),
-        supabase.from('issues')
-          .select('id, description, owner, status, created_at')
-          .eq('organisation_id', orgId)
-          .eq('category', 'current')
-          .eq('status', 'open')
-          .order('created_at', { ascending: true }),
         supabase.from('rocks')
           .select('id, description, status, owner, company_rock, sort_order')
           .eq('organisation_id', orgId)
@@ -524,7 +503,6 @@
       ]);
 
       if (meetingsRes.error) console.warn('Load meetings failed:', meetingsRes.error.message);
-      if (issuesRes.error) console.warn('Load issues failed:', issuesRes.error.message);
       if (rocksRes.error) console.warn('Load rocks failed:', rocksRes.error.message);
       if (targetsRes.error) console.warn('Load targets failed:', targetsRes.error.message);
       if (valuesRes.error) console.warn('Load values failed:', valuesRes.error.message);
@@ -573,59 +551,6 @@
         meetingBtn.innerHTML = active
           ? '\u{1F5D3}\u{FE0F}&nbsp; Resume This Week’s Meeting'
           : '\u{1F5D3}\u{FE0F}&nbsp; Run Weekly Meeting';
-      }
-
-      // v0.5.204 — View Meeting link in the old "This Week" panel was removed
-      // (the panel is now "Open To-Dos" with a "View All ›" link → todos.html).
-      // Run Weekly Meeting button at the top still uses openOrCreateWeeklyMeeting
-      // via wireRunMeetingButton above — that's the single create-or-open entry.
-
-      // v0.5.204 — This Week panel now aggregates open todos across ALL of
-      // this org's meetings (not just one focused meeting), so an open todo
-      // from last week stays visible until someone ticks it done. Joins
-      // through meetings to filter by org via the inner-join shortcut.
-      const todosWrap = document.getElementById('thisWeekTodos');
-      const { data: todos, error: todosErr } = await supabase
-        .from('meeting_todos')
-        .select('description, owner, done, due_date, meetings!inner(organisation_id)')
-        .eq('meetings.organisation_id', orgId)
-        .eq('done', false)
-        .order('due_date', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: true })
-        .limit(5);
-      if (todosErr) console.warn('Load todos failed:', todosErr.message);
-      const list = Array.isArray(todos) ? todos : [];
-      if (list.length) {
-        todosWrap.innerHTML = list.map(t => `
-          <li class="todo-item">
-            <div class="todo-check ${t.done ? 'done' : ''}"></div>
-            <div>
-              <div class="todo-desc ${t.done ? 'done' : ''}">${escapeHtml(t.description || '')}</div>
-              <div class="todo-meta">${escapeHtml(t.owner || '')}${t.due_date ? ' &middot; Due ' + fmtDueDate(t.due_date) : ''}</div>
-            </div>
-          </li>
-        `).join('');
-      }
-
-      // ── Open Issues panel (v0.5.202 — full list, replaced the stat tile) ──
-      const issues = Array.isArray(issuesRes.data) ? issuesRes.data : [];
-      const issuesEl = document.getElementById('openIssuesList');
-      if (issuesEl) {
-        if (!issues.length) {
-          issuesEl.innerHTML = '<div class="issue-empty" style="font-size:0.78rem;color:#aaa;">No open issues. Nice work.</div>';
-        } else {
-          issuesEl.innerHTML = issues.map(it => {
-            const owner = (it.owner || '').trim();
-            return `
-              <div class="issue-row">
-                <span class="marker">&#x25CF;</span>
-                <div class="body">
-                  <div class="desc">${escapeHtml(it.description || '—')}</div>
-                  ${owner ? `<div class="owner">${escapeHtml(owner)}</div>` : ''}
-                </div>
-              </div>`;
-          }).join('');
-        }
       }
 
       // ── Goals (rocks) — counts used by the Quarterly Goals panel below ──
@@ -920,7 +845,7 @@
         .maybeSingle();
       let meetingId = existing && existing.id;
       if (!meetingId) {
-        const q = 'Q' + (Math.floor(new Date().getMonth() / 3) + 1) + ' ' + new Date().getFullYear();
+        const q = fiscalQuarterStr(new Date(), typeof _dashFiscalStart !== 'undefined' ? _dashFiscalStart : 0);
         const { data: created, error } = await supabase
           .from('meetings')
           .insert({ organisation_id: activeId, meeting_date: mondayIso, status: 'in_progress', quarter: q })

@@ -256,12 +256,17 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.234
+v0.5.235
 
-## Pending Actions
-None outstanding — all SQL migrations applied.
+## Pending Actions (must be done outside Claude Code)
+
+### SQL migrations to run in Supabase SQL Editor (`eekefsuaefgpqmjdyniy`)
+1. **`supabase/v0.5.235-delta.sql`** — Migrate IASHQ quarterly goals from "Q2 2026" (calendar) to "Q1 2026/27" (IAS fiscal year). Run once after deploying v0.5.235.
+2. **`supabase/v0.5.231-delta.sql`** — IAS planning meeting data into IASHQ (targets, issues, rocks). Run if not already applied.
+3. **`supabase/v0.5.232-delta.sql`** — Full IAS data across all 4 orgs. Run if not already applied.
 
 ## Latest
+- **v0.5.235** — Fiscal year-aware quarterly goals. **(1)** `goals.html` now reads `business_cadence.last_annual_planning_date` (or `annual_planning_date`) to determine the fiscal year start month, then labels quarters as `Q1 2026/27` style instead of calendar `Q2 2026`. Quarter selector shows a ±1-quarter window around the current fiscal quarter, plus any existing values from the DB so old records remain selectable. **(2)** `business.html` dashboard uses the same fiscal quarter for the Quarterly Goals panel and when creating/finding this week's meeting. **(3)** `run-meeting.html` fetches cadence in init and uses fiscal quarter for the inline Priorities Review (Section 3) rocks query. **(4)** `one-page-operations.html` fetches cadence before the rocks query so the Quarterly Goals column matches the fiscal quarter. **(5)** SQL: `supabase/v0.5.235-delta.sql` updates the 5 IASHQ rocks seeded in v0.5.231 from `quarter = 'Q2 2026'` → `'Q1 2026/27'` — run this in Supabase SQL Editor.
 - **v0.5.234** — Dashboard panel reorder: Core Values moved to immediately after the quick-action buttons (below "View One-Page Operations"), above the 1-Year Goal panel. No SQL.
 - **v0.5.233** — Dashboard + cadence fixes. **(1)** 1-Year Goal "Edit ›" link fixed: was pointing at `targets.html`, now correctly links to `twelve-month-goal.html`. **(2)** Core Values panel moved above Planning Cadence on home dashboard. **(3)** "Year Flow" panel renamed to "Planning Cadence". **(4)** Cadence date input bug fixed: quarterly (and all) date fields now use `change` event only instead of both `input` + `change` — Chrome's date input returns `el.value=""` during partial entry, so the old `input` handler was triggering premature debounced saves with null values mid-typing. Also skipped unnecessary `applyModeUI()` call on `empty → own` first-save transition. No SQL.
 - **v0.5.232** — Comprehensive IAS data import Part 2. Creates `supabase/v0.5.232-delta.sql` populating all 4 IAS orgs (IASHQ, GI, Life, Outsourcing) from the May 2026 planning meeting: `core_focus` (purpose + niche), `one_year_goals` in targets, leadership team members (Jo/Leah/Teresa with % time allocations per unit, plus Lisa in GI and Fhevy in Life/FP), and per-unit issues for GI, Life and Outsourcing. SQL only — run `v0.5.232-delta.sql` in Supabase SQL Editor to apply.

@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.235
+- **Fiscal year-aware quarterly goals.** Quarter labels now reflect the business's fiscal year instead of calendar year. The `business_cadence.last_annual_planning_date` (falling back to `annual_planning_date`) determines the fiscal year start month — for IAS (July start), May 2026 is Q4 2025/26, not Q2 2026. Changes across four files: **(1) `goals.html`** reads cadence and existing DB quarter values on init; `populateQuarterSelects()` builds a ±1-quarter fiscal window (e.g. Q4 2025/26, Q1 2026/27, Q2 2026/27…) and pre-selects the current fiscal quarter; existing "Q2 2026"-style rocks remain selectable via the `extraValues` fallback so no existing data is hidden. **(2) `business.html`** fetches cadence at the start of `renderDashboard()` and uses `fiscalQuarterStr()` for both the Quarterly Goals panel query and the meeting create/find flow. Open Issues and Open To-Dos panels also removed from the home dashboard in this version. **(3) `run-meeting.html`** fetches cadence in the init IIFE and uses the fiscal quarter when loading rocks for the Priorities Review section of the meeting agenda. **(4) `one-page-operations.html`** fetches cadence before the parallel data queries so the Quarterly Goals column is filtered by fiscal quarter. **(5) SQL: `supabase/v0.5.235-delta.sql`** — updates the 5 IASHQ rocks seeded in v0.5.231 from `quarter = 'Q2 2026'` to `'Q1 2026/27'`. Run in Supabase SQL Editor.
+
 ## v0.5.234
 - **Dashboard panel reorder.** Core Values moved to first position after the quick-action buttons (Run Weekly Meeting / View One-Page Plan / View One-Page Operations), above the 1-Year Goal panel. New order: Core Values → 1-Year Goal → Planning Cadence → Quarterly Goals → Open Issues → Open To-Dos. No SQL.
 
