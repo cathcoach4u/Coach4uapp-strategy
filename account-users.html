@@ -307,7 +307,7 @@
       <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.245</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.246</p>
   </div>
 
   <!-- Edit team member modal -->
@@ -555,15 +555,10 @@
           const rolePill  = isPending
             ? '<span class="role-pill role-pending">Pending</span>'
             : '<span class="role-pill role-' + r.role + '">' + r.role + '</span>';
-          const canRemove = !isMe;
-          const removeBtn = canRemove
-            ? `<button class="user-remove-btn" data-action="remove-member" data-member-id="${r.id}" data-member-name="${escHtml(resolvedName || emailDisplay)}" data-org-name="${escHtml(r.organisations.name)}">Remove</button>`
-            : '';
           return `
             <div class="user-org-row">
               <span class="user-org-name">${escHtml(r.organisations.name)}</span>
               <span class="user-org-role">${rolePill}</span>
-              <span class="user-org-action">${removeBtn}</span>
             </div>`;
         }).join('');
 

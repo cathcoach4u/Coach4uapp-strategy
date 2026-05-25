@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.246
+- **Remove button moved off card rows.** The inline red "Remove" button on each business/role row inside a user card has been removed from the card view. It was visible on every row at all times on mobile, creating clutter and accidental-tap risk — especially on a phone where the rows are narrow. The removal path now exists only inside the edit modal: tap the card → "Tap to edit ›" → set any business role to "— No access —" → Save. That calls `remove_team_member` the same way the old inline button did, just behind an intentional edit gesture rather than a prominent red label on the card. Cards now show business name + role pill per row — clean, read-only, and intentional. No SQL.
+
 ## v0.5.245
 - **Name/email separation on user cards.** Email is now never the bold title on `account-users.html` user cards. Previously, any user without a `display_name` had their email address rendered as the bold card title (e.g. Cath's card showed `cath@coachingwithcath.com.au` in bold, while Andrew's showed just "Andrew" with no further info). The fix separates name and email into strictly independent visual slots. **Name slot**: resolves via `display_name` → `user.user_metadata.full_name / .name` (populated for Google/Apple sign-ins) → italic italic prompt `(Add your name ›)` for the current user, `(No name set)` for others. Email is never placed here. **Email slot**: always a separate `.user-email` subtitle div, shown only when email data is available (`user.email` for isMe, `invited_email` or `memberEmailMap` lookup for others). The `openUserEditModal` uses the same resolution so the modal header is consistent. To show real names (e.g. "Cath Baker"), each user taps their own card and sets their Display Name in the edit modal. No SQL.
 
