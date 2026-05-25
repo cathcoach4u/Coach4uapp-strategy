@@ -4,6 +4,14 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.231
+- **IAS planning meeting notes imported into IASHQ.** Created `supabase/v0.5.231-delta.sql` to seed data from the May 2026 IAS planning meeting into the IASHQ organisation. Content imported:
+  - **Targets** (10-year + 7-year visions): 10-year focuses on building a self-sustaining business with reduced owner dependency and sale readiness by 30/06/2036. 7-year (stored in `five_year`) targets $2.5M turnover, D&C loan paid off, 15% profit margin, and succession plan in place by 30/06/2033.
+  - **Current issues** (6): Cash flow visibility, compliance standardisation, staffing/Sunny's replacement, cost-splitting accuracy, Jo's wage allocation discrepancy (Xero 40% vs agreed 30% Operations + 10% IASO), and technology tool challenges.
+  - **Future issues** (4 — for Planning Day): Budget finalisation, formalised training plans (Lisa ANZIIF, Fhevy), AI/automation direction decision, and PM protocols for tech initiatives.
+  - **Q2 2026 quarterly goals** (5): Group budget finalisation, standardised compliance/training docs, accountability chart + time allocation refinement, cash flow reporting improvements, PM protocol definition.
+- SQL only — no code changes. Run `supabase/v0.5.231-delta.sql` in Supabase SQL Editor to apply.
+
 ## v0.5.230
 - **Consolidated all businesses into single coach subscription.** Ran SQL to move all SARUBA and IAS organisations into the Coaching with Cath subscription, then deleted the now-empty Saruba and IAS subscriptions. All 7 businesses (Coach4U Development / Coach4u / ABMS from SARUBA + IASHQ / IAS General / IAS Life / IAS Outsourcing from IAS) now live under one coach account (`subscription_type='coach'`, `included_businesses=99`) with no billing limits. When clients later need their own separate subscriptions, organisations can be moved and all data follows automatically (scoped by `organisation_id`). Updated `CLAUDE.md` Coach + Client Architecture section to reflect single-subscription model. **No code changes — DB and docs only.**
 
