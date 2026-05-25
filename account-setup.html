@@ -85,6 +85,30 @@
     .save-status.ok    { color: #0F766E; }
     .save-status.err   { color: #DC2626; }
 
+    /* Subscription summary card */
+    .plan-card {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      margin: 12px 16px; padding: 18px 16px 14px;
+    }
+    .plan-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin: 0 0 12px; }
+    .plan-row {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 0.85rem; padding: 4px 0;
+    }
+    .plan-label {
+      color: #aaa; font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; min-width: 110px;
+    }
+    .plan-value { color: var(--text); font-weight: 600; }
+    .biz-tree { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .biz-tree-label {
+      font-size: 0.7rem; font-weight: 700; color: #aaa;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+    }
+    .biz-row { display: flex; align-items: center; gap: 7px; padding: 5px 0; font-size: 0.88rem; color: var(--text); }
+    .biz-row.child { padding-left: 22px; color: #555; font-size: 0.84rem; }
+    .biz-row.child::before { content: '↳'; color: #ccc; margin-right: 2px; }
+
     /* Data export card */
     .export-card { margin: 18px 16px 4px; background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 18px 16px 14px; }
     .export-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin: 0 0 4px; }
@@ -183,6 +207,8 @@
       </div>
     </div>
 
+    <div class="plan-card" id="planCard"></div>
+
     <div class="export-card">
       <h2 class="export-title">&#x1F4E5; Data Export</h2>
       <p class="export-blurb">Download a complete snapshot of every business in this account &mdash; strategy, operations, planning, and team data. JSON format, one file per business. Useful for backups, migrations, or if you ever want to leave.</p>
@@ -190,7 +216,7 @@
       <div class="export-status" id="exportStatus"></div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.224</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.225</p>
   </div>
 
   <nav class="bottom-nav">
@@ -212,10 +238,8 @@
       'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y'
     );
 
-    const DEBOUNCE_MS = 3000;
     let sub = null;
-    let allSubs = [];   // every subscription this user owns, for the switcher
-    let saveTimer = null;
+    let allSubs = [];
     const original = { name:'', billing_email:'', billing_address:'', billing_tax_id:'' };
 
     function setStatus(text, kind) {
@@ -241,7 +265,7 @@
       const cachedId = (window.activeOrg && window.activeOrg.getSubscription && window.activeOrg.getSubscription()) || null;
       const { data: subs } = await sb
         .from('subscriptions')
-        .select('id, name, billing_email, billing_address, billing_tax_id, owner_user_id, created_at')
+        .select('id, name, billing_email, billing_address, billing_tax_id, owner_user_id, created_at, status, included_businesses')
         .eq('owner_user_id', user.id)
         .order('created_at', { ascending: true });
       if (!subs || !subs.length) {
@@ -337,8 +361,63 @@
 
     function scheduleSave() {
       markDirty();
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(save, DEBOUNCE_MS);
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function renderPlanCard() {
+      const wrap = document.getElementById('planCard');
+      if (!wrap || !sub) return;
+
+      const { data: orgs } = await sb
+        .from('organisations')
+        .select('id, name, parent_organisation_id, sort_order')
+        .eq('subscription_id', sub.id)
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
+
+      const limit = sub.included_businesses || 2;
+      const count = orgs ? orgs.length : 0;
+
+      const statusLabels = {
+        trial: { label: 'Trial', colour: '#d97706' },
+        active: { label: 'Active', colour: '#059669' },
+        past_due: { label: 'Past due', colour: '#dc2626' },
+        cancelled: { label: 'Cancelled', colour: '#6b7280' }
+      };
+      const st = statusLabels[sub.status] || { label: sub.status || '—', colour: '#888' };
+      const countColour = count > limit ? '#dc2626' : count === limit ? '#d97706' : '#059669';
+
+      let bizHtml = '';
+      if (orgs && orgs.length) {
+        const parents = orgs.filter(o => !o.parent_organisation_id);
+        const children = orgs.filter(o => !!o.parent_organisation_id);
+        for (const p of parents) {
+          bizHtml += `<div class="biz-row">🏢 ${escHtml(p.name || '(Unnamed)')}</div>`;
+          for (const k of children.filter(c => c.parent_organisation_id === p.id)) {
+            bizHtml += `<div class="biz-row child">${escHtml(k.name || '(Unnamed)')}</div>`;
+          }
+        }
+        for (const o of children.filter(c => !parents.find(p => p.id === c.parent_organisation_id))) {
+          bizHtml += `<div class="biz-row">🏢 ${escHtml(o.name || '(Unnamed)')}</div>`;
+        }
+      }
+
+      wrap.innerHTML = `
+        <h2 class="plan-title">Subscription</h2>
+        <div class="plan-row">
+          <span class="plan-label">Status</span>
+          <span class="plan-value" style="color:${st.colour}">${st.label}</span>
+        </div>
+        <div class="plan-row">
+          <span class="plan-label">Businesses</span>
+          <span class="plan-value" style="color:${countColour}">${count} of ${limit} included</span>
+        </div>
+        ${bizHtml ? `<div class="biz-tree"><div class="biz-tree-label">Your businesses</div>${bizHtml}</div>` : ''}
+        ${count >= limit ? `<p style="font-size:0.75rem;color:#888;margin:12px 0 0;line-height:1.5;">To add more businesses, contact your coach.</p>` : ''}
+      `;
     }
 
     // ----- Data Export -----
@@ -473,6 +552,7 @@
       sub = await loadSub(user);
       if (!sub) return;
       applyToForm();
+      renderPlanCard();
       renderExportList();
 
       ['acctNameInput','billingEmailInput','billingAddressInput','taxIdInput'].forEach(id => {
@@ -485,8 +565,7 @@
       });
 
       window.addEventListener('beforeunload', () => {
-        const btn = document.getElementById('saveBtn');
-        if (btn && !btn.disabled) save();
+        if (document.getElementById('saveBtn')?.disabled === false) save();
       });
 
       document.getElementById('signOutBtn').addEventListener('click', async () => {

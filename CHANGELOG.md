@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.225
+- **account-setup.html: Subscription summary card + Save-button-only saving.** Two changes. **(1) Auto-save removed** — the 3-second debounce that silently saved form changes has been removed. The Save button (always visible, greyed out until dirty, teal when there are changes) is the sole save trigger. A `beforeunload` fallback still attempts a save if the user navigates away with unsaved changes. **(2) Subscription summary card** added between the billing form and the Data Export card. Shows: plan Status (Trial / Active / Past due / Cancelled, colour-coded), Businesses used vs allowed (colour-coded green/amber/red against `included_businesses`), and a full parent/child business tree — parent businesses shown with 🏢 icon, children indented with ↳. Renders from a live `organisations` query scoped to `sub.id`. If at the plan limit, shows "To add more businesses, contact your coach." `loadSub` select expanded to include `status` and `included_businesses`. **No SQL.**
+
 ## v0.5.222
 - **Trial-release hardening pass: fixed PWA caching, deleted legacy hubs, added data export, group financials rollup, better empty states, swipe-to-delete on todos.**
 
