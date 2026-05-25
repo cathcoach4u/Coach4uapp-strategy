@@ -443,7 +443,7 @@
       <button id="addBusinessBtn" class="add-btn">+ Create New Business</button>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.239</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.240</p>
 
   </div>
 
@@ -544,21 +544,7 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_pcXHwQVMpvEojb4K3afEMw_RMvgZM-Y';
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) { window.location.href = 'login.html'; }
-
-    // Membership gate — same as account-users.html / account-setup.html / business-level pages.
-    // Added v0.5.159 (was missing on index.html; users with inactive subscription could see this
-    // tab but get bounced from the others).
-    const { data: profile } = await sb.from('users').select('membership_status').eq('id', user.id).single();
-    if (!profile || profile.membership_status !== 'active') {
-      window.location.href = 'inactive.html';
-    }
-
-    document.getElementById('signOutBtn').addEventListener('click', async () => {
-      await sb.auth.signOut();
-      window.location.href = 'login.html';
-    });
+    let user = null;
 
     /* ============== utilities ============== */
     function escHtml(s) {
@@ -601,11 +587,13 @@
     /* ============== loaders ============== */
     async function loadAll() {
       // 1) ALL subscriptions owned by this user
-      const { data: subs } = await sb
+      const { data: subs, error: subsErr } = await sb
         .from('subscriptions')
         .select('id, name, seat_count, included_businesses, created_at')
         .eq('owner_user_id', user.id)
         .order('created_at', { ascending: true });
+      // A query error means auth/RLS issue — bounce to login, not setup wizard
+      if (subsErr) { window.location.href = 'login.html'; return; }
       allSubs = subs || [];
 
       // 1b) Subscriptions where this user is a coach team member (client accounts)
@@ -1129,13 +1117,26 @@
       window.location.href = 'business.html';
     });
 
-    await refresh();
-    if (myMemberships.length && (!window.activeOrg || !window.activeOrg.get())) {
-      const first = myMemberships[0];
-      const firstName = first.organisations && first.organisations.name;
-      window.activeOrg.set(first.organisation_id, firstName);
+    async function boot() {
+      const { data: { user: u }, error: authErr } = await sb.auth.getUser();
+      if (!u || authErr) { window.location.href = 'login.html'; return; }
+      user = u;
+      const { data: profile } = await sb.from('users').select('membership_status').eq('id', u.id).single();
+      if (!profile || profile.membership_status !== 'active') {
+        window.location.href = 'inactive.html'; return;
+      }
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        await sb.auth.signOut(); window.location.href = 'login.html';
+      });
+      await refresh();
+      if (myMemberships.length && (!window.activeOrg || !window.activeOrg.get())) {
+        const first = myMemberships[0];
+        const firstName = first.organisations && first.organisations.name;
+        window.activeOrg.set(first.organisation_id, firstName);
+      }
+      document.body.style.opacity = '1';
     }
-    document.body.style.opacity = '1';
+    boot();
   </script>
 
   <nav class="bottom-nav">
