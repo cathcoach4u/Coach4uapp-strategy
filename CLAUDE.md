@@ -357,85 +357,16 @@ annual_sessions, quarterly_sessions, team_checkins
 
 ## Pricing Model
 
-Three layers: **Subscription** (the platform) + **AI add-on** (optional) + **Services** (your time).
+**Source of truth for pricing: https://cathcoach4u.github.io/coach4uapp-dashboard/admin.html**
 
----
+Update pricing there — not here. The notes below are for development context only.
 
-### 1. Subscription
-
-A business or entity is any organisation in your account — holding companies, subsidiaries, and standalone businesses each count as one. Users are unlimited on every plan.
-
-| Plan | Software | AI Add-on |
-|---|---|---|
-| **Starter — up to 2 businesses or entities** | $150/mo | TBD/mo |
-| **3rd business or entity** | +$75/mo | — |
-| **4th business or entity** | +$75/mo | — |
-| **5th business or entity** | +$75/mo | — |
-| **6+ businesses or entities** | Contact us | — |
-
-#### Monthly progression
-
-| Businesses | Monthly |
-|---|---|
-| 1–2 | $150 |
-| 3 | $225 |
-| 4 | $300 |
-| 5 | $375 |
-| 6+ | Contact us |
-
-#### Worked examples
-
-| Client | Configuration | Monthly |
-|---|---|---|
-| Solo founder | 1 business | **$150** |
-| Small team | 1 business, any number of users | **$150** |
-| Two ventures | 2 businesses | **$150** |
-| Holding co (parent + 2 subsidiaries) | 3 businesses or entities | **$225** |
-| Larger holding (parent + 4 subsidiaries) | 5 businesses or entities | **$375** |
-| Large corporate | 6+ businesses or entities | **Contact us** |
-
-#### Key principles
-- **Users are unlimited** — no per-seat charges, ever.
-- **Subscriptions are account-level** — one subscription per buyer, holds N businesses.
-- **Each business is fully isolated** — own One-Page Plan, scorecard, sessions, issues, goals.
+- **Per business, not per user** — users are unlimited on every plan. Billing unit is the business/entity.
+- **A business or entity** = any organisation in the account (holding company, subsidiary, standalone — each counts as one).
+- **Self-serve up to 5 businesses** — 6+ requires a contact us conversation.
+- **AI add-on** — all AI features are gated behind an optional monthly add-on. Base software works fully without it. Price TBD at AI launch.
+- **Services** — onboarding, coaching retainer, data migration, training, integrations. Quoted per engagement, not automated through the platform.
 - **Coaches are billing-exempt** — full admin-equivalent access, not counted in billing.
-- **Self-serve up to 5 businesses** — 6+ requires a conversation (custom needs, support scope, pricing).
-
----
-
-### 2. AI Add-on (optional)
-
-The base software works fully without AI. The AI add-on unlocks AI-powered features across the platform — everything AI is gated behind this subscription.
-
-| Item | Price |
-|---|---|
-| **AI Add-on** | TBD/month per account |
-
-**Planned AI features:**
-- Strategy suggestions based on business data (values, targets, scorecard trends)
-- Coaching prompts during weekly meetings and planning sessions
-- Scorecard analysis — flags trends, missed targets, patterns
-- One-page plan draft generation
-- Team check-in sentiment analysis and insights
-- Natural language queries about business performance
-
-AI is designed to be built into every part of the platform first, then gated — not bolted on as an afterthought. Price will be set when AI features are ready to launch.
-
----
-
-### 3. Services (your time, quoted separately)
-
-For clients who want hands-on help beyond the software.
-
-| Service | Notes |
-|---|---|
-| **Onboarding & setup** | Account config, data input, first business set up end-to-end. One-time fee — quote based on complexity. |
-| **Coaching retainer** | Ongoing monthly coaching sessions using the platform as the operating system. Your time, billed separately to the software. |
-| **Data input / migration** | Importing existing strategy docs, scorecards, goals from spreadsheets or previous tools. Hourly or fixed package. |
-| **Team training** | Walkthrough session for the leadership team. Per session. |
-| **Integration help** | Connecting to external tools or setting up custom workflows. Quoted per project. |
-
-Services are priced by you per engagement — not automated through the platform.
 
 ## Add a New Member (SQL)
 
