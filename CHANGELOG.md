@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.227
+- **Coach account switcher — links to existing client subscriptions.** `index.html` `loadAll()` now runs a second query: fetches all `team_members` rows where `user_id = current` and `role = 'coach'`, extracts unique `subscription_id` values from the joined organisations, filters out already-owned subscriptions, and fetches those subscription rows. The result is appended to `allSubs` with `_isClient: true`. `renderSwitcher()` prefixes those entries with "Client: " in the dropdown. RLS previously blocked reading other users' subscriptions — SQL migration `v0.5.227-delta.sql` adds `"team members read their org subscription"` policy so any active team member can SELECT the subscription their org belongs to. Same migration inserts Cath as a `'coach'` team_member (status=active) in every organisation whose subscription name matches `%saruba%` or `%ias%` (and is not owned by Cath), with a `NOT EXISTS` guard to prevent duplicates. **Requires SQL**: run `supabase/v0.5.227-delta.sql` in the Supabase SQL Editor.
+
 ## v0.5.226
 - **Coach account support in account-setup.html.** `loadSub` now fetches `subscription_type`. `renderPlanCard()` checks if `subscription_type === 'coach'` and renders a "Coach Account" card — shows Role: Coach in teal, lists own businesses, hides the billing limit entirely, and shows a note pointing to the account switcher for client access. Non-coach accounts are unchanged. SQL migration `supabase/v0.5.226-coach-setup.sql` updates Cath's subscription to `subscription_type = 'coach'` and `included_businesses = 99` — must be run in Supabase SQL Editor. Once run, her card moves from Business Subscriptions → Coaches section in admin.html.
 
