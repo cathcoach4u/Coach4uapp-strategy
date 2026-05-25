@@ -39,6 +39,7 @@
       min-width: 180px; cursor: pointer;
       flex: 1; max-width: 100%;
     }
+    .switcher-name { font-size: 0.88rem; font-weight: 700; color: var(--primary); flex: 1; }
 
     .page-header { padding: 20px 16px 0; }
     .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
@@ -242,7 +243,8 @@
   <div class="container">
     <div class="acct-switcher" id="acctSwitcher" style="display:none;">
       <span class="switcher-label">Account:</span>
-      <select id="accountSwitcher" class="switcher-select"></select>
+      <select id="accountSwitcher" class="switcher-select" style="display:none;"></select>
+      <span id="accountName" class="switcher-name" style="display:none;"></span>
     </div>
 
     <div class="page-header">
@@ -305,7 +307,7 @@
       <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.241</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.242</p>
   </div>
 
   <!-- Edit team member modal -->
@@ -460,12 +462,21 @@
       // Populate the account switcher
       const wrap = document.getElementById('acctSwitcher');
       const select = document.getElementById('accountSwitcher');
+      const nameEl = document.getElementById('accountName');
       wrap.style.display = 'flex';
-      select.innerHTML = allSubs.map(s => {
-        const label = (s.name && s.name.trim()) ? s.name : '(Unnamed account)';
-        const selected = (s.id === sub.id) ? ' selected' : '';
-        return '<option value="' + escHtml(s.id) + '"' + selected + '>' + escHtml(label) + '</option>';
-      }).join('');
+      if (allSubs.length === 1) {
+        select.style.display = 'none';
+        nameEl.style.display = '';
+        nameEl.textContent = (allSubs[0].name && allSubs[0].name.trim()) ? allSubs[0].name : '(Unnamed account)';
+      } else {
+        nameEl.style.display = 'none';
+        select.style.display = '';
+        select.innerHTML = allSubs.map(s => {
+          const label = (s.name && s.name.trim()) ? s.name : '(Unnamed account)';
+          const selected = (s.id === sub.id) ? ' selected' : '';
+          return '<option value="' + escHtml(s.id) + '"' + selected + '>' + escHtml(label) + '</option>';
+        }).join('');
+      }
 
       // 2) My memberships in this account
       const memQuery = sb.from('team_members')

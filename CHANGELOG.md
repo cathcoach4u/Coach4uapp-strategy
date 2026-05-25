@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.242
+- **Account name shown as plain text when there's only one account.** The `ACCOUNT: [Saruba ▾]` dropdown on all three account tabs (Businesses, Users, Setup) was confusing for single-account users — it implied there were multiple names to choose from. Fixed: when a user owns exactly one subscription, the account name renders as a plain bold `<span>` instead of a `<select>`. The dropdown only appears when the user owns 2+ subscriptions (e.g. a coach managing multiple client accounts). No SQL.
+
 ## v0.5.241
 - **Three account-tab polish fixes.** **(1) Tax ID label** on `account-setup.html` corrected from "Tax ID (ABN / VAT / company number)" to "ABN / ACN" with updated help text ("Your Australian Business Number or Company Number — appears on invoices."). Australia uses ABN/ACN rather than VAT; the old label was confusing for Australian users. **(2) Spacing tightened** on `account-setup.html` to match `account-users.html`: `page-header` padding-bottom reduced 8px → 0, `page-sub` margin-bottom 12px → 4px, `section` margin-top 22px → 16px — eliminates the ~42px dead space between the page description and the first section that was visible on mobile. **(3) Duplicate email fixed** on `account-users.html` user cards: when a user has no `display_name` set, the card title falls back to their email address — the `.user-email` subtitle row below was rendering the same email string a second time (e.g. Cath's card showed `cath@coachingwithcath.com.au` both as the bold name and as the subtitle). Fixed by adding an `emailDisplay !== nameDisplay` guard so the email subtitle is only rendered when it differs from the display name. No SQL.
 

@@ -39,6 +39,7 @@
       min-width: 180px; cursor: pointer;
       flex: 1; max-width: 100%;
     }
+    .switcher-name { font-size: 0.88rem; font-weight: 700; color: var(--primary); flex: 1; }
 
     .page-header { padding: 20px 16px 0; }
     .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
@@ -175,7 +176,8 @@
   <div class="container">
     <div class="acct-switcher" id="acctSwitcher" style="display:none;">
       <span class="switcher-label">Account:</span>
-      <select id="accountSwitcher" class="switcher-select"></select>
+      <select id="accountSwitcher" class="switcher-select" style="display:none;"></select>
+      <span id="accountName" class="switcher-name" style="display:none;"></span>
     </div>
 
     <div class="page-header">
@@ -235,7 +237,7 @@
       <div class="export-status" id="exportStatus"></div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.241</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.242</p>
   </div>
 
   <nav class="bottom-nav">
@@ -300,12 +302,21 @@
       // Populate account switcher
       const wrap = document.getElementById('acctSwitcher');
       const sel  = document.getElementById('accountSwitcher');
+      const nameEl = document.getElementById('accountName');
       wrap.style.display = 'flex';
-      sel.innerHTML = subs.map(s => {
-        const label = (s.name && s.name.trim()) ? s.name : '(Unnamed account)';
-        const selected = (s.id === active.id) ? ' selected' : '';
-        return '<option value="' + s.id + '"' + selected + '>' + label.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) + '</option>';
-      }).join('');
+      if (subs.length === 1) {
+        sel.style.display = 'none';
+        nameEl.style.display = '';
+        nameEl.textContent = (subs[0].name && subs[0].name.trim()) ? subs[0].name : '(Unnamed account)';
+      } else {
+        nameEl.style.display = 'none';
+        sel.style.display = '';
+        sel.innerHTML = subs.map(s => {
+          const label = (s.name && s.name.trim()) ? s.name : '(Unnamed account)';
+          const selected = (s.id === active.id) ? ' selected' : '';
+          return '<option value="' + s.id + '"' + selected + '>' + label.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) + '</option>';
+        }).join('');
+      }
       sel.addEventListener('change', (e) => {
         const newSubId = e.target.value;
         const picked = allSubs.find(s => s.id === newSubId);
