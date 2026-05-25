@@ -237,7 +237,7 @@
       <div class="export-status" id="exportStatus"></div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.243</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.244</p>
   </div>
 
   <nav class="bottom-nav">
@@ -299,16 +299,14 @@
         window.activeOrg.setSubscription(active.id, active.name);
       }
 
-      // Populate account switcher
+      // Populate account switcher — only shown for multi-account users (coaches)
       const wrap = document.getElementById('acctSwitcher');
       const sel  = document.getElementById('accountSwitcher');
       const nameEl = document.getElementById('accountName');
-      wrap.style.display = 'flex';
-      if (subs.length === 1) {
-        sel.style.display = 'none';
-        nameEl.style.display = '';
-        nameEl.textContent = (subs[0].name && subs[0].name.trim()) ? subs[0].name : '(Unnamed account)';
+      if (subs.length <= 1) {
+        wrap.style.display = 'none';
       } else {
+        wrap.style.display = 'flex';
         nameEl.style.display = 'none';
         sel.style.display = '';
         sel.innerHTML = subs.map(s => {

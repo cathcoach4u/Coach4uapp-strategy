@@ -249,7 +249,7 @@
 
     <div class="page-header">
       <h1 class="page-title">&#x1F465; User Management</h1>
-      <p class="page-sub">People with access to businesses in this account. Tap a user to change their per-business roles or remove them.</p>
+      <p class="page-sub">Team members across all businesses in this account.</p>
     </div>
 
     <div class="section" id="team">
@@ -307,7 +307,7 @@
       <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.243</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.244</p>
   </div>
 
   <!-- Edit team member modal -->
@@ -460,16 +460,14 @@
       sub = subs.find(s => s.id === cachedId) || subs[0];
       if (window.activeOrg) window.activeOrg.setSubscription(sub.id, sub.name);
 
-      // Populate the account switcher
+      // Populate the account switcher — only shown for multi-account users (coaches)
       const wrap = document.getElementById('acctSwitcher');
       const select = document.getElementById('accountSwitcher');
       const nameEl = document.getElementById('accountName');
-      wrap.style.display = 'flex';
-      if (allSubs.length === 1) {
-        select.style.display = 'none';
-        nameEl.style.display = '';
-        nameEl.textContent = (allSubs[0].name && allSubs[0].name.trim()) ? allSubs[0].name : '(Unnamed account)';
+      if (allSubs.length <= 1) {
+        wrap.style.display = 'none';
       } else {
+        wrap.style.display = 'flex';
         nameEl.style.display = 'none';
         select.style.display = '';
         select.innerHTML = allSubs.map(s => {
