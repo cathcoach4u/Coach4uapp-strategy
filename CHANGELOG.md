@@ -4,6 +4,16 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.232
+- **Comprehensive IAS data import Part 2.** Creates `supabase/v0.5.232-delta.sql` that fully populates all 4 IAS organisations from the May 2026 planning meeting notes. Content added per org:
+  - **IASHQ**: `core_focus` (purpose + niche as holding company / operations leadership), `one_year_goals` (FY26–27 priorities including wage allocation framework and succession planning milestones), leadership team (Jo transitioning to HQ, Leah as Ops Manager, Teresa for GI/HQ attendance).
+  - **IAS General**: `core_focus` (GI broking, ~$1M revenue niche), `one_year_goals` (revenue target, ICS broker hire, SA hire, compliance, ANZIIF for Lisa), leadership team (Teresa 90%, Jo 10%, Leah 10%, Lisa as development), issues (broker hire, compliance, SA hire, IASO allocation).
+  - **IAS Life/FP**: `core_focus` (life insurance + FP fees growth, succession focus), `one_year_goals` (replace Sunny, grow risk/FP revenue, begin Jo succession), leadership team (Jo 50% transitioning, Leah 10%, Fhevy development), issues (Sunny replacement, team stability, IASO allocation, Jo succession plan).
+  - **IAS Outsourcing**: `core_focus` (outsourced broking/admin support, growing client base), `one_year_goals` (cover expenses, formalise shared resource ~$30k pa, confirm internal allocations), leadership team (Leah 20%, Jo 10%), issues (capacity vs growth, shared resource, internal allocations).
+- All leadership team inserts use `WHERE NOT EXISTS` guards — safe to run on a populated DB. SQL only — no code changes.
+
+---
+
 ## v0.5.231
 - **IAS planning meeting notes imported into IASHQ.** Created `supabase/v0.5.231-delta.sql` to seed data from the May 2026 IAS planning meeting into the IASHQ organisation. Content imported:
   - **Targets** (10-year + 7-year visions): 10-year focuses on building a self-sustaining business with reduced owner dependency and sale readiness by 30/06/2036. 7-year (stored in `five_year`) targets $2.5M turnover, D&C loan paid off, 15% profit margin, and succession plan in place by 30/06/2033.
