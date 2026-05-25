@@ -65,9 +65,20 @@
     .form-textarea { min-height: 84px; resize: vertical; line-height: 1.45; }
     .form-help { font-size: 0.72rem; color: #aaa; margin-top: 4px; line-height: 1.4; }
 
+    .form-footer {
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .btn-save {
+      background: var(--accent); color: white; border: none;
+      padding: 9px 20px; border-radius: 8px; font-family: inherit;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-save:hover { background: var(--accent-dark); }
+    .btn-save:disabled { background: #ccc; cursor: wait; }
     .save-status {
       font-size: 0.78rem; color: #888;
-      padding: 0 16px; margin-top: 8px;
     }
     .save-status.ok    { color: #0F766E; }
     .save-status.err   { color: #DC2626; }
@@ -163,9 +174,12 @@
         <input class="form-input" id="taxIdInput" type="text" maxlength="64" placeholder="e.g. ABN 12 345 678 901"/>
         <div class="form-help">Optional. The legal identifier that appears on your invoices.</div>
       </div>
-    </div>
 
-    <div class="save-status" id="saveStatus">Changes save automatically.</div>
+      <div class="form-footer" id="formFooter">
+        <button class="btn-save" id="saveBtn" type="button" style="display:none;">Save changes</button>
+        <span class="save-status" id="saveStatus">Changes save automatically.</span>
+      </div>
+    </div>
 
     <div class="export-card">
       <h2 class="export-title">&#x1F4E5; Data Export</h2>
@@ -174,7 +188,7 @@
       <div class="export-status" id="exportStatus"></div>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.222</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.224</p>
   </div>
 
   <nav class="bottom-nav">
@@ -206,6 +220,17 @@
       const el = document.getElementById('saveStatus');
       el.textContent = text;
       el.className = 'save-status' + (kind ? ' ' + kind : '');
+    }
+
+    function markDirty() {
+      const btn = document.getElementById('saveBtn');
+      if (btn) btn.style.display = '';
+      setStatus('Unsaved changes', '');
+    }
+
+    function markClean() {
+      const btn = document.getElementById('saveBtn');
+      if (btn) btn.style.display = 'none';
     }
 
     async function loadSub(user) {
@@ -302,12 +327,14 @@
       if (window.activeOrg && window.activeOrg.setSubscription) {
         window.activeOrg.setSubscription(sub.id, name);
       }
+      markClean();
       setStatus('Saved ✓', 'ok');
       clearTimeout(setStatus._t);
       setStatus._t = setTimeout(() => setStatus('Changes save automatically.', ''), 1500);
     }
 
     function scheduleSave() {
+      markDirty();
       clearTimeout(saveTimer);
       saveTimer = setTimeout(save, DEBOUNCE_MS);
     }
@@ -385,7 +412,7 @@
 
         const payload = {
           exported_at: new Date().toISOString(),
-          app_version: '0.5.222',
+          app_version: '0.5.224',
           schema: 'coach4u-business-snapshot/v1',
           business_id: orgId,
           business_name: orgName,
@@ -450,6 +477,11 @@
         const el = document.getElementById(id);
         el.addEventListener('input', scheduleSave);
         el.addEventListener('blur',  save);
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', () => {
+        clearTimeout(saveTimer);
+        save();
       });
 
       document.getElementById('signOutBtn').addEventListener('click', async () => {
