@@ -357,9 +357,9 @@ annual_sessions, quarterly_sessions, team_checkins
 
 ## Pricing Model
 
-**Source of truth for pricing: https://cathcoach4u.github.io/coach4uapp-dashboard/admin.html**
+**Source of truth for pricing and payment links: https://cathcoach4u.github.io/coach4uapp-dashboard/admin.html**
 
-Update pricing there — not here. The notes below are for development context only.
+All Stripe payment links and pricing are managed in the admin page above — not here and not in the app code. Update pricing or links there. The notes below are for development context only.
 
 - **Per business, not per user** — users are unlimited on every plan. Billing unit is the business/entity.
 - **A business or entity** = any organisation in the account (holding company, subsidiary, standalone — each counts as one).
