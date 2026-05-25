@@ -195,10 +195,33 @@ The account switcher shows only one entry. If clients later need their own separ
   - IAS Life — child
   - IAS Outsourcing — child
 
+### IAS client data — what has been seeded (run in Supabase to activate)
+
+Two SQL files were created in v0.5.231–232 from the May 2026 IAS planning meeting notes.
+**Run both in order in the Supabase SQL Editor** (`eekefsuaefgpqmjdyniy`) before expecting data to appear.
+
+**`supabase/v0.5.231-delta.sql`** — IASHQ only:
+- `targets.ten_year` — 10-year vision (by 30/06/2036: self-sustaining business, succession / sale readiness, Jo reducing involvement)
+- `targets.five_year` — 7-year plan (by 30/06/2033: $2.5M turnover, D&C loan paid, 15% margin, succession plan)
+- 6 current `issues` — cash flow visibility, compliance gaps, staffing/Sunny, cost-splitting, Jo wage discrepancy (Xero 40% vs agreed 30%+10% IASO), tech-tool challenges
+- 4 future `issues` — budget finalisation, training plans (Lisa/Fhevy), AI direction, PM protocols
+- 5 Q2 2026 `rocks` — group budget, compliance docs, accountability charts, cash flow reporting, PM protocols
+
+**`supabase/v0.5.232-delta.sql`** — all 4 IAS orgs:
+| | Core Focus | One-Year Goals | Leadership Team | Issues |
+|---|---|---|---|---|
+| **IASHQ** | Holding co / ops leadership | FY26–27 wage framework + succession milestones | Jo (30% HQ/ops → transitioning), Leah (60% HQ), Teresa (10% HQ) | — |
+| **GI** | GI broking, ~$1M niche | ~$1M revenue, ICS broker hire, SA hire, compliance, ANZIIF for Lisa | Teresa (90%), Jo (10%), Leah (10%), Lisa (dev) | 4 issues |
+| **Life/FP** | Life insurance + FP fees, succession focus | Replace Sunny, grow risk/FP revenue, Jo succession begin | Jo (50% → reducing), Leah (10%), Fhevy (dev) | 4 issues |
+| **Outsourcing** | Outsourced admin + broking support | Cover expenses, formalise $30k shared resource, confirm GI/Life allocations | Leah (20%), Jo (10%) | 3 issues |
+
+Both files use `WHERE NOT EXISTS` and `ON CONFLICT DO UPDATE` — safe to re-run if needed.
+
 ### What NOT to do
 - Do not create separate subscriptions for SARUBA or IAS — all businesses belong in Coaching with Cath
 - Do not change `owner_user_id` on the Coaching with Cath subscription
 - The v0.5.227-delta.sql Part 2 (inserting Cath as team member in non-owned orgs) should NOT be run
+- Do NOT re-run v0.5.231 or v0.5.232 a second time without checking for existing data — issues and rocks do not have unique constraints and will duplicate
 
 ## Login Page Standard (Gold Standard v2.2)
 
@@ -234,6 +257,16 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 ## Current Version
 v0.5.232
+
+## Pending Actions (must be done outside Claude Code)
+
+> These require manual steps in external tools. Future sessions: check this list before assuming data is missing or a feature is broken.
+
+### SQL migrations to run in Supabase SQL Editor (`eekefsuaefgpqmjdyniy`)
+1. **`supabase/v0.5.231-delta.sql`** — IAS planning meeting data into IASHQ (targets, issues, rocks)
+2. **`supabase/v0.5.232-delta.sql`** — Full IAS data across all 4 orgs (core_focus, one_year_goals, leadership team, per-unit issues)
+
+Once both are run, all IAS content from the May 2026 planning meeting will be visible in the app.
 
 ## Latest
 - **v0.5.232** — Comprehensive IAS data import Part 2. Creates `supabase/v0.5.232-delta.sql` populating all 4 IAS orgs (IASHQ, GI, Life, Outsourcing) from the May 2026 planning meeting: `core_focus` (purpose + niche), `one_year_goals` in targets, leadership team members (Jo/Leah/Teresa with % time allocations per unit, plus Lisa in GI and Fhevy in Life/FP), and per-unit issues for GI, Life and Outsourcing. SQL only — run `v0.5.232-delta.sql` in Supabase SQL Editor to apply.
