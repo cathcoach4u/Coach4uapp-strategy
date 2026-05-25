@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.237
+- **Account Setup save feedback.** The save button and status text now cycle through clearly distinct states so the user always knows what's happening. **(1) Dirty** — as soon as any field is edited, the button turns teal and the status line becomes amber bold "Unsaved changes — tap Save to apply". **(2) Saving** — button disables and reads "Saving…", status updates to match. **(3) Saved** — button shows "Saved ✓" and status turns green for 2 seconds, then both reset to the clean grey/disabled state. Error path shows the Supabase error in red with the button re-enabled for retry. No SQL.
+
 ## v0.5.236
 - **User card table layout.** Business/role rows inside each user card on `account-users.html` now use CSS table layout instead of flex, so the role pills (ADMIN / COACH / MEMBER / Pending) align in a consistent column regardless of business name length. Changed `.user-orgs` to `display: table`, `.user-org-row` to `display: table-row`, business name to a `table-cell` with `white-space: nowrap`, and wrapped the role pill and Remove button in their own `table-cell` spans (`.user-org-role` and `.user-org-action`). No SQL.
 

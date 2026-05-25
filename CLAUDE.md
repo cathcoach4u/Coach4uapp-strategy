@@ -256,7 +256,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 - No staging or branch preview URLs. GitHub Pages deploys `main` directly on every push.
 
 ## Current Version
-v0.5.236
+v0.5.237
 
 ## Pending Actions (must be done outside Claude Code)
 
@@ -266,6 +266,7 @@ v0.5.236
 3. **`supabase/v0.5.232-delta.sql`** — Full IAS data across all 4 orgs. Run if not already applied.
 
 ## Latest
+- **v0.5.237** — Account Setup save feedback made obvious. Button text changes: grey "Save changes" (clean) → teal "Save changes" (dirty) → "Saving…" (in-flight) → "Saved ✓" (2 s, then reverts). Status text gains a `.dirty` amber state ("Unsaved changes — tap Save to apply") so the user knows exactly what to do. No SQL.
 - **v0.5.236** — User card business/role list now displays as a table so the ADMIN/COACH/MEMBER pills align in a column. Changed `.user-orgs` to `display: table`, `.user-org-row` to `display: table-row`, and wrapped the role pill and Remove button in dedicated `table-cell` spans (`.user-org-role` / `.user-org-action`). No SQL.
 - **v0.5.235** — Fiscal year-aware quarterly goals. **(1)** `goals.html` now reads `business_cadence.last_annual_planning_date` (or `annual_planning_date`) to determine the fiscal year start month, then labels quarters as `Q1 2026/27` style instead of calendar `Q2 2026`. Quarter selector shows a ±1-quarter window around the current fiscal quarter, plus any existing values from the DB so old records remain selectable. **(2)** `business.html` dashboard uses the same fiscal quarter for the Quarterly Goals panel and when creating/finding this week's meeting. **(3)** `run-meeting.html` fetches cadence in init and uses fiscal quarter for the inline Priorities Review (Section 3) rocks query. **(4)** `one-page-operations.html` fetches cadence before the rocks query so the Quarterly Goals column matches the fiscal quarter. **(5)** SQL: `supabase/v0.5.235-delta.sql` updates the 5 IASHQ rocks seeded in v0.5.231 from `quarter = 'Q2 2026'` → `'Q1 2026/27'` — run this in Supabase SQL Editor.
 - **v0.5.234** — Dashboard panel reorder: Core Values moved to immediately after the quick-action buttons (below "View One-Page Operations"), above the 1-Year Goal panel. No SQL.
