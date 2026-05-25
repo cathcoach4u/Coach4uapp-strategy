@@ -357,23 +357,21 @@ annual_sessions, quarterly_sessions, team_checkins
 
 ## Pricing Model
 
-Three layers: **SaaS subscription** (the platform) + **AI add-on** (optional) + **Services** (your time).
+Three layers: **Subscription** (the platform) + **AI add-on** (optional) + **Services** (your time).
 
 ---
 
-### 1. SaaS Subscription
+### 1. Subscription
 
-| Item | Price |
-|---|---|
-| **Base** — 2 businesses + up to 5 users | **$150/month** |
-| **3rd business** | **+$75/month** |
-| **4th business** | **+$75/month** |
-| **5th business** | **+$75/month** |
-| **6+ businesses** | Contact us — custom pricing |
+A business or entity is any organisation in your account — holding companies, subsidiaries, and standalone businesses each count as one. Users are unlimited on every plan.
 
-**Users beyond 5**: unlimited, no extra charge. No per-seat billing.
-
-**Coaches**: admin-equivalent for data, billing-exempt — don't count against the 5-user base.
+| Plan | Software | AI Add-on |
+|---|---|---|
+| **Starter — up to 2 businesses or entities** | $150/mo | TBD/mo |
+| **3rd business or entity** | +$75/mo | — |
+| **4th business or entity** | +$75/mo | — |
+| **5th business or entity** | +$75/mo | — |
+| **6+ businesses or entities** | Contact us | — |
 
 #### Monthly progression
 
@@ -389,18 +387,18 @@ Three layers: **SaaS subscription** (the platform) + **AI add-on** (optional) + 
 
 | Client | Configuration | Monthly |
 |---|---|---|
-| Solo founder | 1 business, 3 users | **$150** |
-| Small team | 1 business, 8 users | **$150** (users are unlimited) |
-| Two ventures | 2 businesses, 4 users | **$150** |
-| Holding co | 3 businesses, 6 users | **$225** |
-| Larger holding | 5 businesses, 10 users | **$375** |
-| Large corporate | 10+ businesses | **Contact us** |
+| Solo founder | 1 business | **$150** |
+| Small team | 1 business, any number of users | **$150** |
+| Two ventures | 2 businesses | **$150** |
+| Holding co (parent + 2 subsidiaries) | 3 businesses or entities | **$225** |
+| Larger holding (parent + 4 subsidiaries) | 5 businesses or entities | **$375** |
+| Large corporate | 6+ businesses or entities | **Contact us** |
 
 #### Key principles
-- **Users are global per account** — one person across 3 businesses = 1 seat, counted once.
+- **Users are unlimited** — no per-seat charges, ever.
 - **Subscriptions are account-level** — one subscription per buyer, holds N businesses.
 - **Each business is fully isolated** — own One-Page Plan, scorecard, sessions, issues, goals.
-- **Coaches are billing-exempt** — full admin-equivalent access without consuming a user seat.
+- **Coaches are billing-exempt** — full admin-equivalent access, not counted in billing.
 - **Self-serve up to 5 businesses** — 6+ requires a conversation (custom needs, support scope, pricing).
 
 ---
