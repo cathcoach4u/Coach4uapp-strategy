@@ -955,6 +955,13 @@
     const addErr  = document.getElementById('addErr');
     const addSave = document.getElementById('addSave');
     function openAddBusiness() {
+      const limit = (sub && sub.included_businesses) ? sub.included_businesses : 2;
+      const count = myMemberships.length;
+      if (count >= limit) {
+        const extra = limit < 5 ? `\n\nContact your coach to add more — each additional business is $75/mo.` : `\n\nPlease contact your coach to discuss adding more businesses.`;
+        alert(`You've reached your plan limit of ${limit} business${limit !== 1 ? 'es' : ''}.${extra}`);
+        return;
+      }
       addErr.textContent = ''; addName.value = '';
       openModal('addModal');
       setTimeout(() => addName.focus(), 50);
