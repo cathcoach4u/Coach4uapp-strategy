@@ -70,13 +70,15 @@
       margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
     }
     .btn-save {
-      background: var(--accent); color: white; border: none;
+      background: #e5e7eb; color: #9ca3af; border: none;
       padding: 9px 20px; border-radius: 8px; font-family: inherit;
-      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background .15s;
+      font-size: 0.88rem; font-weight: 700; cursor: default; transition: background .15s, color .15s;
       white-space: nowrap;
     }
-    .btn-save:hover { background: var(--accent-dark); }
-    .btn-save:disabled { background: #ccc; cursor: wait; }
+    .btn-save:not(:disabled) {
+      background: var(--accent); color: white; cursor: pointer;
+    }
+    .btn-save:not(:disabled):hover { background: var(--accent-dark); }
     .save-status {
       font-size: 0.78rem; color: #888;
     }
@@ -176,7 +178,7 @@
       </div>
 
       <div class="form-footer" id="formFooter">
-        <button class="btn-save" id="saveBtn" type="button" style="display:none;">Save changes</button>
+        <button class="btn-save" id="saveBtn" type="button" disabled>Save changes</button>
         <span class="save-status" id="saveStatus">Changes save automatically.</span>
       </div>
     </div>
@@ -224,13 +226,13 @@
 
     function markDirty() {
       const btn = document.getElementById('saveBtn');
-      if (btn) btn.style.display = '';
+      if (btn) btn.disabled = false;
       setStatus('Unsaved changes', '');
     }
 
     function markClean() {
       const btn = document.getElementById('saveBtn');
-      if (btn) btn.style.display = 'none';
+      if (btn) btn.disabled = true;
     }
 
     async function loadSub(user) {
@@ -484,7 +486,7 @@
 
       window.addEventListener('beforeunload', () => {
         const btn = document.getElementById('saveBtn');
-        if (btn && btn.style.display !== 'none') save();
+        if (btn && !btn.disabled) save();
       });
 
       document.getElementById('signOutBtn').addEventListener('click', async () => {
