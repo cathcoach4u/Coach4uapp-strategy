@@ -4,6 +4,9 @@ All notable changes to the project. The two most recent entries live in `CLAUDE.
 
 ---
 
+## v0.5.243
+- **User card consistency + spacing tightened across account tabs.** **(1) Email fix on user cards** — `account-users.html` now fetches emails from the `users` mirror table for all signed-up team members. Previously, any member who joined via invite had their `invited_email` cleared by the `link_pending_invites` trigger on signup, leaving the card with no email data and falling back to `(unnamed teammate)` — no identifying information at all. This was inconsistent: Cath's card (the current user) showed her email because it comes from the auth session, while Andrew and others showed nothing. Fix: after loading teamRows, a secondary query fetches `id, email` from the `users` table for all `user_id`s in teamRows. These are stored in `memberEmailMap` and used in both `renderUsers()` and `openUserEditModal()` as a fallback for `emailDisplay` (and for `nameDisplay` before the `(unnamed teammate)` last-resort). Now every card shows an email unless the display name already contains it. **(2) Spacing** — `acct-switcher` padding reduced (16+14px → 12+10px, margin-bottom 6px → 0); `page-header` padding-top 20px → 14px; `page-sub` margin-bottom reduced to 0; `section` margin-top 16-22px → 14px. Applied identically to all three account tabs (index.html, account-users.html, account-setup.html). No SQL.
+
 ## v0.5.242
 - **Account name shown as plain text when there's only one account.** The `ACCOUNT: [Saruba ▾]` dropdown on all three account tabs (Businesses, Users, Setup) was confusing for single-account users — it implied there were multiple names to choose from. Fixed: when a user owns exactly one subscription, the account name renders as a plain bold `<span>` instead of a `<select>`. The dropdown only appears when the user owns 2+ subscriptions (e.g. a coach managing multiple client accounts). No SQL.
 

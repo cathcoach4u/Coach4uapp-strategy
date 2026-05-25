@@ -23,9 +23,9 @@
     /* Account switcher (mirrors index.html so the chrome is consistent) */
     .acct-switcher {
       display: flex; align-items: center; gap: 10px;
-      padding: 16px 16px 0; flex-wrap: wrap;
+      padding: 12px 16px 10px; flex-wrap: wrap;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 14px; margin-bottom: 6px;
+      margin-bottom: 0;
     }
     .switcher-label {
       font-size: 0.7rem; color: #888; font-weight: 700;
@@ -41,11 +41,11 @@
     }
     .switcher-name { font-size: 0.88rem; font-weight: 700; color: var(--primary); flex: 1; }
 
-    .page-header { padding: 20px 16px 0; }
-    .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 4px; letter-spacing: -0.2px; }
-    .page-sub { font-size: 0.82rem; color: #666; margin: 0 0 4px; line-height: 1.5; }
+    .page-header { padding: 14px 16px 0; }
+    .page-title { font-size: 1.2rem; font-weight: 900; color: var(--primary); margin: 0 0 3px; letter-spacing: -0.2px; }
+    .page-sub { font-size: 0.82rem; color: #666; margin: 0 0 0; line-height: 1.5; }
 
-    .section { padding: 0 16px 16px; margin-top: 16px; }
+    .section { padding: 0 16px 16px; margin-top: 14px; }
     .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
     .section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); }
     .section-meta { font-size: 0.72rem; color: #888; font-weight: 600; }
@@ -307,7 +307,7 @@
       <p class="section-blurb" style="margin-top:14px;">Security is enforced at the database layer (Supabase Row Level Security), not just in the UI &mdash; so a Member can&rsquo;t bypass restrictions even with API access.</p>
     </div>
 
-    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.242</p>
+    <p style="text-align:center;font-size:0.7rem;color:#bbb;margin:24px 0 8px;letter-spacing:0.5px;">v0.5.243</p>
   </div>
 
   <!-- Edit team member modal -->
@@ -439,6 +439,7 @@
     let myMemberships   = [];   // caller's active team_members in the active sub's orgs
     let teamRows        = [];   // every active+pending team_member row in orgs I admin/coach
     let teamGroups      = new Map();
+    let memberEmailMap  = {};   // user_id → email, fetched from users mirror table
     let userEditTarget  = null;
 
     /* ============== modal helpers ============== */
@@ -498,6 +499,14 @@
         .in('organisation_id', adminOrgIds)
         .neq('status', 'removed');
       teamRows = rows || [];
+
+      // Fetch emails for signed-up members (invited_email is cleared after signup).
+      // Uses the public `users` mirror table so we can show identifying info for all cards.
+      const signedUpIds = [...new Set(teamRows.filter(r => r.user_id).map(r => r.user_id))];
+      if (signedUpIds.length) {
+        const { data: emailRows } = await sb.from('users').select('id, email').in('id', signedUpIds);
+        memberEmailMap = Object.fromEntries((emailRows || []).map(u => [u.id, u.email]));
+      }
     }
 
     /* ============== render ============== */
@@ -527,11 +536,13 @@
       const cards = [];
       for (const g of groups.values()) {
         const isMe = g.user_id === user.id;
+        const memberEmail = isMe ? user.email : (g.invited_email || memberEmailMap[g.user_id] || '');
         const nameDisplay = g.display_name
           || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
           || g.invited_email
+          || memberEmailMap[g.user_id]
           || '(unnamed teammate)';
-        const emailDisplay = isMe ? user.email : (g.invited_email || '');
+        const emailDisplay = memberEmail;
         const ini = initials(nameDisplay || emailDisplay);
 
         const orgRows = g.rows.map(r => {
@@ -586,11 +597,14 @@
       const errEl = document.getElementById('userEditErr');
       errEl.textContent = '';
       const isMe = group.user_id === user.id;
-      const knownEmail = group.invited_email || (isMe ? user.email : null);
+      const resolvedEmail = isMe ? user.email : (group.invited_email || memberEmailMap[group.user_id] || '');
+      const knownEmail = resolvedEmail || null;
       const nameDisplay = group.display_name
         || (isMe ? ((user.user_metadata && user.user_metadata.full_name) || user.email) : null)
-        || group.invited_email || '(unnamed teammate)';
-      const emailDisplay = isMe ? user.email : (group.invited_email || '');
+        || group.invited_email
+        || memberEmailMap[group.user_id]
+        || '(unnamed teammate)';
+      const emailDisplay = resolvedEmail;
 
       document.getElementById('userEditAvatar').textContent = initials(nameDisplay || emailDisplay);
       document.getElementById('userEditName').textContent = nameDisplay + (isMe ? ' (you)' : '');
